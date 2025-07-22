@@ -1,0 +1,924 @@
+/************************************************************************/
+/* WUWPCAL2.P   Program Calculate Premium 2                             */
+/* Copyright Tokio Marine Safety Insurance (Thailand) PCL.              */
+/* Create By : Porntiwa T. 24/05/2024  A67-0029                         */
+/************************************************************************/
+
+/* Calculate Premium */
+DEFINE INPUT PARAMETER nv_policy  AS CHAR FORMAT "X(16)".
+DEFINE INPUT PARAMETER nv_campcd  AS CHAR FORMAT "X(40)".
+DEFINE INPUT PARAMETER nv_rencnt  AS INTE FORMAT ">9".
+DEFINE INPUT PARAMETER nv_endcnt  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_riskgp  AS INTE FORMAT ">9".
+DEFINE INPUT PARAMETER nv_riskno  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_itemno  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_batchyr AS INTE FORMAT "9999".     /*ปี batch */
+DEFINE INPUT PARAMETER nv_batchno AS CHAR FORMAT "x(20)" .  /*batch number*/
+DEFINE INPUT PARAMETER nv_batcnt  AS INTE FORMAT "99".
+DEFINE INPUT PARAMETER nv_polday  AS INTE.
+DEFINE INPUT PARAMETER nv_usrid   AS CHAR FORMAT "X(10)".
+DEFINE INPUT PARAMETER nv_progid  AS CHAR FORMAT "X(10)".
+DEFINE INPUT PARAMETER nv_diffprm AS DECI. /* Premium Diff ที่รับได้และให้ Adjust */
+
+DEFINE INPUT PARAMETER nv_covcod  AS CHAR FORMAT "X(5)".
+DEFINE INPUT PARAMETER nv_class   AS CHAR FORMAT "X(5)".
+DEFINE INPUT PARAMETER nv_vehuse  AS CHAR FORMAT "X(2)".
+DEFINE INPUT PARAMETER nv_cstflg  AS CHAR FORMAT "X(2)".         /*C=CC ; S=Seat ; T=Tons ; W=Watts*/
+DEFINE INPUT PARAMETER nv_engcst  AS DECI FORMAT ">>>>>9.99".    /* ต้องใส่ค่าตาม nv_cstflg  */
+DEFINE INPUT PARAMETER nv_drivno  AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_driage1 AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_driage2 AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_levcod  AS INTE.
+DEFINE INPUT PARAMETER nv_levper  AS DECI FORMAT ">>9.99-".
+
+DEFINE INPUT PARAMETER nv_yrmanu  AS INTE FORMAT "9999".
+DEFINE INPUT PARAMETER nv_totsi   AS INTE FORMAT ">>>,>>>,>>9". 
+DEFINE INPUT PARAMETER nv_totfi   AS INTE FORMAT ">>>,>>>,>>9".   
+
+DEFINE INPUT PARAMETER nv_vehgrp  AS CHAR FORMAT "X(3)".
+DEFINE INPUT PARAMETER nv_access  AS CHAR FORMAT "X(3)". /* อุปกรณ์เสริม */  /*  A หรือ " " */
+DEFINE INPUT PARAMETER nv_supe    AS LOGICAL.            /* super car  yes/no */
+
+DEFINE INPUT PARAMETER nv_tpbi1si AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_tpbi2si AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_tppdsi  AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_411si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_412si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_413si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_414si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_42si    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_43si    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_411prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_412prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_413prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_414prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_42prmt  AS DECI FORMAT ">>>,>>>,>>9.99-".  
+DEFINE INPUT PARAMETER nv_43prmt  AS DECI FORMAT ">>>,>>>,>>9.99-".  
+DEFINE INPUT PARAMETER nv_seat41  AS INTE.
+
+DEFINE INPUT PARAMETER nv_dedod   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_addod   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dedpd   AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_dodamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dadamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dpdamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_ncbp    AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER nv_fletp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER nv_dspcp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER nv_dstfp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER nv_clmp    AS DECI FORMAT ">,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_pdprem   AS DECI FORMAT ">>>,>>>,>>9.99-".  /*เบี้ยไม่เต็มปี*/
+DEFINE INPUT PARAMETER nv_netprem  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*เบี้ยที่ต้องการ ส่งแบบเต็มปี*/  
+DEFINE INPUT PARAMETER nv_gapprem  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*เบี้ยเต็มปี*/
+DEFINE INPUT PARAMETER nv_flagprm  AS CHAR FORMAT "X(2)". /* N=Net,G=Gross */
+
+DEFINE INPUT PARAMETER nv_effdat    AS DATE FORMAT "99/99/9999". 
+
+DEFINE INPUT PARAMETER nv_adjpaprm  AS LOGICAL. /*A65-0232*/
+DEFINE INPUT PARAMETER nv_adjprem   AS LOGICAL. /*A65-0232*/
+
+DEFINE INPUT-OUTPUT PARAMETER nv_pdprm0  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*ย้ายมาคำนวนใหม่*/
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_fletamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dspcamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dstfamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_clmamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_baseprm  AS DECI FORMAT ">>>,>>>,>>9.99-". 
+DEFINE INPUT-OUTPUT PARAMETER nv_baseprm3 AS DECI FORMAT ">>>,>>>,>>9.99-". 
+DEFINE INPUT-OUTPUT PARAMETER nv_mainprm  AS DECI FORMAT ">>>,>>>,>>9.99-". 
+                                           
+DEFINE INPUT-OUTPUT PARAMETER nv_ratatt    AS DECI FORMAT ">>>9.9999-".       /* Attach.Rate */
+DEFINE INPUT-OUTPUT PARAMETER nv_siatt     AS INTE FORMAT ">>>,>>>,>>9-".      /* Attach.SI */
+DEFINE INPUT-OUTPUT PARAMETER nv_netatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.Net Premium */
+DEFINE INPUT-OUTPUT PARAMETER nv_fltatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.Fleet % */
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.NCB % */
+DEFINE INPUT-OUTPUT PARAMETER nv_dscatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.DSPC % */
+DEFINE INPUT-OUTPUT PARAMETER nv_attgapt   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atfltgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atncbgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atdscgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_packatt1  AS CHARACTER FORMAT "X(4)".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_chgflg    AS LOGICAL.
+DEFINE INPUT-OUTPUT PARAMETER nv_chgrate   AS DECI FORMAT ">>>9.9999-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chgsi     AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chgpdprm  AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chggapprm AS DECI FORMAT ">>,>>>,>>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_battflg    AS LOGICAL.
+DEFINE INPUT-OUTPUT PARAMETER nv_battrate   AS DECI FORMAT ">>>9.9999-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battsi     AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battprice  AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battpdprm  AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battgapprm AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battyr     AS INTE FORMAT "9999".
+DEFINE INPUT-OUTPUT PARAMETER nv_battper    AS DECI FORMAT ">>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_compprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_uom9_v   AS INTE FORMAT ">>>,>>>,>>9".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_fcctv   AS LOGICAL .    /* cctv = yes/ no */
+DEFINE INPUT-OUTPUT PARAMETER nv_flgsht  AS CHAR.  /* Short rate = "Y" , Pro rate = "N" */
+DEFINE INPUT-OUTPUT PARAMETER nv_evflg   AS LOGICAL.
+
+DEFINE OUTPUT PARAMETER nv_uom1_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom2_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom5_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom6_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom7_c  AS CHAR.  
+DEFINE OUTPUT PARAMETER nv_gapprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE OUTPUT PARAMETER nv_pdprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE OUTPUT PARAMETER nv_status  AS CHAR.   /*fleet YES=Complete , NO=Not Complete */
+DEFINE OUTPUT PARAMETER nv_message AS CHAR.   /*fleet message error */
+
+DEFINE NEW SHARED TEMP-TABLE wkuwd132 LIKE stat.pmuwd132.
+
+DEFINE TEMP-TABLE wadjprm 
+    FIELD polmst   AS CHAR FORMAT "X(50)"
+    FIELD baseprm  AS DECIMAL FORMAT ">>,>>>,>>9.99-"
+    FIELD baseprm3 AS DECIMAL FORMAT ">>,>>>,>>9.99-"
+    FIELD flet_per AS DECIMAL FORMAT ">>>,>>9.99-"
+    FIELD ncbper   AS DECIMAL FORMAT ">>>,>>9.99-"
+    FIELD dss_per  AS DECIMAL FORMAT ">>>,>>9.99-"
+    FIELD stf_per  AS DECIMAL FORMAT ">>>,>>9.99-"
+    FIELD cl_per   AS DECIMAL FORMAT ">>>,>>9.99-"
+    FIELD adjprm   AS DECIMAL FORMAT ">>>,>>9.99-" .
+
+DEFINE VAR nv_base1min AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_base1max AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_base3min AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_base3max AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_rate     AS DECI FORMAT ">>>9.9999-" EXTENT 20.
+DEFINE VAR nv_benecd   AS CHAR EXTENT 20.
+
+DEFINE VAR nv_packg     AS CHAR.
+DEFINE VAR nv_mv411     AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mv412     AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mv413     AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mv414     AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mv42      AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mv43      AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_mvtot     AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE VAR nv_addprem   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_tdeduct   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_netprm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nt_gapprm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nt_pdprm     AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE VAR nv_sumins  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_siplus  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_uom6_v  AS DECI FORMAT ">>>,>>>,>>9.99-".  /* Own Damage */
+DEFINE VAR nv_uom7_v  AS DECI FORMAT ">>>,>>>,>>9.99-".  /* Fire & Theft */
+
+DEFINE VAR nv_premdet  AS DECI FORMAT ">>>,>>>,>>9.99-" EXTENT 25.
+
+DEFINE VAR nv_cntfif  AS INTE.
+DEFINE VAR nv_cntadj  AS INTE.
+DEFINE VAR nv_chkadj1 AS LOGICAL INIT NO.
+DEFINE VAR nv_chkbase AS LOGICAL INIT NO.
+DEFINE VAR nv_chkncb  AS LOGICAL INIT NO.
+DEFINE VAR nv_chkdspc AS LOGICAL INIT NO.
+DEFINE VAR nv_chkclm  AS LOGICAL INIT NO.
+DEFINE VAR nv_cadj    AS LOGICAL INIT NO.
+DEFINE VAR nv_cstep   AS INTE.
+
+DEFINE VAR nv_dspcmax AS INTE.
+DEFINE VAR nv_ncbmax  AS INTE.
+DEFINE VAR nv_clmmax  AS INTE.
+
+DEFINE VAR nv_prmpac  AS CHAR FORMAT "X(2)".
+DEFINE VAR nv_sclass  AS CHAR.
+DEFINE VAR nv_adjprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_adjpd   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_adjgap  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_i       AS INTE INIT 0.
+DEFINE VAR nv_j       AS INTE INIT 0.
+
+DEFINE VAR nv_compcod  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_compvar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_compvar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_compvar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_basecod  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_basevar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_basevar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_basevar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_useprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_usecod   AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_usevar   AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_usevar1  AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_usevar2  AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_engprm   AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_engcod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_engvar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_engvar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_engvar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_drivprm  AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_drivcod  AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_drivvar  AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_drivvar1 AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_drivvar2 AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_yrprm    AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_yrcod    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_yrvar    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_yrvar1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_yrvar2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_siprm    AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_sicod    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_sivar    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_sivar1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_sivar2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_grprm    AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_grpcod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_grpvar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_grpvar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_grpvar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_othprm   AS DECI  FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_othcod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_othvar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_othvar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_othvar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_bipprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_bipcod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_bipvar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_bipvar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_bipvar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_biaprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_biacod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_biavar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_biavar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_biavar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_pdaprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_pdacod   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_pdavar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_pdavar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_pdavar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_41prmt   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_411prm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_41cod1   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_411var   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_411var1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_411var2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_412prm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_41cod2   AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_412var   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_412var1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_412var2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_413prm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_44cod1    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_413var    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_413var1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_413var2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_414prm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_44cod2    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_414var    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_414var1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_414var2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_42prm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_42cod    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_42var    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_42var1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_42var2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_43prm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_43cod    AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_43var    AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_43var1   AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_43var2   AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_dedod1prm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_dedod1_cod AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_dedod1var  AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_dedod1var1 AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_dedod1var2 AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_dedod2prm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_dedod2_cod AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_dedod2var  AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_dedod2var1 AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_dedod2var2 AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_dedpdprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_dedpd_cod  AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_dedpdvar   AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_dedpdvar1  AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_dedpdvar2  AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_totlprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_totlcod  AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_totlvar  AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_totlvar1 AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_totlvar2 AS CHAR  FORMAT "X(30)".
+
+DEFINE VAR nv_supeprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_supecod  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_supevar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_supevar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_supevar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_fletprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_fletcod  AS CHAR FORMAT "X(4)" INIT "".
+DEFINE VAR nv_fletvar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_fletvar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_fletvar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_ncbprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_ncbcod   AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_ncbvar   AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_ncbvar1  AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_ncbvar2  AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_dspcprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_dspccod  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_dspcvar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_dspcvar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_dspcvar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_clmprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_clmcod   AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_clmvar   AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_clmvar1  AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_clmvar2  AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_dstfprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_dstfcod  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_dstfvar  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_dstfvar1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_dstfvar2 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_basecod3 AS CHAR  FORMAT "X(4)".
+DEFINE VAR nv_basevar3 AS CHAR  FORMAT "X(60)".
+DEFINE VAR nv_basevar4 AS CHAR  FORMAT "X(30)".
+DEFINE VAR nv_basevar5 AS CHAR  FORMAT "X(30)".
+        
+DEFINE VAR nv_useprm3  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_usecod3  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_usevar3  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_usevar31 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_usevar32 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_engprm3  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_engcod3  AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_engvar3  AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_engvar31 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_engvar32 AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_siprm3   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_sicod3   AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_sivar3   AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_sivar31  AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_sivar32  AS CHAR FORMAT "X(30)".
+
+DEFINE VAR nv_siattcod   AS CHARACTER FORMAT "X(4)".
+DEFINE VAR nv_attprm     AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_attgap     AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_siattvar   AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_siattvar1  AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_siattvar2  AS CHAR      FORMAT "X(60)".
+    
+DEFINE VAR nv_fltattcod  AS CHARACTER FORMAT "X(4)".
+DEFINE VAR nv_fltattvar  AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_fltattvar1 AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_fltattvar2 AS CHAR      FORMAT "X(60)".
+ 
+DEFINE VAR nv_ncbattcod   AS CHARACTER FORMAT "X(4)".
+DEFINE VAR nv_ncbattvar   AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_ncbattvar1  AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_ncbattvar2  AS CHAR      FORMAT "X(60)".
+
+DEFINE VAR nv_dscattcod   AS CHARACTER FORMAT "X(4)".
+DEFINE VAR nv_dscattvar   AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_dscattvar1  AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_dscattvar2  AS CHAR      FORMAT "X(60)".
+
+DEFINE VAR nv_package     AS DECI      FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_packprm     AS DECI      FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_packattvar  AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_packattvar1 AS CHAR      FORMAT "X(60)".
+DEFINE VAR nv_packattvar2 AS CHAR      FORMAT "X(60)".
+
+DEFINE VAR nv_disatt    AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_gapatt    AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_atfltgap  AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_atfltprm  AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_packatt   AS CHAR FORMAT "X(4)".
+DEFINE VAR nv_atncbgap  AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_atncbprm  AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_atdscgap  AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE VAR nv_atdscprm  AS DECI FORMAT ">>,>>>,>>9-".
+
+DEFINE VAR nv_prvprm    AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_prem1     AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_prem3     AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_prem2     AS DECI FORMAT ">>,>>>,>>9.99-". 
+DEFINE VAR nv_prvprm1   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_prvprm3   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_supe00    AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_si00      AS INTE FORMAT ">,>>>,>>>,>>9".
+DEFINE VAR nv_lodclm1   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_lodclm2   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE VAR nv_totdis    AS DECI FORMAT ">>,>>>,>>9.99-".
+
+DEFINE VAR nv_benprm    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_bencod    AS CHAR FORMAT "X(10)".
+DEFINE VAR nv_benvar    AS CHAR FORMAT "X(60)".
+DEFINE VAR nv_benvar1   AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_benvar2   AS CHAR FORMAT "X(30)".
+/*--
+DEFINE VAR nv_gap       AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_prem_c    AS DECI FORMAT ">>>,>>>,>>9.99-".
+--*/
+DEFINE VAR nv_gap       AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE VAR nv_prem_c    AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE VAR n_uom_c      AS CHAR NO-UNDO.
+DEFINE VAR n_uom_v      AS DECI NO-UNDO. 
+DEFINE VAR nv_addpadj   AS DECI FORMAT ">>>,>>>,>>9.99-". 
+DEFINE VAR nv_diff      AS DECI FORMAT ">>>,>>>9.99-" .  
+DEFINE VAR nv_cntchk    AS INT  INIT 0 .  
+
+DEFINE VAR nv_tariff   AS CHAR FORMAT "X" INIT "X".
+DEFINE VAR nv_key_a    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_key_b    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_tempsi   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_driage   AS DECI FORMAT ">,>>9.99-".
+DEFINE VAR nv_age1rate AS DECI FORMAT ">>>9.9999-".
+DEFINE VAR nv_age2rate AS DECI FORMAT ">>>9.9999-".
+DEFINE VAR nv_drivcod1 AS CHAR FORMAT "X(10)".
+DEFINE VAR nv_drivcod2 AS CHAR FORMAT "X(10)".
+DEFINE VAR nv_caryr    AS INTE.
+DEFINE VAR nv_ratep    AS DECI FORMAT ">>>9.9999-".
+DEFINE VAR nv_basemin  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_basemax  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_prem     AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE VAR nv_chk      AS LOGICAL INITIAL YES.
+DEFINE VAR nv_baseap   AS DECIMAL FORMAT ">>>,>>9".
+DEFINE VAR nv_bencod1  AS CHAR FORMAT "X(4)" INITIAL "" NO-UNDO.
+DEFINE VAR nv_bencod2  AS CHAR FORMAT "X(4)" INITIAL "" NO-UNDO.
+DEFINE VAR nv_cons     AS CHAR    FORMAT "X(2)".
+DEFINE BUFFER bxmm106  FOR sicsyac.xmm106.
+DEFINE VAR nv_ncbyrs   AS INTE.
+
+DEFINE VAR nv_spa411   AS CHAR INIT "".
+DEFINE VAR nv_spa412   AS CHAR INIT "".
+DEFINE VAR nv_spa413   AS CHAR INIT "".
+DEFINE VAR nv_spa414   AS CHAR INIT "".
+DEFINE VAR nv_spa42    AS CHAR INIT "".
+DEFINE VAR nv_spa43    AS CHAR INIT "".
+DEFINE VAR nv_flagpa   AS CHAR INIT "".
+
+DEFINE VAR nv_diffpd   AS DECI.
+DEFINE VAR nv_diffgp   AS DECI.
+
+DEFINE VAR nv_fletadj AS DECI FORMAT ">>>>9.99-".
+DEFINE VAR nv_ncbadj  AS DECI FORMAT ">>>>9.99-".
+DEFINE VAR nv_dspcadj AS DECI FORMAT ">>>>9.99-".
+DEFINE VAR nv_clmadj  AS DECI FORMAT ">>>>9.99-".
+DEFINE VAR nv_dstfadj AS DECI FORMAT ">>>>9.99-".
+
+DEFINE VAR nv_short AS DECI.
+DEFINE VAR nv_mindiff AS DECI.
+DEFINE VAR nv_maxdiff AS DECI. 
+
+DEFINE VAR nv_addatt  AS CHAR INIT "".
+
+IF nv_diffprm > 0 THEN DO:
+    ASSIGN nv_mindiff = nv_diffprm * (-1)
+           nv_maxdiff = nv_diffprm.
+END.
+ELSE IF nv_diffprm < 0 THEN DO:
+    ASSIGN nv_mindiff = nv_diffprm
+           nv_maxdiff = nv_diffprm * (-1).
+END.
+ELSE DO:
+    ASSIGN nv_mindiff = 0
+           nv_maxdiff = 0.
+END.
+
+IF nv_flgsht = "Y" THEN DO:
+    FIND FIRST sicsyac.xmm127 WHERE
+               sicsyac.xmm127.poltyp  = "V70"      AND
+               sicsyac.xmm127.daymth  = YES        AND
+               sicsyac.xmm127.nodays >= nv_polday  NO-LOCK NO-ERROR.
+    IF AVAIL sicsyac.xmm127 THEN DO:
+        nv_short = sicsyac.xmm127.short.
+    END.
+END.
+
+nv_sclass = TRIM(SUBSTRING(nv_class,2,4)).
+nv_prmpac = TRIM(SUBSTRING(nv_class,1,1)).
+
+IF nv_vehuse = "" THEN DO:
+   IF TRIM(nv_sclass) <> "" THEN nv_vehuse = SUBSTR(nv_sclass,2,1) .
+   ELSE DO:
+       nv_message = "Not Found Vehicle Usage".
+       RETURN.
+   END.
+END.
+
+/*-- Group Car 110/120/110E/120E --*/
+IF nv_vehgrp = "" THEN DO:
+    IF nv_covcod <> "3"   AND nv_covcod <> "2.1" AND
+       nv_covcod <> "2.2" AND nv_covcod <> "3.1" AND
+       nv_covcod <> "3.2" AND nv_covcod <> "2"   THEN DO:
+        IF  nv_sclass = "110" OR nv_sclass = "110E" OR
+            nv_sclass = "120" OR nv_sclass = "120E" OR
+            nv_sclass = "E11" OR nv_sclass = "E12" THEN DO:
+            nv_message = "Not Found Group Code".
+            RETURN.
+        END.
+    END.
+END.
+
+/* change ton > Kg. */
+IF nv_cstflg = "T" THEN DO:
+    IF nv_engcst < 1000 THEN nv_engcst = nv_engcst * 1000 .
+END.
+/*-- Check TPBI = "" ?? --*/
+IF nv_covcod = "1" OR nv_covcod = "5" THEN DO:
+    ASSIGN
+        nv_uom6_v  = nv_totsi
+        nv_uom7_v  = nv_totfi
+        nv_sumins  = nv_totsi
+        nv_siplus = 0
+        nv_uom6_c = "D6"    
+        nv_uom7_c = "D7" .  
+END.
+ELSE IF nv_covcod = "2" THEN DO:
+    ASSIGN
+        nv_uom6_v  = 0
+        nv_uom7_v  = nv_totfi
+        nv_sumins  = nv_totfi
+        nv_siplus  = 0
+        nv_uom6_c = ""  
+        nv_uom7_c = "D7" .  
+END.
+ELSE IF nv_covcod = "3" THEN DO:
+    ASSIGN
+        nv_uom6_v  = 0
+        nv_uom7_v  = 0
+        nv_sumins  = 0
+        nv_siplus  = 0
+        nv_uom6_c = "" 
+        nv_uom7_c = "" .
+END.
+ELSE IF nv_covcod = "2.1" OR nv_covcod = "2.2" THEN DO:
+    ASSIGN
+        nv_uom6_v  = nv_totsi
+        nv_uom7_v  = nv_totfi
+        nv_sumins  = nv_totsi
+        nv_siplus  = nv_totsi
+        nv_uom6_c  = "D6"  
+        nv_uom7_c  = "D7" .  
+END.
+ELSE IF nv_covcod = "3.1" OR nv_covcod = "3.2" THEN DO:
+    ASSIGN
+        nv_uom6_v  = nv_totsi
+        nv_uom7_v  = 0
+        nv_sumins  = nv_totsi
+        nv_siplus  = nv_totsi
+        nv_uom6_c = "D6"   
+        nv_uom7_c = "" .  
+END.
+
+IF nv_tpbi1si <> 0 THEN ASSIGN nv_uom1_c = "D1" .
+IF nv_tpbi2si <> 0 THEN ASSIGN nv_uom2_c = "D2" .
+IF nv_tppdsi  <> 0 THEN ASSIGN nv_uom5_c = "D5" .
+
+IF nv_tpbi1si > 999999999 THEN nv_tpbi1si = 999999999.
+IF nv_tpbi2si > 999999999 THEN nv_tpbi2si = 999999999.
+IF nv_tppdsi  > 999999999 THEN nv_tppdsi  = 999999999.
+
+IF nv_ncbamt  < 0 THEN nv_ncbamt  = nv_ncbamt  * (-1).
+IF nv_fletamt < 0 THEN nv_fletamt = nv_fletamt * (-1).
+IF nv_dspcamt < 0 THEN nv_dspcamt = nv_dspcamt * (-1).
+IF nv_dstfamt < 0 THEN nv_dstfamt = nv_dstfamt * (-1).
+IF nv_clmamt  < 0 THEN nv_clmamt  = nv_clmamt  * (-1).
+
+{WGW/WGWPTAR1.I}  /*{WUW/WUWTARF1.I}*/  
+
+{WGW/WGWPCPA1.I}  /*{WUW/WUWPAPM1.I}*/  /*Calculate Additional Premium*/
+
+IF nv_message <> "" THEN DO: 
+    nv_status = "NO" . 
+    nv_message = nv_message.
+    RETURN.
+END.
+
+{WGW/WGWPCDD1.I}  /*{WUW/WUWDEDCT.I}*/  /*Calculate Deduct*/
+
+IF nv_message = "" THEN DO:
+
+    /* BASE PREMIUM 3 */
+    IF nv_covcod = "2.1" OR nv_covcod = "2.2" OR
+       nv_covcod = "3.1" OR nv_covcod = "3.2" THEN DO:
+        IF nv_baseprm3 <> 0 THEN DO:
+            IF nv_baseprm3 >= nv_base3min AND
+               nv_baseprm3 <= nv_base3max THEN DO:
+                nv_baseprm3 = nv_baseprm3.
+            END.
+            ELSE DO:
+                IF nv_baseprm3 < nv_base3min THEN nv_baseprm3 = nv_base3min.
+                ELSE IF nv_baseprm3 > nv_base3max THEN nv_baseprm3 = nv_base3max.
+            END.
+        END.
+        ELSE DO:
+            nv_baseprm3 = nv_base3min.
+        END.
+    END.
+    ELSE nv_baseprm3 = 0.
+    
+    /*---
+    {WUW/WUWPCBW1.I}
+
+    ASSIGN
+        nv_cntadj = 0
+        nv_chkadj1 = NO.
+    
+    /* Check Base Premium */
+    IF nv_baseprm > nv_base1max THEN DO: 
+        nv_baseprm  = nv_base1max.
+        nv_message = "RB".
+        nv_status = "NO" .
+        /*RETURN.*/
+    END.
+    ELSE IF nv_baseprm < nv_base1min THEN DO: 
+        nv_baseprm  = nv_base1min.
+        nv_message = "RB".
+        nv_status = "NO" .
+        /*RETURN.*/
+    END.
+    ELSE DO: 
+        nv_baseprm  = nv_baseprm.
+        nv_message  = "".
+    END.
+    ---*/
+
+    IF nv_netprem <> 0 THEN DO:
+        /* ถอยเบี้ยหา Base Premium */
+
+        /*--
+        IF nv_covcod = "2.1" OR nv_covcod = "2.2" OR
+           nv_covcod = "3.1" OR nv_covcod = "3.2" THEN DO:
+            nv_baseprm3 = nv_base3min.
+        END.
+        ELSE nv_baseprm3 = 0.
+        --*/
+        
+        IF nv_baseprm = 0 THEN DO:
+            {WGW/WGWPCBW1.I}  /*{WUW/WUWBCKWD.I}*/   
+        END.
+        ELSE nv_baseprm = nv_baseprm.
+        
+        ASSIGN
+            nv_cntadj = 0
+            nv_chkadj1 = NO.
+     
+        /* Check Base Premium */
+        IF nv_baseprm > nv_base1max THEN DO: 
+            nv_baseprm  = nv_base1max.
+            nv_message = "RB".
+            nv_status = "NO" .
+            /*RETURN.*/
+        END.
+        ELSE IF nv_baseprm < nv_base1min THEN DO: 
+            nv_baseprm  = nv_base1min.
+            nv_message = "RB".
+            nv_status = "NO" .
+            /*RETURN.*/
+        END.
+        ELSE DO: 
+            nv_baseprm  = nv_baseprm.
+            nv_message  = "".
+        END.
+    END.
+    ELSE DO:
+        IF nv_baseprm <> 0 THEN nv_baseprm = nv_baseprm.
+
+        /*--
+        nv_baseprm  = 0.
+        nv_baseprm3 = 0.
+        ---*/
+    END.
+
+    {WGW/WGWPCFW1.I}  /*{WUW/WUWFORW1.I}*/   
+
+    {WGW/WGWPGPM1.I}  /*{WUW/WUWG1323.I}*/   
+
+    IF nv_netprem <> 0 THEN DO:
+        IF nv_netprem = nv_gapprm THEN DO:
+            nv_status = "YES".
+        END.
+        ELSE DO:
+            IF nv_message = "" THEN DO:
+                nv_message = "Premium Not Adjust".
+            END.  
+            nv_status  = "NO".
+        END.
+    END.
+    ELSE DO: /*คำนวนตาม Base ได้เบี้ยเท่าไหร่ออกเท่านั้น*/
+        nv_status = "YES".
+        nv_message = "".
+    END.
+    
+    ASSIGN
+        nv_gapprem = nv_gapprm.
+        nv_pdprem  = nv_pdprm.
+
+    /*-- Attach ร.ย.ต. --*/
+    IF (nv_ratatt <> 0 OR nv_netatt <> 0) AND nv_siatt <> 0 THEN DO:
+
+        ASSIGN
+            nv_attgap   = nv_attgapt  
+            nv_atfltgap = nv_atfltgapt
+            nv_atncbgap = nv_atncbgapt
+            nv_atdscgap = nv_atdscgapt
+            nv_packatt  = nv_packatt1. 
+
+        /*WUW/WUWMATT2.P*/
+        RUN WGW/WGWPCAT1.P(INPUT        nv_tariff,       
+                           INPUT        nv_effdat,       
+                           INPUT        nv_polday,      
+                           INPUT        nv_flgsht,
+                           INPUT-OUTPUT nv_ratatt,       
+                           INPUT-OUTPUT nv_siatt ,       
+                           INPUT-OUTPUT nv_netatt,       
+                           INPUT-OUTPUT nv_fltatt,       
+                           INPUT-OUTPUT nv_ncbatt,       
+                           INPUT-OUTPUT nv_dscatt,       
+                           INPUT-OUTPUT nv_atfltgap,     
+                           INPUT-OUTPUT nv_atfltprm,     
+                           INPUT-OUTPUT nv_atncbgap,     
+                           INPUT-OUTPUT nv_atncbprm,     
+                           INPUT-OUTPUT nv_atdscgap,     
+                           INPUT-OUTPUT nv_atdscprm,     
+                           INPUT-OUTPUT nv_disatt,       
+                           INPUT-OUTPUT nv_gapatt,       
+                           INPUT-OUTPUT nv_siattcod,     
+                           INPUT-OUTPUT nv_attprm,       
+                           INPUT-OUTPUT nv_attgap,       
+                           INPUT-OUTPUT nv_siattvar,     
+                           INPUT-OUTPUT nv_siattvar1,    
+                           INPUT-OUTPUT nv_siattvar2,    
+                           INPUT-OUTPUT nv_fltattcod,    
+                           INPUT-OUTPUT nv_fltattvar,    
+                           INPUT-OUTPUT nv_fltattvar1,   
+                           INPUT-OUTPUT nv_fltattvar2,   
+                           INPUT-OUTPUT nv_ncbattcod,    
+                           INPUT-OUTPUT nv_ncbattvar,    
+                           INPUT-OUTPUT nv_ncbattvar1,   
+                           INPUT-OUTPUT nv_ncbattvar2,   
+                           INPUT-OUTPUT nv_dscattcod,    
+                           INPUT-OUTPUT nv_dscattvar,    
+                           INPUT-OUTPUT nv_dscattvar1,   
+                           INPUT-OUTPUT nv_dscattvar2,   
+                           INPUT-OUTPUT nv_packatt,      
+                           INPUT-OUTPUT nv_package,      
+                           INPUT-OUTPUT nv_packprm,      
+                           INPUT-OUTPUT nv_packattvar,   
+                           INPUT-OUTPUT nv_packattvar1,  
+                           INPUT-OUTPUT nv_packattvar2,  
+                                 OUTPUT nv_message ).
+    
+        nv_addatt = "ATDG".  
+        {WGW/WGWPGPM2.I} /*{WUW/WUWPM232.I}*/  
+    END.
+
+    /*-- Attach ร.ย.ฟ.05 / ร.ย.ฟ.06 --*/
+    IF nv_chgflg = YES OR nv_battflg = YES THEN DO:
+        nv_addatt = "ATEV".
+        {WGW/WGWPGPM2.I}
+    END.
+
+    nv_addatt = "".  
+
+END.
+ELSE DO:
+    nv_status = "NO".
+END.
+IF nv_message <> ""  THEN  nv_status = "NO". 
+
+PROCEDURE PD_MatchPrem:
+
+    IF nv_mainprm <> 0 THEN DO:
+        IF nv_mainprm <> nv_prem1 THEN DO:
+            nv_message = "PREMIUM DIFF [MAINPREM]: " + STRING(nv_mainprm) + " <> " + STRING(nv_prem1).
+        END.
+    END.
+
+    IF nv_fletamt <> 0 THEN DO:
+        IF nv_fletamt > 0 THEN nv_fletamt = nv_fletamt * (-1).
+        IF nv_fletamt <> nv_fletprm THEN DO:
+            nv_message = "PREMIUM DIFF [FLEET]: " + STRING(nv_fletamt) + " <> " + STRING(nv_fletprm).
+        END.
+    END.
+
+    IF nv_ncbamt <> 0 THEN DO:
+        IF nv_ncbamt > 0 THEN nv_ncbamt = nv_ncbamt * (-1).
+        IF nv_ncbamt <> nv_ncbprm THEN DO:
+            nv_message = "PREMIUM DIFF [NCB]: " + STRING(nv_ncbamt) + " <> " + STRING(nv_ncbprm).
+        END.
+    END.
+
+    IF nv_dspcamt <> 0 THEN DO:
+        IF nv_dspcamt > 0 THEN nv_dspcamt = nv_dspcamt * (-1).
+        IF nv_dspcamt <> nv_dspcprm THEN DO:
+            nv_message = "PREMIUM DIFF [DS_OTHER]: " + STRING(nv_dspcamt) + " <> " + STRING(nv_dspcprm).
+        END.
+    END.
+
+    IF nv_clmamt <> 0 THEN DO:
+        IF nv_clmamt > 0 THEN nv_clmamt = nv_clmamt * (-1).
+        IF nv_clmamt <> nv_clmprm THEN DO:
+            nv_message = "PREMIUM DIFF [CLAIM]: " + STRING(nv_clmamt) + " <> " + STRING(nv_clmprm).
+        END.
+    END.
+
+    IF nv_dstfamt <> 0 THEN DO:
+        IF nv_dstfamt > 0 THEN nv_dstfamt = nv_dstfamt * (-1).
+        IF nv_dstfamt <> nv_dstfprm THEN DO:
+            nv_message = "PREMIUM DIFF [DS_STAFF]: " + STRING(nv_dstfamt) + " <> " + STRING(nv_dstfprm).
+        END.
+    END.
+
+END PROCEDURE.
+
+PROCEDURE PdWkUwd132A:
+
+    FIND LAST stat.pmuwd132 WHERE 
+              stat.pmuwd132.campcd = nv_policy AND
+              stat.pmuwd132.policy = nv_policy AND
+              stat.pmuwd132.itemno = nv_itemno NO-ERROR NO-WAIT.
+    IF NOT AVAIL stat.pmuwd132 THEN DO:
+        CREATE stat.pmuwd132.
+        ASSIGN
+            pmuwd132.policy = nv_policy
+            pmuwd132.campcd = nv_policy
+            pmuwd132.rencnt = nv_rencnt 
+            pmuwd132.endcnt = nv_endcnt 
+            pmuwd132.riskno = nv_riskno
+            pmuwd132.itemno = nv_itemno
+            pmuwd132.bencod = nv_bencod
+            pmuwd132.benvar = nv_benvar
+            pmuwd132.gap_ae = NO  /* yes  comment ranu*/
+            pmuwd132.gap_c  = nv_gap
+            pmuwd132.pd_aep = "E"
+            pmuwd132.prem_c = nv_prem_c
+            pmuwd132.uom_c  = n_uom_c
+            pmuwd132.uom_v  = n_uom_v
+            pmuwd132.trndat = TODAY
+            pmuwd132.trntim = STRING(TIME,"HH:MM:SS")
+            pmuwd132.usrid  = USERID(LDBNAME(1))
+            pmuwd132.effdat = nv_effdat
+            pmuwd132.expdat = nv_effdat + 365
+            pmuwd132.stcd   = nv_status
+            pmuwd132.txt1   = string(nv_batchyr,"9999")
+            pmuwd132.txt2   = nv_batchno .  
+    END.
+   
+END PROCEDURE.
+
+
+/*--
+/*-- Check Premium --*/
+FOR EACH pmuwd132 WHERE
+         pmuwd132.campcd = nv_policy AND
+         pmuwd132.policy = nv_policy NO-LOCK:
+    OUTPUT TO "D:\NewTariffEV\TestF\Premium.csv" APPEND.
+    PUT pmuwd132.bencod "|".
+    PUT pmuwd132.gap_c "|".
+    PUT pmuwd132.prem_c SKIP.
+    OUTPUT CLOSE.
+END.
+--*/
+    
+
+
+
+
+
+
+
+
+
+

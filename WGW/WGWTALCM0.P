@@ -1,0 +1,1019 @@
+/*Sub Program uwt74101 / uwt74102*/
+/*CREATE BY : Jiraphon P.   A61-0023   25/01/2018
+            : เพิ่มการ Allocate งาน Motor   
+              Transfer Policy ที่เข้าเงื่อนไขการ Allocate ให้ Auto Allocate 
+---------------------------------------------------------------------------- */
+/*Modify BY : Jiraphon P. A64-0380 06/06/2022
+            : Change Table Allocate Treaty Code (xmm025 > run uwetr225)      */    
+/* Modify by : Jiraphon P. A64-0380 Date 06/07/2023
+             : ปรับเงื่อนไขการดึงพารามิเตอร์  Treaty Code 
+               โดยเช็คจากวัน Com.date ของกรมธรรม์ ให้อยู่ในช่วง
+               ของ Com.date and Ter.date ใน Table xmm225 */   
+/* Modify by  : Chaiyong W. A67-0202 17/12/2024                         */
+/*              Change to Web Service                                   */                   
+DEFINE INPUT PARAMETER nv_policy AS CHAR INIT "".
+DEFINE INPUT PARAMETER nv_rencnt AS int  init 0. 
+DEFINE INPUT PARAMETER nv_endcnt AS int  init 0.  /*--  
+DEFINE INPUT PARAMETER nv_prog   AS CHAR INIT "".
+DEFINE OUTPUT PARAMETER nv_error AS CHAR INIT "".
+                                          
+DEFINE VAR nv_policy AS CHAR INIT "D06960000015".
+DEFINE VAR nv_rencnt AS int  init 0. 
+DEFINE VAR nv_endcnt AS int  init 0.    */
+DEF VAR nv_error AS CHAR INIT "".
+
+DEFINE NEW SHARED  VAR  s_recid1   AS RECID NO-UNDO.
+DEFINE NEW SHARED  VAR  s_recid4   AS RECID NO-UNDO. /*120*/
+DEFINE NEW SHARED  VAR  s_recid2   AS RECID NO-UNDO.
+DEFINE   VAR nv_allotyp     AS CHAR  INIT "".
+DEFINE   VAR nv_rico1       LIKE XMM068.xol1no.    /* XOL Treaty 1 No. */
+DEFINE   VAR nv_rico2       LIKE XMM068.xol2no.    /* XOL Treaty 2 No. */
+DEFINE   VAR nv_rico3       LIKE XMM068.xol3no.    /* XOL Treaty 3 No. */                                              
+DEFINE   VAR nv_name1       LIKE XMM068.xol1na.    /* XOL Treaty 1 Name */
+DEFINE   VAR nv_name2       LIKE XMM068.xol2na.    /* XOL Treaty 2 Name */
+DEFINE   VAR nv_name3       LIKE XMM068.xol3na.    /* XOL Treaty 3 Name */                                              
+DEFINE   VAR nv_perlim1     LIKE XMM068.xollt.     /* XOL Treaty 1 Cover */
+DEFINE   VAR nv_perlim2     LIKE XMM068.xol2lt.    /* XOL Treaty 2 Cover */
+DEFINE   VAR nv_perlim3     LIKE XMM068.xol3lt.    /* XOL Treaty 3 Cover */   
+DEF VAR nv_allo   AS LOGICAL INIT NO.
+DEF VAR nv_ricocr AS CHAR    INIT "".
+DEF VAR nv_namecr AS CHAR    INIT "".
+DEF VAR nv_compcr AS DECI    INIT 0.
+DEF VAR nv_riprcr AS DECI    INIT 0.
+DEF VAR nv_perlcr AS DECI    INIT 0.
+DEF VAR nv_count  AS INT     INIT 0.
+DEF VAR  nv_csftcr  AS CHAR INIT "".
+
+DEFINE VAR nv_si      AS   DECIMAL .
+DEFINE VAR nv_si_0ret AS   DECIMAL FORMAT ">>,>>>,>>9.99".
+DEFINE VAR nv_si_0rq  AS   DECIMAL FORMAT ">>,>>>,>>9.99".
+DEFINE VAR nv_si_othr AS   DECIMAL FORMAT ">>,>>>,>>9.99".
+DEFINE VAR nv_ripr1   LIKE uwd200.ripr   INITIAL 0  NO-UNDO.   
+DEFINE VAR nv_ripr2   LIKE uwd200.ripr   INITIAL 0  NO-UNDO.  
+DEFINE VAR nv_ripr3   LIKE uwd200.ripr   INITIAL 0  NO-UNDO.    
+DEFINE VAR nv_com1_p  AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE VAR nv_com2_p  AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE VAR nv_com3_p  AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE VAR nv_com1    AS DECIMAL INITIAL 0.
+DEFINE VAR nv_com2    AS DECIMAL INITIAL 0.
+DEFINE VAR nv_com3    AS DECIMAL INITIAL 0.
+DEFINE VAR n_csftq1   LIKE uwm200.csftq.
+DEFINE VAR n_name1    LIKE xmm600.abname.
+DEFINE VAR n_csftq2   LIKE uwm200.csftq.
+DEFINE VAR n_name2    LIKE xmm600.abname.
+DEFINE VAR n_csftq3   LIKE uwm200.csftq.
+DEFINE VAR n_name3    LIKE xmm600.abname.
+DEFINE VAR n_risk     AS LOGICAL INIT NO.
+
+DEFINE TEMP-TABLE t_allocate NO-UNDO
+    FIELD policy        LIKE uwm120.policy
+    FIELD rencnt        LIKE uwm120.rencnt
+    FIELD endcnt        LIKE uwm120.endcnt
+    FIELD riskno        LIKE uwm120.riskno
+    FIELD riskgp        LIKE uwm120.riskgp
+    FIELD nv_sical      LIKE uwm120.sigr    /*sum insured*/ 
+    FIELD nv_prmcal     LIKE uwm120.prem_r  /*เบี้ย*/
+    FIELD risi          LIKE uwd200.risi    /*ทุน ที่allocate*/
+    FIELD rico          LIKE uwd200.rico    /*0ret , 0rq70*/
+    FIELD nv_totsum     AS DECI INIT 0  
+    FIELD nv_totprem    AS DECI INIT 0
+    FIELD csftq         AS CHAR
+    FIELD perlimit      LIKE uwd200.risi_p
+    FIELD sicurr        LIKE uwd200.sicurr
+    FIELD ric1          LIKE uwd200.ric1
+    FIELD ric2          LIKE uwd200.ric2
+    FIELD csftq0        LIKE uwm200.csftq      
+    FIELD name0         LIKE xmm600.abname  . 
+DEFINE BUFFER bt_allocate FOR t_allocate.
+
+DEF NEW SHARED TEMP-TABLE t_csftq 
+    FIELD rico      AS CHAR INIT ""
+    FIELD csftq     AS CHAR INIT ""
+    FIELD nname     AS CHAR INIT ""
+    FIELD rip1      AS DECI INIT 0
+    field rip1ae    as logical init no  
+    field rip2ae    as logical init no    
+    field rip2      as DECI init 0
+    field com2gn    as LOGICAL INIT NO
+    FIELD ricomm    AS DATE INIT ? 
+    FIELD riexp     AS DATE INIT ? 
+    FIELD treaty_yr AS CHAR INIT "".
+
+DEF VAR n_name AS CHAR INIT "".
+DEF VAR n_csftq AS CHAR INIT "".
+DEF VAR n_message AS CHAR INIT "".
+DEF VAR n_rino AS CHAR INIT "".
+DEF VAR n_appno AS INT INIT 0.
+DEF BUFFER buwm200 FOR uwm200.
+DEF VAR nv_rip1 AS DECI INIT 0.
+DEF VAR nv_rip2 as DECI INIT 0.
+DEF VAR nv_rip1ae    as LOGICAL INIT NO.
+DEF VAR nv_rip2ae    as LOGICAL INIT NO.
+DEF VAR nv_rip2_d    as char init "".
+DEF VAR nv_com2gn    as LOGICAL INIT NO.
+/*Add A64-0380*/
+DEF VAR nv_ricomm    AS DATE INIT ? .
+DEF VAR nv_riexp     AS DATE INIT ? .
+DEF VAR nv_treaty_yr AS CHAR INIT "".
+DEFINE VAR nv_date   AS DATE INIT ?. 
+/*End A64-0380*/
+DEFINE VAR n_recsi   LIKE uwd200.risi INITIAL[0].
+DEFINE VAR n_recpr   AS DECIMAL FORMAT ">>,>>>,>>>,>>9.99-" INITIAL[0].
+DEFINE VAR n_recc1   AS DECIMAL FORMAT ">>,>>>,>>>,>>9.99-" INITIAL[0].
+DEFINE VAR n_recc2   AS DECIMAL FORMAT ">>,>>>,>>>,>>9.99-" INITIAL[0].
+DEFINE VAR nv_fptr   AS RECID NO-UNDO.
+DEFINE VAR nv_bptr   AS RECID NO-UNDO.
+DEFINE VAR nv_nptr   As RECID INIT  0.
+DEFINE VAR nv_per1   AS DECI  INIT 0.
+DEFINE VAR nv_per2   AS DECI  INIT 0.
+DEFINE VAR nv_per3   AS DECI  INIT 0.
+DEFINE VAR nv_cal    AS DECI  INIT 0.
+DEFINE VAR nv_cal2   AS DECI  INIT 0.
+DEFINE VAR nv_cal3   AS DECI  INIT 0.
+DEFINE VAR nv_per    AS CHAR  INIT "".
+DEFINE VAR nv_risk   AS DECI  INIT 0.
+DEFINE VAR nv_makdes AS CHAR FORMAT "x(20)".
+
+loop_main:
+DO TRANSACTION:
+    FIND uwm100 USE-INDEX uwm10001 WHERE 
+        uwm100.policy =  nv_policy  AND
+        uwm100.rencnt =  nv_rencnt  AND
+        uwm100.endcnt =  nv_endcnt  NO-ERROR NO-WAIT.
+    IF AVAIL uwm100 THEN DO:
+        s_recid1 = RECID(uwm100).
+
+        FOR EACH uwm200 USE-INDEX uwm20001 WHERE
+            uwm200.policy = uwm100.policy  AND
+            uwm200.rencnt = uwm100.rencnt  AND
+            uwm200.endcnt = uwm100.endcnt  :
+            nv_fptr = uwm200.fptr01.
+            DO WHILE nv_fptr <> 0 AND uwm200.fptr01 <> ? :
+                FIND uwd200 WHERE RECID(uwd200) = nv_fptr NO-ERROR.
+                IF AVAIL uwd200 THEN DO:
+                    nv_fptr = uwd200.fptr.
+        
+                    IF uwd200.policy = uwm100.policy  AND
+                       uwd200.rencnt = uwm100.rencnt  AND
+                       uwd200.endcnt = uwm100.endcnt  THEN DO:  
+                        DELETE uwd200.
+                    END.
+                    ELSE nv_fptr = 0.
+                END.
+                ELSE nv_fptr = 0. 
+            END.
+            DELETE uwm200.
+        END.
+         
+        ASSIGN
+            uwm100.sist_p = 0   uwm100.sifa_p = 0   uwm100.sity_p = 0
+            uwm100.pdst_t = 0   uwm100.pdfa_t = 0   uwm100.pdty_t = 0
+            uwm100.cost_t = 0   uwm100.cofa_t = 0   uwm100.coty_t = 0.
+
+        /*Add Jiraphon P. A64-0380*/
+        nv_date = ?.
+        nv_date = IF uwm100.poltyp = "C90" THEN uwm100.accdat ELSE uwm100.comdat.
+        /*End Add Jiraphon P. A64-0380*/
+
+        FIND LAST uwm120 WHERE
+                uwm120.policy = uwm100.policy AND    
+                uwm120.rencnt = uwm100.rencnt AND                                   
+                uwm120.endcnt = uwm100.endcnt NO-LOCK NO-ERROR.                     
+        IF AVAIL uwm120 THEN DO:
+            /*IF uwm120.riskno > 1 THEN n_risk = YES.*/
+            IF uwm120.riskno > 1 THEN LEAVE loop_main.
+            IF SUBSTR(uwm120.CLASS,2,3) = "110" OR SUBSTR(uwm120.CLASS,2,3) = "120" THEN DO:
+            /*nv_allotyp = TRIM(uwm100.poltyp + uwm120.CLASS) .*/
+                nv_allotyp = TRIM(uwm100.poltyp + substr(uwm120.CLASS,2,3)) .
+    
+                FIND LAST uwm130 USE-INDEX uwm13001 WHERE uwm130.policy = uwm120.policy AND
+                                                          uwm130.rencnt = uwm120.rencnt AND
+                                                          uwm130.endcnt = uwm120.endcnt AND
+                                                          uwm130.riskgp = uwm120.riskgp AND
+                                                          uwm130.riskno = uwm120.riskno NO-LOCK NO-ERROR NO-WAIT.
+                IF AVAIL uwm130 THEN DO:
+                    IF uwm130.itemno > 1 THEN LEAVE loop_main.
+                      FIND LAST uwm301 USE-INDEX uwm30101 WHERE uwm301.policy = uwm130.policy AND    /*ข้อมูลรถ*/
+                                                                uwm301.rencnt = uwm130.rencnt AND
+                                                                uwm301.endcnt = uwm130.endcnt AND
+                                                                uwm301.riskgp = uwm130.riskgp AND
+                                                                uwm301.riskno = uwm130.riskno AND
+                                                                uwm301.itemno = uwm130.itemno AND 
+                                                                uwm301.covcod = "1" NO-LOCK NO-ERROR.  /*Jiraphon A60-0390 เฉพาะ ป.1 ให้Allocate*/
+                      IF AVAIL uwm301 THEN DO:
+                          
+                          FIND FIRST maktab_fil USE-INDEX maktab01 WHERE maktab_fil.sclass = SUBSTR(uwm120.CLASS,2,3)  AND    /*รหัสรถเช็คยี่ห้อรถ*/
+                                                                         maktab_fil.modcod = uwm301.modcod NO-LOCK NO-ERROR.
+                          
+                          IF NOT AVAIL maktab_fil THEN DO:
+                             FIND FIRST maktab_fil USE-INDEX maktab01 WHERE maktab_fil.sclass = "****"  AND    /*รหัสรถเช็คยี่ห้อรถ*/
+                                                                            maktab_fil.modcod = uwm301.modcod NO-LOCK NO-ERROR.
+                             IF AVAIL maktab_fil THEN nv_makdes = maktab_fil.makdes.
+                          END.
+                          ELSE nv_makdes = maktab_fil.makdes.
+                               
+                          FIND FIRST uccont WHERE uccont.groupn = nv_makdes   AND       /*ยี่ห้อรถเช็ค red book*/
+                                                  uccont.contno = nv_allotyp  NO-LOCK NO-ERROR.
+                          IF AVAIL uccont THEN DO:
+                              IF YEAR(uwm100.comdat) <= 2017 THEN DO:   /*Add Jiraphon A60-0506 */
+                                  IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 10 THEN DO: 
+                                      nv_allo = YES.
+                                  END.
+                              END.
+                              ELSE DO:
+                                  IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 15 THEN DO: 
+                                      nv_allo = YES.
+                                  END.
+                              END.
+    
+                              FIND LAST xmm068 USE-INDEX xmm06801 WHERE xmm068.poltyp  = nv_allotyp    AND       /*หาพารามิเตอร์*/
+                                                                        xmm068.comdat <= uwm100.comdat NO-LOCK NO-ERROR.
+                              IF AVAIL xmm068 THEN DO:
+                                   IF uwm100.sigr_p >= xmm068.ownlt THEN DO:
+                                       IF YEAR(uwm100.comdat) <= 2017 THEN DO:
+                                           IF (YEAR(uwm100.comdat) + 1 ) - uwm301.yrmanu <= 10 THEN DO:
+                                               IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                               ELSE nv_allo = YES.
+                                           END.
+                                       END.
+                                       ELSE DO:
+                                           IF (YEAR(uwm100.comdat) + 1 ) - uwm301.yrmanu <= 15 THEN DO:
+                                               IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                               ELSE nv_allo = YES.
+                                           END.
+                                       END.
+                                       ASSIGN nv_rico1    = XMM068.xol1no  
+                                              nv_rico2    = XMM068.xol2no  
+                                              nv_rico3    = XMM068.xol3no  
+                                              nv_name1    = XMM068.xol1na  
+                                              nv_name2    = XMM068.xol2na  
+                                              nv_name3    = XMM068.xol3na  
+                                              nv_perlim1  = XMM068.xollt   
+                                              nv_perlim2  = XMM068.xol2lt  
+                                              nv_perlim3  = XMM068.xol3lt.
+                                   END.
+                                   ELSE DO: 
+                                       IF uwm100.sigr_p <= xmm068.ownlt THEN DO:
+                                           IF YEAR(uwm100.comdat) <= 2017 THEN DO:
+                                              IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 10 THEN DO:
+                                                  IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                                  ELSE nv_allo = YES.
+                                              END.
+                                           END.
+                                           ELSE DO:
+                                               IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 15 THEN DO:
+                                                  IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                                  ELSE nv_allo = YES.
+                                               END.
+                                           END.
+                                           ASSIGN nv_rico1    = XMM068.xol1no  
+                                               nv_rico2       = XMM068.xol2no  
+                                               nv_rico3       = XMM068.xol3no  
+                                               nv_name1       = XMM068.xol1na  
+                                               nv_name2       = XMM068.xol2na  
+                                               nv_name3       = XMM068.xol3na  
+                                               nv_perlim1     = XMM068.xollt   
+                                               nv_perlim2     = XMM068.xol2lt  
+                                               nv_perlim3     = XMM068.xol3lt.           
+                                       END.
+                                   END.                      
+                              END.  /*xmm068*/
+                              ELSE DO: /*ไม่มีการเซตพารามิเตอร์ V70110,V70120*/
+                                  nv_allo = NO.
+                                  MESSAGE COLOR Y/RED "Not Avail Limit Own Damage (xmm068). Can not Auto Allocate.". PAUSE 10.
+                              END.
+                          END. /*End loop uccont*/
+                          ELSE DO:
+                              FIND LAST xmm068 USE-INDEX xmm06801 WHERE xmm068.poltyp  = nv_allotyp    AND       /*หาพารามิเตอร์*/
+                                                                        xmm068.comdat <= uwm100.comdat NO-LOCK NO-ERROR.
+                              IF AVAIL xmm068 THEN DO:                                                           
+                                   IF uwm100.sigr_p >= xmm068.ownlt THEN DO:
+                                       IF YEAR(uwm100.comdat) <= 2017 THEN DO:
+                                           IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 10 THEN DO:
+                                               IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                               ELSE nv_allo = YES.
+                                           END.
+                                       END.
+                                       ELSE DO:
+                                           IF (YEAR(uwm100.comdat) + 1) - uwm301.yrmanu <= 15 THEN DO:
+                                               IF nv_makdes = "Lamborghini" OR nv_makdes = "McLaren" THEN nv_allo = NO. 
+                                               ELSE nv_allo = YES.
+                                           END.
+                                       END.
+    
+                                       ASSIGN nv_rico1 = XMM068.xol1no  
+                                           nv_rico2    = XMM068.xol2no  
+                                           nv_rico3    = XMM068.xol3no  
+                                           nv_name1    = XMM068.xol1na  
+                                           nv_name2    = XMM068.xol2na  
+                                           nv_name3    = XMM068.xol3na  
+                                           nv_perlim1  = XMM068.xollt   
+                                           nv_perlim2  = XMM068.xol2lt  
+                                           nv_perlim3  = XMM068.xol3lt.
+                                   END.
+                                   ELSE DO:  
+                                          nv_allo = NO.     
+                                   END.
+                              END.
+                              ELSE DO: /*ไม่มีการเซตพารามิเตอร์ V70110,V70120*/
+                                  nv_allo = NO.
+                                  MESSAGE COLOR Y/RED "Not Avail Limit Own Damage (xmm068). ,Can not Auto Allocate.". PAUSE 10.
+                              END.
+                          END.
+                          
+                      END.  /*uwm301*/
+                      ELSE nv_allo = NO.
+                END.  /*uwm130*/
+            END.  /*110/120*/
+        END.  /*uwm120*/
+       
+        FIND FIRST uwm200 USE-INDEX uwm20001 WHERE 
+                   uwm200.policy = uwm100.policy AND    /*เช็คว่ามี Allocate หรือไม่*/
+                   uwm200.rencnt = uwm100.rencnt AND
+                   uwm200.endcnt = uwm100.endcnt NO-LOCK NO-ERROR.
+        IF NOT AVAIL uwm200 THEN do:
+            /*
+            FIND FIRST uwm120 WHERE
+                uwm120.policy = uwm100.policy AND    
+                uwm120.rencnt = uwm100.rencnt AND                                   
+                uwm120.endcnt = uwm100.endcnt NO-LOCK NO-ERROR.                     
+            IF AVAIL uwm120 THEN DO: 
+                s_recid4  = RECID(uwm120) .
+                IF uwm120.riskno = 1 THEN DO:*/
+                    /*---
+                    FOR EACH uwm130 WHERE
+                        uwm130.policy   = uwm120.policy  and
+                        uwm130.rencnt   = uwm120.rencnt  and
+                        uwm130.endcnt   = uwm120.endcnt  and
+                        uwm130.riskgp   = uwm120.riskgp  AND
+                        uwm130.riskno   = uwm120.riskno  NO-LOCK:
+                    END.   ---*/    
+            
+            FOR EACH uwm120 WHERE
+                uwm120.policy = uwm100.policy AND    
+                uwm120.rencnt = uwm100.rencnt AND                                   
+                uwm120.endcnt = uwm100.endcnt NO-LOCK BREAK BY uwm120.riskgp BY uwm120.riskno :
+                s_recid4  = RECID(uwm120) .
+
+                /*
+                IF FIRST-OF(uwm120.riskgp) THEN DO:
+                    /*--
+                    FIND FIRST uccont WHERE uccont.contno = nv_allotyp  NO-LOCK NO-ERROR.
+                    IF AVAIL uccont THEN DO: */
+                        
+
+                        FIND LAST xmm068 USE-INDEX xmm06801 WHERE 
+                                           xmm068.poltyp  = nv_allotyp    AND       /*หาพารามิเตอร์*/
+                                           xmm068.comdat <= uwm100.comdat NO-LOCK NO-ERROR.
+                        IF AVAIL xmm068 THEN DO:
+                            ASSIGN nv_rico1    = XMM068.xol1no             
+                                   nv_rico2    = XMM068.xol2no             
+                                   nv_rico3    = XMM068.xol3no             
+                                   nv_name1    = XMM068.xol1na             
+                                   nv_name2    = XMM068.xol2na             
+                                   nv_name3    = XMM068.xol3na             
+                                   nv_perlim1  = XMM068.xollt              
+                                   nv_perlim2  = XMM068.xol2lt             
+                                   nv_perlim3  = XMM068.xol3lt.     
+                            NV_allo = YES.
+                        END.
+                    /*--END. */
+                END. */
+    
+                    IF nv_allo = YES THEN DO:
+                        
+                        nv_count = 0.
+                        loop_csftq:
+                        REPEAT:
+                            nv_count = nv_count + 1.
+                            IF nv_count = 1 THEN assign nv_ricocr = nv_rico1  . 
+                            IF nv_count = 2 THEN assign nv_ricocr = nv_rico2  . 
+                            IF nv_count = 3 THEN assign nv_ricocr = nv_rico3  . 
+
+                            IF nv_ricocr <> "" THEN DO:
+                                ASSIGN
+                                    n_name   = ""
+                                    n_csftq  = ""
+                                    nv_rip1  = 0.
+                                FIND FIRST t_csftq WHERE t_csftq.rico   = nv_ricocr NO-ERROR NO-WAIT.
+                                IF NOT AVAIL t_csftq THEN DO:
+                                    IF  nv_ricocr = "STAT" THEN DO:
+                                        ASSIGN
+                                            n_name           = "Statutory"
+                                            n_csftq          = "D".
+                                    END.
+                                    ELSE DO:
+                                        FIND xmm600 USE-INDEX xmm60001 WHERE xmm600.acno = nv_ricocr NO-LOCK NO-ERROR.
+                                        IF AVAIL xmm600 THEN  DO:
+                                            ASSIGN
+                                                n_name  = xmm600.abname
+                                                n_csftq = "F".                                             
+                                        END.
+                                        ELSE DO:
+                                            IF SUBSTRING(nv_ricocr,4,2) <> SUBSTRING(uwm120.policy,3,2) AND
+                                               (nv_ricocr <> "0RET") THEN DO:
+                                                nv_error = "Policy No.: " + uwm100.policy + "Reinsurer Code. " + nv_ricocr + " Mismatch With Policy Type." .
+                                            END.
+                                            /*comment Jiraphon p. A64-0380
+                                            FIND xmm025 USE-INDEX xmm02501 WHERE xmm025.treaty = nv_ricocr NO-LOCK NO-ERROR.
+                                            IF AVAILABLE xmm025 THEN DO:
+                                                ASSIGN
+                                                    n_name    = xmm025.trdes
+                                                    n_csftq   = "T"
+                                                    nv_com2gn = xmm025.com2gn .
+                                                    
+                                                    nv_rip1   = xmm025.rip1  
+                                                    nv_rip2   = xmm025.rip2
+                                                    nv_rip1ae = xmm025.rip1ae
+                                                    nv_rip2ae = xmm025.rip2ae ---*/
+                                                      
+                                            /*Add Jiraphon P. A64-0380*/
+                                            /*FIND xmm225 USE-INDEX xmm22501 WHERE xmm225.treaty = nv_ricocr AND
+                                                                  xmm225.tryear = YEAR(nv_date) NO-LOCK NO-ERROR.
+                                            IF AVAIL xmm225 THEN DO:     --COmment A64-0380 06/07/2023*/
+
+                                            /*Add A64-0380 06/07/2023*/
+                                            FIND FIRST xmm225 USE-INDEX xmm22504 WHERE
+                                                 xmm225.comdat <= nv_date AND
+                                                 xmm225.terdat >= nv_date AND
+                                                 xmm225.treaty = nv_ricocr
+                                            NO-LOCK NO-ERROR.
+                                            IF AVAIL xmm225 THEN DO:
+                                            /*End A64-0380 06/07/2023*/     
+                                                ASSIGN
+                                                    n_name    = xmm225.trdes 
+                                                    n_csftq   = "T"          
+                                                    nv_com2gn = xmm225.com2gn.
+                                                    nv_rip1ae = NO.
+                                                    nv_rip2ae = NO.
+                                                 RUN wuw\wuwetr225
+                                                     (INPUT  uwm100.policy , 
+                                                      INPUT  uwm100.rencnt , 
+                                                      INPUT  uwm100.endcnt ,
+                                                      INPUT  YEAR(uwm100.comdat) ,
+                                                      INPUT  uwm100.comdat ,
+                                                      INPUT  nv_ricocr ,
+                                                      OUTPUT nv_rip1,
+                                                      OUTPUT nv_rip2,    
+                                                      OUTPUT nv_rip1ae , 
+                                                      OUTPUT nv_rip2ae ,
+                                                      OUTPUT nv_error,
+                                                      OUTPUT nv_treaty_yr).
+                                                /*End Add Jiraphon P. A64-0380*/   
+                                            END.
+                                        END.
+                                    END.
+                                    IF n_name <> "" AND n_csftq <> "" THEN DO:
+                                        
+                                        CREATE  t_csftq.
+                                        ASSIGN
+                                            t_csftq.rico    = nv_ricocr
+                                            t_csftq.csftq   = n_csftq    
+                                            t_csftq.nname   = n_name
+                                            t_csftq.rip1    = nv_rip1 
+                                            t_csftq.rip1ae  = nv_rip1ae
+                                            t_csftq.rip2ae  = nv_rip2ae
+                                            t_csftq.rip2    = nv_rip2 
+                                            t_csftq.com2gn  = nv_com2gn
+                                            t_csftq.treaty_yr = nv_treaty_yr. /*Add A64-0380*/    
+                                    END.
+                                    ELSE nv_error = "Policy No.: " + uwm100.policy + " Not Found Code Allocate : " + nv_ricocr.
+                                END.
+                            END.
+                            IF nv_count = 3 THEN LEAVE loop_csftq.
+                        END.
+                        IF nv_error <> "" THEN LEAVE loop_main.
+
+                        IF nv_per = "" THEN DO:
+                             IF (nv_perlim1   +
+                            nv_perlim2   +
+                            nv_perlim3   ) <= 100 THEN nv_per = "YES".
+                             ELSE nv_per = "NO".
+                        END.
+                        IF nv_per = "YES" THEN DO:
+                            RUN WGW\WGWTALCM1 
+                            (INPUT nv_rico1 ,              
+                             INPUT nv_rico2 ,              
+                             INPUT nv_rico3 ,              
+                             INPUT nv_name1 ,              
+                             INPUT nv_name2 ,              
+                             INPUT nv_name3 ,              
+                             INPUT nv_perlim1 ,            
+                             INPUT nv_perlim2 ,            
+                             INPUT nv_perlim3 ,            
+                             OUTPUT nv_si_0ret,           
+                             OUTPUT nv_si_0rq ,            
+                             OUTPUT nv_si_othr,            
+                             OUTPUT nv_ripr1  ,             
+                             OUTPUT nv_ripr2  ,             
+                             OUTPUT nv_ripr3  ,             
+                             OUTPUT nv_com1_p ,            
+                             OUTPUT nv_com2_p ,            
+                             OUTPUT nv_com3_p ,            
+                             OUTPUT n_csftq1  ,             
+                             OUTPUT n_name1   ,             
+                             OUTPUT n_csftq2  ,             
+                             OUTPUT n_name2   ,             
+                             OUTPUT n_csftq3  ,             
+                             OUTPUT n_name3  ). 
+                        END.
+                        ELSE DO:
+                            RUN WGW\WGWTALCM2 
+                            (INPUT nv_rico1 ,              
+                            INPUT nv_rico2 ,              
+                            INPUT nv_rico3 ,              
+                            INPUT nv_name1 ,              
+                            INPUT nv_name2 ,              
+                            INPUT nv_name3 ,              
+                            INPUT nv_perlim1 ,            
+                            INPUT nv_perlim2 ,            
+                            INPUT nv_perlim3 ,            
+                            OUTPUT nv_si_0ret,           
+                            OUTPUT nv_si_0rq ,            
+                            OUTPUT nv_si_othr,            
+                            OUTPUT nv_ripr1  ,             
+                            OUTPUT nv_ripr2  ,             
+                            OUTPUT nv_ripr3  ,             
+                            OUTPUT nv_com1_p ,            
+                            OUTPUT nv_com2_p ,            
+                            OUTPUT nv_com3_p ,            
+                            OUTPUT n_csftq1  ,             
+                            OUTPUT n_name1   ,             
+                            OUTPUT n_csftq2  ,             
+                            OUTPUT n_name2   ,             
+                            OUTPUT n_csftq3  ,             
+                            OUTPUT n_name3   ,
+                            OUTPUT nv_per1   ,
+                            OUTPUT nv_per2   ,
+                            OUTPUT nv_per3   ). 
+                        END.
+
+                        nv_count = 0.
+                        loop_crtemp:
+                        REPEAT:
+                            nv_count = nv_count + 1.
+                            IF nv_count = 1 THEN assign nv_ricocr = nv_rico1   nv_namecr = n_name1   nv_si     =   nv_si_0ret
+                                                        nv_perlcr = nv_perlim1 nv_riprcr = nv_ripr1  nv_csftcr =   n_csftq1
+                                                        nv_compcr = nv_com1_p.
+                            IF nv_count = 2 THEN assign nv_ricocr = nv_rico2   nv_namecr = n_name2   nv_si     =   nv_si_0rq
+                                                        nv_perlcr = nv_perlim2 nv_riprcr = nv_ripr2  nv_csftcr = n_csftq2
+                                                        nv_compcr = nv_com2_p.
+                            IF nv_count = 3 THEN assign nv_ricocr = nv_rico3   nv_namecr = n_name3   nv_si     = nv_si_othr
+                                                        nv_perlcr = nv_perlim3 nv_riprcr = nv_ripr3  nv_csftcr = n_csftq3
+                                                        nv_compcr = nv_com3_p.
+
+                            IF nv_per = "YES" THEN DO:
+                            END.
+                            ELSE DO:
+                                if nv_count = 1 then assign nv_perlcr =  nv_per1    nv_per1  = 0.
+                                if nv_count = 2 then assign nv_perlcr =  nv_per2    nv_per2  = 0.
+                                if nv_count = 3 then assign nv_perlcr =  nv_per3    nv_per3  = 0.
+
+                                ASSIGN
+                                    nv_cal  = nv_perlim1   + nv_perlim2   + nv_perlim3  
+                                    nv_cal2 = nv_si_0ret   + nv_si_0rq    + nv_si_othr.
+
+                                IF nv_count = 1  THEN DO:
+                                    ASSIGN
+                                        nv_cal  = nv_perlim1   + nv_perlim2   + nv_perlim3  
+                                        nv_cal2 = nv_si_0ret   + nv_si_0rq    + nv_si_othr.
+                                    IF  nv_cal < nv_cal2 THEN DO:
+                                    nv_cal3 = nv_cal2 - nv_cal.
+                                    /*
+                                        MESSAGE "จำนวนเงินเอาประกันภัยรวม         :   " string(nv_cal2,">>>,>>>,>>>,>>>,>>9.99-")  SKIP
+                                                "Capacity  ที่ทางบริษัทรับได้          : " string(nv_cal,">>>,>>>,>>>,>>>,>>9.99-")  SKIP
+                                                "เกิน                                               : " string(nv_cal3,">>>,>>>,>>>,>>>,>>9.99-")  VIEW-AS ALERT-BOX INFORMATION.
+                                    */
+                                    END.
+                                END.
+                                /*--marine 90
+                                nv_cal = nv_si.
+                                IF nv_perlim1 > nv_cal THEN DO:
+                                    nv_perlim1 = nv_perlim1 - nv_cal.
+                                END.
+                                ELSE DO:
+                                    IF nv_perlim1 <> 0 THEN DO:
+                                        nv_cal  = nv_cal - nv_perlim1.
+                                        nv_perlim1 = 0.
+                                    END.
+                                    IF nv_cal <> 0 THEN DO:
+                                        IF nv_perlim2 > nv_cal THEN DO:
+                                            nv_perlim2 = nv_perlim2 - nv_cal.
+                                        END.
+                                        ELSE DO:
+                                            ASSIGN
+                                                nv_cal      = nv_cal - nv_perlim2
+                                                nv_perlim2  = 0.
+                                        END.
+                                        IF nv_cal <> 0 THEN DO:
+                                            ASSIGN
+                                                nv_cal      = nv_cal - nv_perlim3
+                                                nv_perlim3  = 0.
+                                        END.
+                                    END.
+                                END.
+                                IF nv_cal <> 0 THEN DO:
+                                END. */
+                            END.    
+
+                            IF nv_ricocr <> "" THEN DO:
+                                FIND FIRST t_allocate WHERE
+                                           t_allocate.policy = uwm120.policy and                
+                                           t_allocate.rencnt = uwm120.rencnt and               
+                                           t_allocate.endcnt = uwm120.endcnt and
+                                           t_allocate.riskgp = uwm120.riskgp AND
+                                           t_allocate.riskno = uwm120.riskno and
+                                           t_allocate.rico   = nv_ricocr     NO-ERROR NO-WAIT.
+                                IF NOT AVAIL t_allocate THEN DO:
+                                    CREATE t_allocate.
+                                    ASSIGN
+                                       t_allocate.policy      = uwm120.policy
+                                       t_allocate.rencnt      = uwm120.rencnt 
+                                       t_allocate.endcnt      = uwm120.endcnt
+                                       t_allocate.riskno      = uwm120.riskno
+                                       t_allocate.riskgp      = uwm120.riskgp
+                                       t_allocate.nv_prmcal   = uwm120.prem_r 
+                                       t_allocate.ric1        = nv_compcr   
+                                       t_allocate.ric2        = 0           
+                                       t_allocate.rico        = nv_ricocr            
+                                       t_allocate.nv_totsum   = nv_si        
+                                       t_allocate.nv_totprem  = nv_riprcr
+                                       t_allocate.perlimit    = nv_perlcr
+                                       t_allocate.sicurr      = "BHT"
+                                       t_allocate.csftq0      = nv_csftcr  
+                                       t_allocate.name0       = nv_namecr .   
+                                END.
+                            END.
+                            IF nv_count = 3 THEN LEAVE loop_crtemp.
+                        END.
+                    END.
+                /*END.*/
+            END.
+            RELEASE t_allocate.
+            IF nv_allo = NO THEN DO:
+                /*MESSAGE "ไม่พบพารามิเตอร์สำหรับการ allocate กรุณาติดต่อ Computer".*/
+                LEAVE loop_main.
+            END.
+            FOR EACH bt_allocate WHERE   bt_allocate.nv_totsum = 0:
+
+                FIND FIRST t_allocate WHERE
+                                           t_allocate.policy = t_allocate.policy  and                
+                                           t_allocate.rencnt = t_allocate.rencnt  and               
+                                           t_allocate.endcnt = t_allocate.endcnt  and
+                                           (t_allocate.riskgp <> t_allocate.riskgp  OR
+                                           t_allocate.riskno <> t_allocate.riskno)  and
+                                           t_allocate.rico   = t_allocate.rico      AND 
+                                           t_allocate.nv_totsum > 0 NO-LOCK NO-ERROR NO-WAIT.
+                IF AVAIL t_allocate THEN DO:
+                END.                       
+                ELSE DO:
+                    DELETE bt_allocate.
+                END.
+            END.
+
+            IF nv_error <> "" THEN LEAVE loop_main.
+            IF nv_allo = YES THEN DO:
+                FOR EACH t_csftq NO-LOCK:
+                    FIND FIRST t_allocate WHERE  t_csftq.rico    = t_allocate.rico NO-LOCK NO-ERROR.
+                    IF AVAIL t_allocate THEN DO:
+                        FIND FIRST uwm200 USE-INDEX uwm20001 WHERE uwm200.policy = uwm120.policy     AND            /*create uwm200*/
+                                                                   uwm200.rencnt = uwm120.rencnt     AND
+                                                                   uwm200.endcnt = uwm120.endcnt     AND
+                                                                   uwm200.csftq  = n_csftq           AND
+                                                                   uwm200.rico   = t_allocate.rico   NO-ERROR.
+                        IF NOT AVAIL uwm200 THEN DO:                                     
+                            CREATE uwm200.
+                            s_recid2 = RECID(uwm200).                                            
+                            ASSIGN
+                                uwm200.policy = t_allocate.policy          /* Policy No.             */           
+                                uwm200.rencnt = t_allocate.rencnt          /* Renewal Count          */
+                                uwm200.endcnt = t_allocate.endcnt          /* Endorsement Count      */
+                                uwm200.rico   = CAPS(t_allocate.rico)      /* Co/Stat/Fac/Tty/Qs     */  
+                                uwm200.csftq  = t_allocate.csftq0          /* RI Company/Treaty      */  
+                                uwm200.c_enct = 0                          /* Cession Endorsement Co */
+                                uwm200.fptr01 = 0                          /* First uwd200 RI Out Pr fptr01  */                       
+                                uwm200.bptr01 = 0                          /* Last uwd200 RI Out Pre bptr01  */
+                                uwm200.fptr02 = 0                          /*First uwd201 RI Appl.  */ 
+                                uwm200.bptr02 = 0                          /*Last uwd201 RI Appl. T */
+                                uwm200.fptr03 = 0                          /*First uwd202 RI Appl.E */
+                                uwm200.bptr03 = 0                          /*Last uwd202 RI Appl.En */
+                                uwm200.rip1   = 0                          /*Commission 1%*/
+                                uwm200.rip2   = 0.
+                               
+                            IF uwm200.csftq = "D" THEN DO:
+                                uwm200.rip1ae = NO.
+                                uwm200.rip2ae = NO.
+                            END.
+                            ELSE IF uwm200.csftq = "F" THEN DO: 
+                                uwm200.rip1ae = YES.
+                                uwm200.rip2ae = NO.
+                            END.
+                            ELSE IF uwm200.csftq = "T" THEN DO:
+                                /*Add A64-0380*/
+                                ASSIGN
+                                    uwm200.rip1ae    = t_csftq.rip1ae  /*xmm025.rip1ae*/ 
+                                    uwm200.rip2ae    = t_csftq.rip2ae  /*xmm025.rip2ae*/ 
+                                    uwm200.treaty_yr = t_csftq.treaty_yr
+                                    uwm200.rip1      = t_csftq.rip1 
+                                    uwm200.rip2      = t_csftq.rip2 
+                                    uwm200.com2gn    = t_csftq.com2gn.  
+                                /*End A64-0380*/
+                            END.
+                            IF uwm200.rip1ae = NO THEN DO:
+                               /*IF n_csftq = "T" THEN uwm200.rip1 = t_csftq.rip1 . Comment A64-0380*/
+                            END.
+                            ELSE DO:
+                                uwm200.rip1 = ((uwm100.com1_t + uwm100.com2_t + uwm100.com3_t +
+                                               uwm100.com4_t) * 100) / uwm100.prem_t .
+                                IF uwm200.rip1 < 0 THEN uwm200.rip1 = uwm200.rip1 * -1.
+                                IF uwm200.rip1 = ? THEN uwm200.rip1 = 0. 
+                            END.
+                            
+                            IF uwm200.rip2ae = NO THEN DO:
+                               /*IF n_csftq <> "F" THEN uwm200.rip2 = 0.  Comment A64-0380*/
+                               /*Add A64-0380*/
+                               IF n_csftq <> "F" THEN DO:
+                                   IF n_csftq <> "T" THEN uwm200.rip2 = 0.
+                               END.
+                               /*End Add A64-0380*/
+                               ELSE DO:
+                                  FIND xmm031 USE-INDEX xmm03101 WHERE
+                                       xmm031.poltyp = uwm100.poltyp NO-LOCK NO-ERROR.
+                                  IF AVAIL xmm031 THEN uwm200.rip2 = xmm031.rip2_d.   /* xmm031.rip2_d.*/
+                               END.
+                            END.
+                            /*Comment A64-0380
+                            ELSE DO:
+                               IF uwm200.csftq = "T" THEN uwm200.rip2 = xmm025.rip2. 
+                            END. 
+                            IF uwm200.csftq = "T" THEN uwm200.com2gn = xmm025.com2gn.
+                            ELSE uwm200.com2gn = NO. */
+                            IF uwm200.csftq <> "T" THEN uwm200.com2gn = NO. /*A64-0380*/
+                            ASSIGN
+                              uwm200.ricomm = uwm100.comdat
+                              uwm200.riexp  = uwm100.expdat
+                              uwm200.trndat = uwm100.trndat. 
+                        
+                            IF uwm200.csftq = "F" THEN DO:
+                               FIND FIRST xmm024 NO-LOCK NO-ERROR.
+                               IF AVAIL xmm024 THEN uwm200.ristmp = xmm024.fstp_d.
+                            END.
+                            ELSE uwm200.ristmp = 0.
+                        
+                            uwm200.prntri = NO. 
+                            IF uwm200.csftq = "F" THEN uwm200.c_year = YEAR(uwm100.trndat).
+                                                                  
+                            ASSIGN
+                              uwm200.recip = "N"
+                              uwm200.c_enno = 0
+                              uwm200.dept   = uwm100.dept
+                              uwm200.curbil = uwm100.curbil.
+                                                 /*--
+                            IF uwm200.csftq <> "T" THEN n_dept = uwm100.dept .
+                            ELSE n_dept = "".  
+                            IF uwm200.csftq = "T" THEN n_ttyno = uwm200.rico.
+                            ELSE IF uwm200.csftq = "F" THEN n_ttyno = "FAC".
+                            ELSE IF uwm200.csftq = "D" THEN n_ttyno = "STAT".  */
+        
+                            ASSIGN
+                              n_message = ""
+                              n_rino    = ""
+                              n_appno   = uwm200.c_no.
+        
+                            FIND FIRST buwm200 USE-INDEX uwm20001 WHERE buwm200.policy = uwm200.policy AND
+                                                                        buwm200.rencnt = uwm200.rencnt AND
+                                                                        buwm200.endcnt = uwm200.endcnt - 1 AND
+                                                                        buwm200.csftq  = uwm200.csftq AND
+                                                                        buwm200.rico   = uwm200.rico  NO-LOCK NO-ERROR.
+                            IF AVAIL buwm200 THEN DO:
+                                IF uwm200.c_year <> buwm200.c_year THEN DO:
+
+                                    nv_error = uwm200.rico + " Cession Year " +  STRING(uwm200.c_year,"9999")  +  " is not change!!!".
+                                    MESSAGE  nv_error. NEXT.
+
+                                    /*---
+                                    MESSAGE COLOR YELLOW/MAGENTA "Cession Year is not change!!!".
+                                    PAUSE.
+                                    NEXT-PROMPT uwm200.c_year WITH FRAME nf1.
+                                    NEXT.  */
+                                END.
+                            END.
+                            ELSE DO:
+                                IF SUBSTRING(STRING(uwm200.c_year + 543,"9999"),3,2) <> TRIM(SUBSTRING(uwm200.recip,8,2)) THEN 
+                                    n_appno = 0.
+                            END.
+                            IF uwm200.csftq = "F" AND n_appno = 0 THEN DO:   /*Running no. code fac*/
+                            
+                                /*---
+                                RUN WGW\WGWEAPPNO  (INPUT    uwm200.policy ,
+                                                  INPUT    uwm200.c_year ,
+                                                  INPUT    uwm100.poltyp ,
+                                                  INPUT-OUTPUT n_appno ,
+                                                  INPUT-OUTPUT n_rino  ,
+                                                  INPUT-OUTPUT n_message).
+                                comment by Chaiyong W. A67-0202 17/12/2024*/
+                                /*---Begin by Chaiyong W. A67-0202 17/12/2024*/
+                                RUN wuw\wuweapno  (INPUT        uwm200.policy ,
+                                                   INPUT        uwm200.c_year ,
+                                                   INPUT        uwm100.poltyp ,
+                                                   INPUT-OUTPUT n_appno       ,
+                                                   INPUT-OUTPUT n_rino        ,
+                                                   INPUT-OUTPUT n_message    ).
+                                /*End by Chaiyong W. A67-0202 17/12/2024-----*/                  
+                            END.
+                            IF n_message <> "" THEN DO: 
+                                 /*MESSAGE n_message VIEW-AS ALERT-BOX. */
+                                 nv_error = n_message.
+                                 NEXT.
+                            END.
+                            ELSE DO:    
+                                 IF n_rino <> "" AND uwm200.csftq = "F" THEN DO:
+                                     ASSIGN uwm200.c_no   = n_appno                       
+                                            SUBSTR(uwm200.recip,2,30) = "|" + n_rino.
+                                 END.
+                            END.
+                            ASSIGN
+                                nv_fptr = 0    
+                                nv_bptr = 0    
+                                nv_nptr = 0.    
+                            FOR EACH bt_allocate WHERE bt_allocate.policy = uwm200.policy AND
+                                                       bt_allocate.rencnt = uwm200.rencnt AND
+                                                       bt_allocate.endcnt = uwm200.endcnt AND
+                                                       bt_allocate.rico   = uwm200.rico NO-LOCK
+                            BREAK BY bt_allocate.rencnt
+                                  BY bt_allocate.endcnt
+                                  BY bt_allocate.riskno :
+                                IF FIRST-OF(bt_allocate.riskno) THEN DO:
+                                    IF nv_risk = 0 OR nv_risk <> bt_allocate.riskno THEN DO:
+                                        ASSIGN
+                                            n_recsi  = 0
+                                            n_recpr  = 0
+                                            n_recc1  = 0
+                                            n_recc2  = 0.
+                                        FIND FIRST uwm120 USE-INDEX uwm12001 WHERE
+                                            uwm120.policy    =  bt_allocate.policy             AND 
+                                            uwm120.rencnt    =  bt_allocate.rencnt             AND 
+                                            uwm120.endcnt    =  bt_allocate.endcnt             AND 
+                                            uwm120.riskgp    =  bt_allocate.riskgp             AND 
+                                            uwm120.riskno    =  bt_allocate.riskno             NO-ERROR NO-WAIT.
+                                        IF AVAIL uwm120 THEN DO:
+    
+                                            ASSIGN
+                                                uwm120.sist   =  0   uwm120.sifac  =  0   uwm120.sitty  = 0
+                                                uwm120.pdst   =  0   uwm120.pdfac  =  0   uwm120.pdtty  = 0
+                                                uwm120.comst  =  0   uwm120.comfac =  0   uwm120.comtty = 0
+                                                nv_risk = uwm120.riskno.
+                                        END.
+                                    END.
+                                END.
+                                FIND FIRST uwd200  WHERE uwd200.policy    =  bt_allocate.policy             AND            /*create uwd200*/     
+                                                         uwd200.rencnt    =  bt_allocate.rencnt             AND                                  
+                                                         uwd200.endcnt    =  bt_allocate.endcnt             AND   
+                                                         uwd200.riskgp    =  bt_allocate.riskgp             AND
+                                                         uwd200.riskno    =  bt_allocate.riskno             AND 
+                                                         uwd200.rico      =  bt_allocate.rico               NO-ERROR.          
+                                IF NOT AVAIL uwd200 THEN DO:            
+                                    CREATE uwd200.
+                                    ASSIGN                                                    
+                                        uwd200.policy    =  bt_allocate.policy                 
+                                        uwd200.rencnt    =  bt_allocate.rencnt                 
+                                        uwd200.endcnt    =  bt_allocate.endcnt                 
+                                        uwd200.riskno    =  bt_allocate.riskno                 
+                                        uwd200.c_enct    =  0                                 
+                                        uwd200.csftq     =  bt_allocate.csftq                  
+                                        uwd200.rico      =  bt_allocate.rico                   
+                                        uwd200.riskgp    =  bt_allocate.riskgp                 
+                                        uwd200.riskno    =  bt_allocate.riskno 
+                                        uwd200.ric1      =  bt_allocate.ric1
+                                        uwd200.ric2      =  bt_allocate.ric2
+                                        uwd200.csftq     =  bt_allocate.csftq0
+                                        uwd200.risiae    =  YES                                                                                                          
+                                        uwd200.ripsae    =  NO 
+                                        uwd200.ric1ae    =  YES
+                                        uwd200.ric2ae    =  YES
+                                        uwd200.risi      =  bt_allocate.nv_totsum
+                                        uwd200.risi_p    =  bt_allocate.perlimit               
+                                        uwd200.ripr      =  bt_allocate.nv_totprem
+                                        uwd200.fptr      =  0
+                                        uwd200.bptr      =  nv_bptr.
+                                    nv_nptr          =  RECID(uwd200).
+                                    IF uwd200.csftq = "D" THEN DO:                                          
+                                        uwm120.sist   = uwm120.sist  - (n_recsi - uwd200.risi).         
+                                        uwm120.pdst   = uwm120.pdst  - (n_recpr - uwd200.ripr).         
+                                        uwm120.comst  = uwm120.comst - ((n_recc1 - uwd200.ric1) +       
+                                                                        (n_recc2 - uwd200.ric2)).       
+                                        uwm100.sist_p = uwm100.sist_p - (n_recsi - uwd200.risi).        
+                                        uwm100.pdst_t = uwm100.pdst_t - (n_recpr - uwd200.ripr).        
+                                        uwm100.cost_t = uwm100.cost_t - ((n_recc1 - uwd200.ric1) +      
+                                                                         (n_recc2 - uwd200.ric2)).      
+                                    END.                                                               
+                                    IF uwd200.csftq = "F" THEN DO:                                          
+                                        uwm120.sifac  = uwm120.sifac  - (n_recsi - uwd200.risi).        
+                                        uwm120.pdfac  = uwm120.pdfac  - (n_recpr - uwd200.ripr).        
+                                        uwm120.comfac = uwm120.comfac - ((n_recc1 - uwd200.ric1) +      
+                                                                         (n_recc2 - uwd200.ric2)).      
+                                        uwm100.sifa_p = uwm100.sifa_p - (n_recsi - uwd200.risi).        
+                                        uwm100.pdfa_t = uwm100.pdfa_t - (n_recpr - uwd200.ripr).        
+                                        uwm100.cofa_t = uwm100.cofa_t - ((n_recc1 - uwd200.ric1) +      
+                                                                         (n_recc2 - uwd200.ric2)).      
+                                    END.                                                               
+                                    IF uwd200.csftq = "T" THEN DO:                                          
+                                        uwm120.sitty  = uwm120.sitty  - (n_recsi - uwd200.risi).        
+                                        uwm120.pdtty  = uwm120.pdtty  - (n_recpr - uwd200.ripr).        
+                                        uwm120.comtty = uwm120.comtty - ((n_recc1 - uwd200.ric1) +      
+                                                                         (n_recc2 - uwd200.ric2)).      
+                                        uwm100.sity_p = uwm100.sity_p - (n_recsi - uwd200.risi).        
+                                        uwm100.pdty_t = uwm100.pdty_t - (n_recpr - uwd200.ripr).        
+                                        uwm100.coty_t = uwm100.coty_t - ((n_recc1 - uwd200.ric1) +      
+                                                                         (n_recc2 - uwd200.ric2)).      
+                                    END.
+                                    IF uwm200.fptr01 = 0 THEN uwm200.fptr01 = RECID(uwd200).
+                                    IF nv_fptr = 0 AND nv_bptr = 0 THEN DO:                 
+                                        ASSIGN
+                                            uwd200.fptr   = 0
+                                            uwd200.bptr   = 0
+                                            nv_nptr       = RECID(uwd200) 
+                                            nv_bptr       = RECID(uwd200) .
+                                    END.
+                                    ELSE DO:
+                                        FIND FIRST uwd200 WHERE RECID(uwd200) = nv_bptr NO-ERROR.
+                                        IF AVAIL uwd200  THEN uwd200.fptr = nv_nptr.
+                                        FIND LAST uwd200 WHERE RECID(uwd200) = nv_nptr NO-ERROR.
+                                        IF AVAIL uwd200 THEN DO:
+                                            uwd200.bptr = nv_bptr.
+                                            nv_bptr     = RECID(uwd200). 
+                                        END.
+                                    END.
+                                END.
+                                uwm200.bptr01 = RECID(uwd200).
+                                uwd200.fptr   = 0.     
+                            END.
+                        END.
+                    END.
+                END. /*t_allocate*/
+            END.
+        END.
+    END.
+    /*----
+
+    FOR EACH t_allocate NO-LOCK:
+        DISP t_allocate.policy             SKIP  
+             t_allocate.rencnt             skip
+             t_allocate.endcnt             skip
+             t_allocate.riskno             skip
+             t_allocate.riskgp             skip
+             t_allocate.nv_prmcal          skip
+             t_allocate.ric1               skip
+             t_allocate.ric2               SKIP  
+             t_allocate.rico               skip
+             t_allocate.nv_totsum          format ">>,>>>,>>>,>>9.99-" skip
+             t_allocate.nv_totprem         format ">>,>>>,>>>,>>9.99-" skip
+             t_allocate.perlimit           format ">>,>>>,>>>,>>9.99-" SKIP 
+             t_allocate.sicurr             skip
+             t_allocate.csftq0             skip 
+             t_allocate.name0              WITH FRAME nf555.
+    
+    END.---*/
+    RELEASE uwd200.
+    RELEASE uwm200.
+    RELEASE uwm120.
+    RELEASE uwm100.
+END.
+
+/*------------------------------delete allocate
+FOR EACH uwm200 WHERE uwm200.policy = "D07060000450" :
+    DELETE uwm200.
+END.
+
+FOR EACH uwd200 WHERE uwd200.policy = "D07060000450" :
+    DELETE uwd200.
+END.
+
+FIND FIRST uwm100 WHERE uwm100.policy = "D07060000450" NO-ERROR.
+IF AVAIL uwm100 THEN DO:
+    ASSIGN
+        uwm100.sist_p = 0
+        uwm100.pdst_t = 0
+        uwm100.cost_t = 0
+        uwm100.sifa_p  = 0
+        uwm100.pdfa_t  = 0
+        uwm100.cofa_t  = 0
+        uwm100.sity_p = 0
+        uwm100.pdty_t = 0
+        uwm100.coty_t = 0.
+
+    FOR EACH uwm120 WHERE uwm120.policy = uwm100.policy:
+
+        ASSIGN
+        uwm120.sitty  =    0
+        uwm120.pdtty  =    0
+        uwm120.comtty =    0
+        uwm120.sifac  =    0 
+        uwm120.pdfac  =    0 
+        uwm120.comfac =    0 
+        uwm120.sist   =    0
+        uwm120.pdst   =    0
+        uwm120.comst  =    0.
+    END.
+END.
+-------------------------*/

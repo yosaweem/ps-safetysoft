@@ -1,0 +1,201 @@
+/*HO: GW_SAFE -LD SIC_BRAN,GW_STAT -LD BRSTAT,EXPIRY -LD SIC_EXP, SICSYAC, SICCL, STAT*/
+/************************************************************************/
+/* wgwrw100.p   Transfer Expiry to Gw_safe ,Gw_stat                     */
+/* Dup Program  : uwr70304.p                                            */
+/* Copyright	: Safety Insurance Public Company Limited 				*/
+/*			  บริษัท ประกันคุ้มภัย จำกัด (มหาชน)					    */
+/* CREATE BY	: Chaiyong W.   ASSIGN A61-0016 21/05/2018              */
+/************************************************************************/
+
+DEF SHARED VAR sh_policy   LIKE sic_bran.uwm100.policy.
+DEF SHARED VAR sh_rencnt   LIKE sic_bran.uwm100.rencnt.
+DEF SHARED VAR sh_endcnt   LIKE sic_bran.uwm100.endcnt.
+DEF SHARED VAR n_policy    LIKE sic_exp.UWM100.POLICY.
+DEF SHARED VAR n_renew     LIKE sic_exp.UWM100.RENCNT.
+DEF SHARED var sh_bchyr   AS INT INIT 0.    
+DEF SHARED VAR sh_bchno   AS CHAR INIT "".  
+DEF SHARED VAR sh_bchcnt  AS INT INIT 0. 
+
+def var nv_int as int.
+def var nv_fptr as recid.
+def var nv_bptr as recid.
+def var nv_sts as char format "x(01)".
+def stream str_inf.
+def buffer wf_uwd140 for sic_bran.uwd140.
+def buffer wf_uwd141 for sic_bran.uwd141.
+
+def shared stream ns1.    /*sombat*/
+def var putchr as char format "x(100)" init "" no-undo.
+
+hide message no-pause.
+
+loop_for:
+for each sic_exp.uwm304 where
+                     sic_exp.uwm304.policy = sh_policy
+                     /*
+                     sic_exp.uwm304.rencnt = sh_rencnt and
+                     sic_exp.uwm304.endcnt = sh_endcnt
+                     */
+                                no-lock.
+         find sic_bran.uwm304 where sic_bran.uwm304.policy = n_policy and
+                                sic_bran.uwm304.rencnt = n_renew and
+                                sic_bran.uwm304.endcnt = 0 and
+                                sic_bran.uwm304.riskgp = sic_exp.uwm304.riskgp and
+                                sic_bran.uwm304.riskno = sic_exp.uwm304.riskno AND
+                                sic_bran.uwm304.bchyr  = sh_bchyr              AND
+                                sic_bran.uwm304.bchno  = sh_bchno              AND
+                                sic_bran.uwm304.bchcnt = sh_bchcnt           
+                                no-error.
+         nv_sts = "N".
+         if available sic_bran.uwm304 then next loop_for.
+         if not available sic_bran.uwm304
+         then do:
+            create sic_bran.uwm304.
+         end.
+
+/*delete uwd140 */
+         nv_fptr = sic_bran.uwm304.fptr01.
+         do while nv_fptr <> 0 and sic_bran.uwm304.fptr01 <> ? :
+            find sic_bran.uwd140 where recid(sic_bran.uwd140) = nv_fptr
+                no-error.
+            if available sic_bran.uwd140 then do: /*sombat */
+               nv_fptr = sic_bran.uwd140.fptr.
+               if sic_bran.uwd140.policy = n_policy and
+                  sic_bran.uwd140.rencnt = n_renew  and
+                  sic_bran.uwd140.endcnt = 0 then do:
+                  delete sic_bran.uwd140.
+                end.
+                else
+                  nv_fptr = 0.
+            end.
+            else
+                nv_fptr = 0.
+         end.
+
+/*Update Data*/
+            assign
+            sic_bran.uwm304.area          = sic_exp.uwm304.area
+            sic_bran.uwm304.beam          = sic_exp.uwm304.beam
+            sic_bran.uwm304.bptr01        = 0
+            sic_bran.uwm304.bptr02        = 0
+            sic_bran.uwm304.clatch        = sic_exp.uwm304.clatch
+            sic_bran.uwm304.constr        = sic_exp.uwm304.constr
+            sic_bran.uwm304.distct        = sic_exp.uwm304.distct
+            sic_bran.uwm304.endcnt        = 0
+            sic_bran.uwm304.floor         = sic_exp.uwm304.floor
+            sic_bran.uwm304.fptr01        = 0
+            sic_bran.uwm304.fptr02        = 0
+            sic_bran.uwm304.front         = sic_exp.uwm304.front
+            sic_bran.uwm304.left          = sic_exp.uwm304.left
+            sic_bran.uwm304.locn1         = sic_exp.uwm304.locn1
+            sic_bran.uwm304.locn2         = sic_exp.uwm304.locn2
+            sic_bran.uwm304.locn3         = sic_exp.uwm304.locn3
+            sic_bran.uwm304.nohong        = sic_exp.uwm304.nohong
+            sic_bran.uwm304.occlim        = sic_exp.uwm304.occlim
+            sic_bran.uwm304.occupn        = sic_exp.uwm304.occupn
+            sic_bran.uwm304.occupy        = sic_exp.uwm304.occupy
+            sic_bran.uwm304.ownten        = sic_exp.uwm304.ownten
+            sic_bran.uwm304.planno        = sic_exp.uwm304.planno
+            sic_bran.uwm304.policy        = n_policy
+            sic_bran.uwm304.prevloc       = sic_exp.uwm304.prevloc
+            sic_bran.uwm304.rear          = sic_exp.uwm304.rear
+            sic_bran.uwm304.rencnt        = n_renew
+            sic_bran.uwm304.right         = sic_exp.uwm304.right
+            sic_bran.uwm304.riskgp        = sic_exp.uwm304.riskgp
+            sic_bran.uwm304.riskno        = sic_exp.uwm304.riskno
+            sic_bran.uwm304.roof          = sic_exp.uwm304.roof
+            sic_bran.uwm304.storey        = sic_exp.uwm304.storey
+            sic_bran.uwm304.wall          = sic_exp.uwm304.wall
+            sic_bran.uwm304.bchyr         = sh_bchyr                
+            sic_bran.uwm304.bchno         = sh_bchno                
+            sic_bran.uwm304.bchcnt        = sh_bchcnt               .
+/* End Update uwm304 */
+
+/* Fire Risk Location Text */
+         nv_fptr = sic_exp.uwm304.fptr01.
+         nv_bptr = 0.
+         do while nv_fptr <> 0 and nv_sts = "N" and sic_exp.uwm304.fptr01 <> ?:
+            find sic_exp.uwd140 where recid(sic_exp.uwd140) = nv_fptr
+            no-lock no-error.
+            if not available sic_exp.uwd140 then do: /*sombat */
+              hide message no-pause.  /*
+              message "not found " sic_exp.uwd140.policy sic_exp.uwd140.rencnt "/"
+                       sic_exp.uwd140.endcnt "on file uwd140".*/
+              putchr = "".
+              putchr = "not found " + sic_exp.uwd140.policy +
+                       " R/E " + STRING(sic_exp.uwd140.rencnt,"99")  +
+                       "/"     + STRING(sic_exp.uwd140.endcnt,"999") +
+                       " Riskgp/Riskno " + STRING(sic_exp.uwd140.riskgp,"99") +
+                       "/"               + STRING(sic_exp.uwd140.riskno,"999") +
+                       " on file uwd140 Fire Risk Location Text".
+              put stream ns1 putchr format "x(100)" skip.
+              leave.
+            end.
+
+            nv_fptr = sic_exp.uwd140.fptr.
+            create sic_bran.uwd140.
+            assign
+            sic_bran.uwd140.bptr          = nv_bptr
+            sic_bran.uwd140.endcnt        = 0
+            sic_bran.uwd140.fptr          = 0
+            sic_bran.uwd140.ltext         = sic_exp.uwd140.ltext
+            sic_bran.uwd140.policy        = n_policy
+            sic_bran.uwd140.rencnt        = n_renew
+            sic_bran.uwd140.riskgp        = sic_exp.uwd140.riskgp
+            sic_bran.uwd140.riskno        = sic_exp.uwd140.riskno.
+            if nv_bptr <> 0 then do:
+              find wf_uwd140 where recid(wf_uwd140) = nv_bptr.
+              wf_uwd140.fptr = recid(sic_bran.uwd140).
+            end.
+            if nv_bptr = 0 then  sic_bran.uwm304.fptr01 = recid(sic_bran.uwd140).
+            nv_bptr = recid(sic_bran.uwd140).
+         end. /* End do nv_fptr */
+         sic_bran.uwm304.bptr01 = nv_bptr.
+
+/* Fire Risk Block Numbers */
+         nv_fptr = sic_exp.uwm304.fptr02.
+         nv_bptr = 0.
+         do while nv_fptr <> 0 and nv_sts = "N" and sic_exp.uwm304.fptr02 <> ?:
+            find sic_exp.uwd141 where recid(sic_exp.uwd141) = nv_fptr
+            no-lock no-error.
+            if not available sic_exp.uwd141 then do: /*sombat */
+              hide message no-pause. /*
+              message "not found " sic_exp.uwd141.policy sic_exp.uwd141.rencnt "/"
+                       sic_exp.uwd141.endcnt "on file uwd141".*/
+              putchr = "".
+              putchr = "not found " + sic_exp.uwd141.policy +
+                       " R/E " + STRING(sic_exp.uwd141.rencnt,"99")  +
+                       "/"     + STRING(sic_exp.uwd141.endcnt,"999") +
+                       " Riskgp/Riskno " + STRING(sic_exp.uwd141.riskgp,"99") +
+                       "/"               + STRING(sic_exp.uwd141.riskno,"999") +
+                       " on file uwd141 Fire Risk Block Numbers".
+              put stream ns1 putchr format "x(100)" skip.
+              leave.
+            end.
+            nv_fptr = sic_exp.uwd141.fptr.
+            create sic_bran.uwd141.
+            assign
+
+            sic_bran.uwd141.blok_n        = sic_exp.uwd141.blok_n
+            sic_bran.uwd141.bptr          = nv_bptr
+            sic_bran.uwd141.dist_n        = sic_exp.uwd141.dist_n
+            sic_bran.uwd141.endcnt        = 0
+            sic_bran.uwd141.fptr          = 0
+            sic_bran.uwd141.policy        = n_policy
+            sic_bran.uwd141.prov_n        = sic_exp.uwd141.prov_n
+            sic_bran.uwd141.rencnt        = n_renew
+            sic_bran.uwd141.riskgp        = sic_exp.uwd141.riskgp
+            sic_bran.uwd141.riskno        = sic_exp.uwd141.riskno
+            sic_bran.uwd141.sblok_n       = sic_exp.uwd141.sblok_n.
+
+            if nv_bptr <> 0 then do:
+              find wf_uwd141 where recid(wf_uwd141) = nv_bptr.
+              wf_uwd141.fptr = recid(sic_bran.uwd141).
+            end.
+            if nv_bptr = 0 then  sic_bran.uwm304.fptr02 = recid(sic_bran.uwd141).
+            nv_bptr = recid(sic_bran.uwd141).
+         end. /* End do nv_fptr */
+         sic_bran.uwm304.bptr02 = nv_bptr.
+
+
+end. /* End for expiry uwm304 */

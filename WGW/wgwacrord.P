@@ -1,0 +1,172 @@
+/*************************************************************************
+ wgwacrord.P  : Find file AcroRd32.exe save to file cdir
+               SUB PROGRAM Wgwqryp1.W
+ Copyright    : Safety Insurance Public Company Limited
+                บริษัท ประกันคุ้มภัย จำกัด (มหาชน)
+ ------------------------------------------------------------------------                 
+ Database     : BUInt
+ ------------------------------------------------------------------------                
+ CREATE BY    : Kridtiya i. A64-0187 Date. 19/04/2021
+
+*************************************************************************/
+
+DEFINE INPUT        PARAMETER nv_SearchDrive      AS CHARACTER NO-UNDO. /*"C:\"*/
+DEFINE INPUT        PARAMETER nv_SearchName       AS CHARACTER NO-UNDO. /*"AcroRd32.exe"*/
+DEFINE INPUT        PARAMETER nv_CreateFileAcroRd AS LOGICAL   NO-UNDO. /*YES/NO*/
+DEFINE INPUT-OUTPUT PARAMETER nv_CheckFile        AS CHARACTER NO-UNDO.
+/* ------------------------------------------------------------- */
+
+DEFINE VARIABLE nv_searchfile  AS CHARACTER FORMAT "X(50)".
+DEFINE VARIABLE nv_filename    AS CHARACTER FORMAT "X(50)".
+DEFINE VARIABLE nv_savedir     AS CHARACTER FORMAT "X(150)".
+DEFINE VARIABLE nv_savefile    AS CHARACTER FORMAT "X(50)".
+DEFINE VARIABLE nv_opendfile   AS CHARACTER FORMAT "X(50)".
+DEFINE VARIABLE nv_changedir   AS CHARACTER FORMAT "X(150)".
+
+DEFINE VARIABLE nv_FILEAcroRd  AS CHARACTER FORMAT "X(50)".
+/*
+DEFINE VAR nv_line        AS INTEGER               .
+*/
+DEFINE STREAM nfile.
+
+DEFINE SHARED TEMP-TABLE ctemp NO-UNDO
+  FIELD dirtext         AS CHARACTER FORMAT "X(100)"  INITIAL ""
+.
+DEFINE SHARED TEMP-TABLE cdir  NO-UNDO
+  FIELD DirName         AS CHARACTER FORMAT "X(150)"  INITIAL ""
+  FIELD FilNAME         AS CHARACTER FORMAT "X(50)"   INITIAL ""
+  FIELD UseFileName     AS CHARACTER FORMAT "X(200)"  INITIAL ""
+.
+/* ----------------------------------------------------------- */
+/*
+nv_opendfile = "D07057SK0025.PDF".
+*/
+/*
+nv_filename   = "AcroRd32.exe".
+nv_searchfile = "C:\" + nv_filename.
+*/
+
+FIND FIRST cdir NO-LOCK NO-ERROR NO-WAIT.
+IF AVAILABLE cdir THEN RETURN.
+/* ----------------------------------------------------------- */
+
+nv_filename   = TRIM(nv_SearchName).
+nv_searchfile = TRIM(nv_SearchDrive) + TRIM(nv_filename).
+
+nv_FILEAcroRd = "FILEAcroRd.TMP".
+
+IF nv_CreateFileAcroRd = YES THEN DO: /*ให้สร้าง file FILEAcroRd.TMP ใหม่*/
+
+  DOS SILENT DIR/S VALUE(nv_searchfile) > VALUE(nv_FILEAcroRd).
+END.
+
+IF SEARCH(nv_FILEAcroRd) = ? THEN DO:
+
+  DOS SILENT DIR/S VALUE(nv_searchfile) > VALUE(nv_FILEAcroRd).
+END.
+
+
+INPUT STREAM nfile FROM VALUE(nv_FILEAcroRd).
+
+REPEAT :
+
+  CREATE ctemp.
+  IMPORT STREAM nfile UNFORMATTED ctemp.
+
+  HIDE MESSAGE NO-PAUSE.
+  /* **
+  display ctemp.dirtext format "x(70)" WITH CENTERED.
+
+  PAUSE 0.
+  ** */
+  IF INDEX(ctemp.dirtext," .")  <> 0 THEN NEXT.
+  IF INDEX(ctemp.dirtext," ..") <> 0 THEN NEXT.
+  IF INDEX(ctemp.dirtext,"<")   <> 0 THEN NEXT.
+
+  IF nv_savedir = "" THEN DO:
+
+    IF INDEX(ctemp.dirtext,"\") <> 0 THEN DO:
+
+      nv_savedir = TRIM(SUBSTR(ctemp.dirtext,INDEX(ctemp.dirtext,"\") - 2,150)).
+    END.
+
+    NEXT.
+  END.
+
+  IF nv_savefile = "" THEN DO:
+
+    IF INDEX(ctemp.dirtext,nv_filename) <> 0 THEN DO:
+
+      nv_savefile = TRIM(SUBSTR(ctemp.dirtext,INDEX(ctemp.dirtext,nv_filename),50)).
+    END.
+
+    NEXT.
+  END.
+
+END.
+INPUT STREAM nfile CLOSE.
+
+/* ไม่ลบ เพื่อไม่ต้องเสียเวลา process ใหม่
+DOS SILENT DEL VALUE(nv_FILEAcroRd).
+-*/
+
+
+/*
+DISPLAY nv_savedir FORMAT "x(60)"
+        nv_savefile.
+*/
+nv_CheckFile = "NOT".
+
+FOR EACH cdir: DELETE cdir. END.
+
+IF nv_savedir <> "" AND nv_savefile <> "" THEN DO:
+
+  CREATE cdir.
+  ASSIGN
+  cdir.DirName     = nv_savedir
+  cdir.FilNAME     = nv_savefile
+  cdir.UseFileName = TRIM(nv_savedir) + "\" + TRIM(nv_savefile).
+
+  nv_CheckFile = "AcroRd".
+END.
+
+/*
+FOR EACH cdir NO-LOCK:
+ display
+ cdir.DirName     format "x(60)"
+ cdir.FilNAME     format "x(60)"
+ cdir.UseFileName format "x(60)".
+END.
+*/
+
+/* ------------------
+FIND FIRST cdir NO-LOCK NO-ERROR.
+IF AVAILABLE cdir THEN DO:
+
+  nv_changedir = cdir.DirName.
+  nv_changedir = REPLACE(nv_changedir,"C:","CD").
+  /*
+  DISPLAY nv_changedir FORMAT "x(60)". */
+  /* -------------------
+  DOS SILENT VALUE("C:").
+  DOS SILENT VALUE("CD\").
+  DOS SILENT VALUE(nv_changedir).
+  DOS SILENT VALUE("D:").
+  DOS SILENT VALUE("C:" + nv_filename) VALUE("FDW7057PS0289.PDF").
+  -------------------- */
+
+
+  OUTPUT TO TEST1.BAT.
+  PUT "C:"   SKIP
+      "CD\"  SKIP       
+      nv_changedir SKIP
+      "D:"   SKIP
+      "C:" nv_filename " " nv_opendfile  SKIP.
+  OUTPUT CLOSE.
+  DOS SILENT VALUE("CALL TEST1.BAT").
+
+END.
+------------------ */
+
+/* *************************************************************************/
+/* END OF FILE : WRSAcroRd.p */

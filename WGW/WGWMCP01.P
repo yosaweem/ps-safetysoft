@@ -1,0 +1,559 @@
+/************************************************************************/
+/* WUWMCP01.P   Program Calculate Premium                               */
+/* Copyright Tokio Marine Safety Insurance (Thailand) PCL.              */
+/* Create By : Porntiwa T. A67-0029  29/05/2024                         */
+/************************************************************************/
+
+/* Calculate Premium */
+DEFINE INPUT PARAMETER nv_policy  AS CHAR FORMAT "X(16)".
+DEFINE INPUT PARAMETER nv_campcd  AS CHAR FORMAT "X(40)".
+DEFINE INPUT PARAMETER nv_rencnt  AS INTE FORMAT ">9".
+DEFINE INPUT PARAMETER nv_endcnt  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_riskgp  AS INTE FORMAT ">9".
+DEFINE INPUT PARAMETER nv_riskno  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_itemno  AS INTE FORMAT "999".
+DEFINE INPUT PARAMETER nv_batchyr AS INTE FORMAT "9999".     /*ปี batch */
+DEFINE INPUT PARAMETER nv_batchno AS CHAR FORMAT "x(20)" .  /*batch number*/
+DEFINE INPUT PARAMETER nv_batcnt  AS INTE FORMAT "99".
+DEFINE INPUT PARAMETER nv_polday  AS INTE.
+DEFINE INPUT PARAMETER nv_usrid   AS CHAR FORMAT "X(10)".
+DEFINE INPUT PARAMETER nv_progid  AS CHAR FORMAT "X(10)".
+DEFINE INPUT PARAMETER nv_diffprm AS DECI. /* Premium Diff ที่รับได้และให้ Adjust */
+
+DEFINE INPUT PARAMETER nv_tariff  AS CHAR.
+DEFINE INPUT PARAMETER nv_covcod  AS CHAR FORMAT "X(5)".
+DEFINE INPUT PARAMETER nv_class   AS CHAR FORMAT "X(5)".
+DEFINE INPUT PARAMETER nv_vehuse  AS CHAR FORMAT "X(2)".
+DEFINE INPUT PARAMETER nv_cstflg  AS CHAR FORMAT "X(2)".         /*C=CC ; S=Seat ; T=Tons ; W=Watts*/
+DEFINE INPUT PARAMETER nv_engcst  AS DECI FORMAT ">>>>>9.99".    /* ต้องใส่ค่าตาม nv_cstflg  */
+DEFINE INPUT PARAMETER nv_drivno  AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_driage1 AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_driage2 AS INTE FORMAT ">>9".
+DEFINE INPUT PARAMETER nv_levcod  AS INTE.
+DEFINE INPUT PARAMETER nv_levper  AS DECI FORMAT ">>9.99-".
+DEFINE INPUT PARAMETER nv_yrmanu  AS INTE FORMAT "9999".
+DEFINE INPUT PARAMETER nv_totsi   AS INTE FORMAT ">>>,>>>,>>9". 
+DEFINE INPUT PARAMETER nv_totfi   AS INTE FORMAT ">>>,>>>,>>9".  
+
+DEFINE INPUT PARAMETER nv_vehgrp  AS CHAR FORMAT "X(3)".
+DEFINE INPUT PARAMETER nv_access  AS CHAR FORMAT "X(3)". /* อุปกรณ์เสริม */  /*  A หรือ " " */
+DEFINE INPUT PARAMETER nv_supe    AS LOGICAL.            /* super car  yes/no */
+
+DEFINE INPUT PARAMETER nv_tpbi1si AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_tpbi2si AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_tppdsi  AS DECI FORMAT ">>>,>>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_411si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_412si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_413si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_414si   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_42si    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_43si    AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_411prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_412prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_413prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_414prmt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_42prmt  AS DECI FORMAT ">>>,>>>,>>9.99-".  
+DEFINE INPUT PARAMETER nv_43prmt  AS DECI FORMAT ">>>,>>>,>>9.99-".  
+DEFINE INPUT PARAMETER nv_seat41  AS INTE.
+
+DEFINE INPUT PARAMETER nv_dedod   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_addod   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dedpd   AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_dodamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dadamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT PARAMETER nv_dpdamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT PARAMETER nv_newpdprm  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*เบี้ยไม่เต็มปี*/
+DEFINE INPUT PARAMETER nv_newgpprm  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*เบี้ยเต็มปี*/
+DEFINE INPUT PARAMETER nv_flagprm   AS CHAR FORMAT "X(2)".             /* N=Net,G=Gross */
+
+DEFINE INPUT PARAMETER nv_effdat    AS DATE FORMAT "99/99/9999". 
+
+DEFINE INPUT PARAMETER nv_adjpaprm  AS LOGICAL. 
+DEFINE INPUT PARAMETER nv_adjprem   AS LOGICAL. 
+DEFINE INPUT PARAMETER nv_flgpol    AS CHAR.     /*NR=New RedPlate, NU=New Used Car, RN=Renew*/
+DEFINE INPUT PARAMETER nv_flgclm    AS CHAR.     /*NC=NO CLAIM , WC=With Claim*/
+
+/*-
+DEFINE INPUT PARAMETER vb_clmper    AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER vb_dspcper   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER vb_fletper   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT PARAMETER vb_dstfper   AS DECI FORMAT ">,>>9.99-".
+-*/
+DEFINE INPUT PARAMETER cv_lfletper  AS DECI FORMAT ">,>>9.99-".  /*Limit Fleet % 10%*/
+DEFINE INPUT PARAMETER cv_lncbper   AS DECI FORMAT ">,>>9.99-".  /*Limit NCB %  50%*/
+DEFINE INPUT PARAMETER cv_ldssper   AS DECI FORMAT ">,>>9.99-".  /*Limit DSPC % กรณีป้ายแดง 110  ส่ง 45%  นอกนั้นส่ง 30% 35%*/
+DEFINE INPUT PARAMETER cv_lclmper   AS DECI FORMAT ">,>>9.99-".  /*Limit Claim % กรณีให้ Load Claim ได้ New 0% or 50% , Renew 0% or 20 - 50%  0%*/
+DEFINE INPUT PARAMETER cv_ldstfper  AS DECI FORMAT ">,>>9.99-".  /*Limit DSTF % 0%*/
+DEFINE INPUT PARAMETER nv_reflag    AS LOGICAL INIT NO.  /*กรณีไม่ต้องการ Re-Calculate ใส่ Yes*/
+
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbyrs  AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbp    AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_fletp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dspcp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dstfp   AS DECI FORMAT ">,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_clmp    AS DECI FORMAT ">,>>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_pdprm0  AS DECI FORMAT ">>>,>>>,>>9.99-".  /*ย้ายมาคำนวนใหม่*/
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_fletamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dspcamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dstfamt AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_clmamt  AS DECI FORMAT ">>>,>>>,>>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_baseprm  AS DECI FORMAT ">>>,>>>,>>9.99-". 
+DEFINE INPUT-OUTPUT PARAMETER nv_baseprm3 AS DECI FORMAT ">>>,>>>,>>9.99-". 
+DEFINE INPUT-OUTPUT PARAMETER nv_mainprm  AS DECI FORMAT ">>>,>>>,>>9.99-". 
+                                           
+/*-- Attach Coverage --*/
+/*-- ร.ย.ต. --*/
+DEFINE INPUT-OUTPUT PARAMETER nv_ratatt    AS DECI FORMAT ">>>9.9999-".       /* Attach.Rate */
+DEFINE INPUT-OUTPUT PARAMETER nv_siatt     AS INTE FORMAT ">>>,>>>,>>9-".      /* Attach.SI */
+DEFINE INPUT-OUTPUT PARAMETER nv_netatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.Net Premium */
+DEFINE INPUT-OUTPUT PARAMETER nv_fltatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.Fleet % */
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.NCB % */
+DEFINE INPUT-OUTPUT PARAMETER nv_dscatt    AS DECI FORMAT ">>,>>>,>>9-".       /* Attach.DSPC % */
+DEFINE INPUT-OUTPUT PARAMETER nv_attgapt   AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atfltgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atncbgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atdscgapt AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_packatt1  AS CHARACTER FORMAT "X(4)".
+
+/*-- ร.ย.ฟ.05 Charger --*/
+DEFINE INPUT-OUTPUT PARAMETER nv_chgflg    AS LOGICAL.
+DEFINE INPUT-OUTPUT PARAMETER nv_chgrate   AS DECI FORMAT ">>>9.9999-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chgsi     AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chgpdprm  AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_chggapprm AS DECI FORMAT ">>,>>>,>>9.99-".
+
+/*-- ร.ย.ฟ.06 Battery --*/
+DEFINE INPUT-OUTPUT PARAMETER nv_battflg    AS LOGICAL.
+DEFINE INPUT-OUTPUT PARAMETER nv_battrate   AS DECI FORMAT ">>>9.9999-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battsi     AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battprice  AS INTE FORMAT ">>>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battpdprm  AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battgapprm AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_battyr     AS INTE FORMAT "9999".
+DEFINE INPUT-OUTPUT PARAMETER nv_battper    AS DECI FORMAT ">>9.99-".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_compprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_uom9_v   AS INTE FORMAT ">>>,>>>,>>9".
+
+DEFINE INPUT-OUTPUT PARAMETER nv_fcctv   AS LOGICAL .    /* cctv = yes/ no */
+DEFINE INPUT-OUTPUT PARAMETER nv_flgsht  AS CHAR.        /* Short rate = "Y" , Pro rate = "N" */
+DEFINE INPUT-OUTPUT PARAMETER nv_evflg   AS LOGICAL.
+
+DEFINE OUTPUT PARAMETER nv_uom1_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom2_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom5_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom6_c  AS CHAR.
+DEFINE OUTPUT PARAMETER nv_uom7_c  AS CHAR.  
+DEFINE OUTPUT PARAMETER nv_gapprm  AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE OUTPUT PARAMETER nv_pdprm   AS DECI FORMAT ">>>,>>>,>>9.99-".
+DEFINE OUTPUT PARAMETER nv_status  AS CHAR.   /*fleet YES=Complete , NO=Not Complete */
+DEFINE OUTPUT PARAMETER nv_message AS CHAR.   /*fleet message error */
+
+DEFINE VAR nv_chkcal  AS INTE INIT 0.
+DEFINE VAR nv_chkdspc AS LOGICAL INIT NO.
+DEFINE VAR nv_chkncb  AS LOGICAL INIT NO.
+DEFINE VAR nv_chkclm  AS LOGICAL INIT NO.
+DEFINE VAR nv_short   AS DECI.
+
+ASSIGN
+    nv_chkdspc = NO
+    nv_chkncb  = NO
+    nv_chkclm  = NO
+    /*cv_ldssper = 35
+    cv_lclmper = 0*/
+    nv_chkcal  = 0.
+
+/*Limit of Dspc%*/
+IF cv_ldssper = 0 THEN DO:
+    IF nv_flgpol = "NR" THEN cv_ldssper = 45.
+    ELSE IF nv_flgpol = "NU" THEN cv_ldssper = 30.
+    ELSE IF nv_flgpol = "RN" THEN cv_ldssper = 30.
+    ELSE cv_ldssper = cv_ldssper.
+END.
+
+FIND FIRST sicsyac.xmm127 WHERE
+           sicsyac.xmm127.poltyp  = "V70"      AND
+           sicsyac.xmm127.daymth  = YES        AND
+           sicsyac.xmm127.nodays >= nv_polday  NO-LOCK NO-ERROR.
+IF AVAIL sicsyac.xmm127 THEN DO:
+    nv_short = sicsyac.xmm127.short.
+END.
+
+/*-- Check Premium EVCG --*/
+IF nv_chgflg = YES THEN DO:
+    IF nv_chggapprm <> 0 THEN DO:
+        IF nv_chgpdprm = 0 THEN DO:
+            nv_chgpdprm = TRUNCATE(nv_chggapprm * (nv_short / 100),0).  
+        END.
+        ELSE nv_chgpdprm = nv_chgpdprm.
+    END.
+    ELSE DO:
+        IF nv_chgpdprm <> 0 THEN DO:
+            nv_chggapprm = TRUNCATE((nv_chgpdprm / nv_short) * 100,0).
+        END.
+        ELSE nv_chggapprm = nv_chggapprm.
+    END.
+END.
+
+/*-- Check Premium EVBT --*/
+IF nv_battflg = YES THEN DO:
+    IF nv_battgapprm <> 0 THEN DO:
+        IF nv_battpdprm = 0 THEN DO:
+            nv_battpdprm = TRUNCATE(nv_battgapprm * (nv_short / 100),0). 
+        END.
+        ELSE nv_battpdprm = nv_battpdprm.
+    END.
+    ELSE DO:
+        IF nv_battpdprm <> 0 THEN DO:
+            nv_battgapprm = TRUNCATE((nv_battpdprm / nv_short) * 100,0).
+        END.
+        ELSE nv_battgapprm = nv_battgapprm.
+    END.
+END.
+
+loop_cal01:
+REPEAT:
+    RUN PD_CalPremium.
+
+    IF nv_reflag = NO THEN DO:
+
+        IF nv_message <> "" AND nv_message <> "RB" THEN DO: /*RB= Re-Cal Base*/
+            nv_message = nv_message.
+            LEAVE loop_cal01.
+        END.
+        ELSE IF nv_message = "RB" THEN DO:
+            nv_baseprm = 0.
+        END.
+
+        IF nv_clmp < cv_lclmper THEN DO: 
+            nv_chkclm = NO.
+        END.
+        ELSE IF nv_clmp >= cv_lclmper THEN DO:
+            nv_chkclm = YES.
+        END.
+
+        IF nv_newgpprm <> nv_gapprm THEN DO:
+            nv_chkcal = nv_chkcal + 1.
+
+            IF nv_chkcal > 100 THEN DO:
+                nv_message = "1.เบี้ยที่ได้(" + TRIM(STRING(nv_gapprm,">>,>>>,>>9.99-")) + ") <> เบี้ยที่ต้องการ(" + TRIM(STRING(nv_newgpprm,">>,>>>,>>9.99-")) + ")". 
+                LEAVE loop_cal01.
+            END.
+
+            /*คง NCB ปรับ DSPC ก่อน*/
+            IF nv_newgpprm < nv_gapprm THEN DO:  /*ลดเบี้ย*/
+                IF nv_chkdspc = NO THEN DO:
+                    IF (nv_dspcp + 1) < cv_ldssper THEN DO:
+                        nv_dspcp = nv_dspcp + 1.
+                        nv_chkdspc = NO.
+                    END.
+                    ELSE IF (nv_dspcp + 1) >= cv_ldssper THEN DO:
+                        nv_dspcp = cv_ldssper.
+                        nv_chkdspc = YES.
+                    END.
+                END.
+                ELSE DO: 
+                    nv_message = "2.เบี้ยที่ได้(" + TRIM(STRING(nv_gapprm,">>,>>>,>>9.99-")) + ") <> เบี้ยที่ต้องการ(" + TRIM(STRING(nv_newgpprm,">>,>>>,>>9.99-")) + ")". 
+                    /*RUN PD_CheckMsgr.*/
+                    LEAVE loop_cal01.
+                END.
+            END.
+            ELSE IF nv_newgpprm > nv_gapprm THEN DO:  /*เพิ่มเบี้ย*/
+        
+                IF nv_chkdspc = YES AND nv_chkncb = YES AND nv_chkclm = YES THEN DO:
+                    nv_message = "3.เบี้ยที่ได้(" + TRIM(STRING(nv_gapprm,">>,>>>,>>9.99-")) + ") <> เบี้ยที่ต้องการ(" + TRIM(STRING(nv_newgpprm,">>,>>>,>>9.99-")) + ")". 
+                    /*RUN PD_CheckMsgr.*/
+                    LEAVE loop_cal01.
+                END.
+        
+                IF nv_chkdspc = NO THEN DO:
+                    IF nv_fcctv = YES THEN DO: 
+                        IF nv_dspcp > 5 THEN DO:
+                            nv_dspcp = nv_dspcp - 1.
+            
+                            IF nv_dspcp < 5 THEN DO:
+                                nv_dspcp = 5.
+                                nv_chkdspc = YES.
+                            END.
+                            ELSE nv_chkdspc = NO.
+                        END.
+                        ELSE DO:
+                            nv_dspcp = 5.
+                            nv_chkdspc = YES.
+                        END.
+                    END.
+                    ELSE DO:
+                        IF nv_dspcp = 0 THEN DO:
+                            nv_dspcp = 0.
+                            nv_chkdspc = YES.
+                        END.
+                        ELSE DO:
+                            nv_dspcp = nv_dspcp - 1.
+                            IF nv_dspcp < 0 THEN DO:
+                                nv_dspcp = 0.
+                                nv_chkdspc = YES.
+                            END.
+                            ELSE nv_chkdspc = NO.
+                        END.
+                    END.
+                END.
+                ELSE DO:
+                    IF nv_chkncb = NO THEN DO:
+                        IF nv_flgclm = "WC" THEN DO:
+                            IF nv_ncbp <= 0 THEN DO:
+                                nv_ncbp = 0.
+                                nv_ncbyrs = 0.
+                            END.
+                            ELSE DO:
+                                IF nv_ncbp = 20 THEN DO:
+                                    nv_ncbp = 0.
+                                    nv_ncbyrs = 0.
+                                END.
+                                ELSE DO:
+                                    nv_ncbp = nv_ncbp - 10.
+                                END.
+                            END.
+        
+                            IF nv_ncbp <= 0 THEN DO: 
+                                nv_ncbp = 0.
+                                nv_ncbyrs = 0.
+                            END.
+        
+                            nv_chkncb = YES.
+                        END.
+                        ELSE DO:
+                            nv_chkncb = YES.
+                        END.
+                    END.
+                    ELSE DO:
+                        IF nv_flgclm = "WC" THEN DO:  
+                            IF nv_clmp = 0 THEN DO:
+                                nv_clmp = nv_clmp + 20.
+                            END.
+                            ELSE DO: 
+                                nv_clmp = nv_clmp + 10.
+                            END.
+            
+                            IF nv_clmp >= cv_lclmper THEN DO: 
+                                nv_clmp = cv_lclmper.
+                                nv_chkclm = YES.
+                            END.
+                            ELSE DO:
+                                nv_chkclm = NO.
+                            END.
+                        END.
+                        ELSE DO:
+                            IF nv_chkclm = NO THEN DO:
+                                IF nv_clmp >= cv_lclmper THEN DO: 
+                                    nv_clmp = cv_lclmper.
+                                    nv_chkclm = YES.
+                                END.
+                                ELSE DO:
+                                    nv_chkclm = nv_chkclm.
+                                END.
+            
+                                IF nv_chkclm = NO THEN DO:
+                                    IF nv_clmp = 0 THEN DO:
+                                        nv_clmp = nv_clmp + 20.
+                                    END.
+                                    ELSE DO: 
+                                        nv_clmp = nv_clmp + 10.
+                                    END.
+                
+                                    IF nv_clmp >= cv_lclmper THEN DO: 
+                                        nv_clmp = cv_lclmper.
+                                        nv_chkclm = YES.
+                                    END.
+                                    ELSE DO:
+                                        nv_chkclm = NO.
+                                    END.
+                                END.
+                            END.
+                        END.
+                    END.
+                END.
+            END.
+        END. /* <> */
+        ELSE DO:
+            nv_message = "". 
+            LEAVE loop_cal01.
+        END. /* = */
+    END. 
+    ELSE DO: /* Cal. ได้เท่าไหร่ ออกไปเท่านั้น */
+        IF nv_newgpprm <> 0 THEN DO: 
+            IF nv_newgpprm = nv_gapprm THEN nv_message = "". 
+            ELSE nv_message = "NEQ".
+        END.
+        ELSE nv_message = "". /*Cal เท่าไหร่ไปเท่านั้น*/
+        LEAVE loop_cal01.
+    END.
+
+END.
+
+IF nv_message = "" THEN DO: 
+    nv_status  = "YES". 
+END.
+ELSE DO: 
+    IF nv_message = "NEQ" THEN DO: 
+        nv_message = "Not Equal Premium..".
+    END.
+    nv_status  = "YES".
+END.
+
+PROCEDURE PD_CalPremium:
+    /*-- Check NCB Year --*/
+    IF nv_ncbp <> 0 THEN DO:
+        FIND FIRST sicsyac.xmm104 WHERE
+                   sicsyac.xmm104.tariff = nv_tariff AND
+                   sicsyac.xmm104.CLASS  = nv_class  AND
+                   sicsyac.xmm104.covcod = nv_covcod AND
+                   sicsyac.xmm104.ncbper = nv_ncbp   NO-LOCK NO-ERROR NO-WAIT.
+        IF AVAIL sicsyac.xmm104 THEN DO:
+            nv_ncbyrs = sicsyac.xmm104.ncbyrs.
+        END.
+        ELSE DO:
+            nv_message = "Not Found NCB Year on xmm104". 
+        END.
+    END.
+
+    RUN WGW\WGWPCAL2.P (INPUT nv_policy , 
+                        INPUT nv_campcd , 
+                        INPUT nv_rencnt , 
+                        INPUT nv_endcnt , 
+                        INPUT nv_riskgp , 
+                        INPUT nv_riskno , 
+                        INPUT nv_itemno , 
+                        INPUT nv_batchyr, 
+                        INPUT nv_batchno, 
+                        INPUT nv_batcnt , 
+                        INPUT nv_polday , 
+                        INPUT nv_usrid  , 
+                        INPUT nv_progid , 
+                        INPUT nv_diffprm, 
+                        
+                        INPUT nv_covcod , 
+                        INPUT nv_class  , 
+                        INPUT nv_vehuse , 
+                        INPUT nv_cstflg , 
+                        INPUT nv_engcst , 
+                        INPUT nv_drivno , 
+                        INPUT nv_driage1, 
+                        INPUT nv_driage2,
+                        INPUT nv_levcod ,
+                        INPUT nv_levper ,
+
+                        INPUT nv_yrmanu , 
+                        INPUT nv_totsi  , 
+                        INPUT nv_totfi  , 
+                        
+                        INPUT nv_vehgrp , 
+                        INPUT nv_access , 
+                        INPUT nv_supe   , 
+                        
+                        INPUT nv_tpbi1si, 
+                        INPUT nv_tpbi2si, 
+                        INPUT nv_tppdsi , 
+                        
+                        INPUT nv_411si  , 
+                        INPUT nv_412si  , 
+                        INPUT nv_413si  , 
+                        INPUT nv_414si  , 
+                        INPUT nv_42si   , 
+                        INPUT nv_43si   , 
+                        INPUT nv_411prmt, 
+                        INPUT nv_412prmt, 
+                        INPUT nv_413prmt, 
+                        INPUT nv_414prmt, 
+                        INPUT nv_42prmt , 
+                        INPUT nv_43prmt , 
+                        INPUT nv_seat41 , 
+                        
+                        INPUT nv_dedod  , 
+                        INPUT nv_addod  , 
+                        INPUT nv_dedpd  , 
+                        
+                        INPUT nv_dodamt , 
+                        INPUT nv_dadamt , 
+                        INPUT nv_dpdamt , 
+                        
+                        INPUT nv_ncbp   , 
+                        INPUT nv_fletp  , 
+                        INPUT nv_dspcp  , 
+                        INPUT nv_dstfp  , 
+                        INPUT nv_clmp   , 
+                        
+                        INPUT nv_newpdprm,  
+                        INPUT nv_newgpprm,  
+                        INPUT nv_newgpprm,  
+                        INPUT nv_flagprm,  
+                        
+                        INPUT nv_effdat ,   
+                        
+                        INPUT nv_adjpaprm,  
+                        INPUT nv_adjprem ,  
+                        
+                        INPUT-OUTPUT nv_pdprm0 , 
+                        INPUT-OUTPUT nv_ncbamt , 
+                        INPUT-OUTPUT nv_fletamt, 
+                        INPUT-OUTPUT nv_dspcamt, 
+                        INPUT-OUTPUT nv_dstfamt, 
+                        INPUT-OUTPUT nv_clmamt , 
+                        
+                        INPUT-OUTPUT nv_baseprm ,
+                        INPUT-OUTPUT nv_baseprm3,
+                        INPUT-OUTPUT nv_mainprm ,
+                                                  
+                        INPUT-OUTPUT nv_ratatt   , 
+                        INPUT-OUTPUT nv_siatt    , 
+                        INPUT-OUTPUT nv_netatt   , 
+                        INPUT-OUTPUT nv_fltatt   , 
+                        INPUT-OUTPUT nv_ncbatt   , 
+                        INPUT-OUTPUT nv_dscatt   , 
+                        INPUT-OUTPUT nv_attgapt  , 
+                        INPUT-OUTPUT nv_atfltgapt, 
+                        INPUT-OUTPUT nv_atncbgapt, 
+                        INPUT-OUTPUT nv_atdscgapt, 
+                        INPUT-OUTPUT nv_packatt1 , 
+
+                        INPUT-OUTPUT nv_chgflg   ,
+                        INPUT-OUTPUT nv_chgrate  ,
+                        INPUT-OUTPUT nv_chgsi    ,
+                        INPUT-OUTPUT nv_chgpdprm ,
+                        INPUT-OUTPUT nv_chggapprm,
+
+                        INPUT-OUTPUT nv_battflg   ,
+                        INPUT-OUTPUT nv_battrate  ,
+                        INPUT-OUTPUT nv_battsi    ,
+                        INPUT-OUTPUT nv_battprice ,
+                        INPUT-OUTPUT nv_battpdprm ,
+                        INPUT-OUTPUT nv_battgapprm,
+                        INPUT-OUTPUT nv_battyr    ,
+                        INPUT-OUTPUT nv_battper   ,
+                        
+                        INPUT-OUTPUT nv_compprm,  
+                        INPUT-OUTPUT nv_uom9_v ,  
+                        
+                        INPUT-OUTPUT nv_fcctv ,  
+                        INPUT-OUTPUT nv_flgsht, 
+                        INPUT-OUTPUT nv_evflg, 
+                        
+                        OUTPUT nv_uom1_c , 
+                        OUTPUT nv_uom2_c , 
+                        OUTPUT nv_uom5_c , 
+                        OUTPUT nv_uom6_c , 
+                        OUTPUT nv_uom7_c , 
+                        OUTPUT nv_gapprm , 
+                        OUTPUT nv_pdprm  , 
+                        OUTPUT nv_status , 
+                        OUTPUT nv_message). 
+END PROCEDURE.
+
+
+
+

@@ -1,0 +1,448 @@
+/*----------------------------------------------------------------------------------
+ WGWRE100.P : CREATE TABLE UWM100 FOR RENEW 
+ ASSIGN NO. : A57-0228   DATE : 15/04/2014
+ MODIFY BY  : PORNTIWA P.
+ BEFORE PROGRAM : WGWMCGEN.W
+ 
+ /*CONNECT : STAT ; EXPIRY -LD SIC_EXP ; GW_SAFE -LD SIC_BRAN ; GW_STAT -LD BRSTAT*/
+------------------------------------------------------------------------------------*/ 
+DEFINE INPUT PARAMETER nv_policy AS CHAR FORMAT "X(16)".
+DEFINE INPUT PARAMETER nv_cr_2   AS CHAR FORMAT "X(16)".
+DEFINE INPUT PARAMETER nv_vehreg AS CHAR FORMAT "X(12)".
+DEFINE INPUT PARAMETER nv_cha_no AS CHAR .
+DEFINE INPUT PARAMETER nv_comdat AS DATE FORMAT "99/99/9999".
+DEFINE INPUT PARAMETER nv_expdat AS DATE FORMAT "99/99/9999".
+DEFINE INPUT PARAMETER nv_branch AS CHAR FORMAT "X(2)".
+DEFINE INPUT PARAMETER nv_bchyr  AS INTE.
+DEFINE INPUT PARAMETER nv_bchno  AS CHAR.
+DEFINE INPUT PARAMETER nv_bchcnt AS INTE.
+DEFINE INPUT PARAMETER n_user    AS CHAR.
+DEFINE OUTPUT PARAMETER nv_name1 AS CHAR.
+DEFINE OUTPUT PARAMETER nv_addr1 AS CHAR.
+DEFINE OUTPUT PARAMETER nv_addr2 AS CHAR.
+DEFINE OUTPUT PARAMETER nv_addr3 AS CHAR.
+DEFINE OUTPUT PARAMETER nv_addr4 AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nv_comment AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nv_status  AS CHAR.
+
+DEFINE VAR nv_i       AS INTE.
+DEFINE VAR nv_confirm AS LOGICAL.
+DEFINE VAR nv_renew   LIKE sic_bran.uwm100.rencnt.
+DEFINE VAR nv_fptr    AS RECID.
+DEFINE VAR nv_bptr    AS RECID.
+DEFINE VAR n_day      AS INT  FORMAT "99".
+DEFINE VAR n_month    AS INT  FORMAT "99".
+DEFINE VAR n_year     AS INT  FORMAT "9999".
+DEFINE BUFFER wf_uwd100 FOR sic_bran.uwd100.
+DEFINE BUFFER wf_uwd102 FOR sic_bran.uwd102.
+DEFINE BUFFER wf_uwd103 FOR sic_bran.uwd103.
+DEFINE BUFFER wf_uwd104 FOR sic_bran.uwd104.
+DEFINE BUFFER wf_uwd105 FOR sic_bran.uwd105.
+DEFINE BUFFER wf_uwd106 FOR sic_bran.uwd106.
+
+FIND LAST sic_exp.uwm100 USE-INDEX uwm10001 WHERE
+          sic_exp.uwm100.policy = TRIM(nv_policy) NO-ERROR NO-WAIT.
+IF NOT AVAIL sic_exp.uwm100 THEN DO:
+    /*MESSAGE "Not found policy on Expiry System" VIEW-AS ALERT-BOX.*/
+    nv_comment = nv_comment + "| Not found policy on Expiry System ".
+    nv_status  = "N".
+    RETURN.
+END.
+ELSE DO:
+    IF sic_exp.uwm100.releas = YES THEN DO:
+        /*MESSAGE "Policy No " sic_exp.uwm100.policy " Transfer Already " VIEW-AS ALERT-BOX.*/
+        nv_comment = nv_comment + " | Policy No " + sic_exp.uwm100.policy + " Transfer Already ".
+        nv_status  = "N".
+        RETURN.
+    END.
+    ELSE IF sic_exp.uwm100.polsta <> "OS" THEN DO:
+        /*MESSAGE "Policy Status " sic_exp.uwm100.polsta " Can't Transfer(not OS)" VIEW-AS ALERT-BOX.*/
+        nv_comment = nv_comment + " | Policy Status " + sic_exp.uwm100.polsta + " Can't Transfer(not OS) ".
+        nv_status  = "N".
+        RETURN.
+    END.
+    ELSE DO: 
+
+        IF nv_branch <> "" THEN nv_branch = TRIM(nv_branch).
+        ELSE nv_branch = sic_exp.uwm100.branch. 
+
+        nv_renew   = 0.
+        nv_renew   = sic_exp.uwm100.rencnt + 1.
+        nv_confirm = YES.
+
+    END.
+
+    ASSIGN
+        n_day   = DAY(nv_comdat)
+        n_month = MONTH(nv_comdat)
+        n_year  = YEAR(nv_comdat).
+    
+    IF nv_confirm = YES THEN DO:
+        DO TRANSACTION:
+            CREATE sic_bran.uwm100.
+            ASSIGN
+                sic_bran.uwm100.fptr01 = 0                          /*First uwd100 Policy Up reci  */  
+                sic_bran.uwm100.bptr01 = 0                          /*Last  uwd100 Policy Up reci  */  
+                sic_bran.uwm100.fptr02 = 0                          /*First uwd102 Policy Me reci  */  
+                sic_bran.uwm100.bptr02 = 0                          /*Last  uwd102 Policy Me reci  */  
+                sic_bran.uwm100.fptr03 = 0                          /*First uwd105 Policy Cl reci  */  
+                sic_bran.uwm100.bptr03 = 0                          /*Last  uwd105 Policy Cl reci  */  
+                sic_bran.uwm100.fptr04 = 0                          /*First uwd103 Policy Re reci  */  
+                sic_bran.uwm100.bptr04 = 0                          /*Last  uwd103 Policy Ren reci  */ 
+                sic_bran.uwm100.fptr05 = 0                          /*First uwd104 Policy En reci  */  
+                sic_bran.uwm100.bptr05 = 0                          /*Last  uwd104 Policy End reci  */ 
+                sic_bran.uwm100.fptr06 = 0                          /*First uwd106 Pol.Endt. reci  */  
+                sic_bran.uwm100.bptr06 = 0                          /*Last  uwd106 Pol. Endt. reci  */ 
+                sic_bran.uwm100.policy = nv_cr_2                    /*Policy No.             char  */
+                sic_bran.uwm100.rencnt = nv_renew                   /*Renewal Count          inte  */
+                sic_bran.uwm100.endcnt = 0                          /*Endorsement Count      inte  */
+                sic_bran.uwm100.renno  = sic_exp.uwm100.renno       /*Renewal No.            char  */
+                sic_bran.uwm100.endno  = ""                         /*Endorsement No.        char  */
+                sic_bran.uwm100.curbil = sic_exp.uwm100.curbil      /*Currency of Billing    char  */
+                sic_bran.uwm100.curate = sic_exp.uwm100.curate      /*Currency rate for Bill deci-7*/
+                sic_bran.uwm100.branch = nv_branch                  /*Branch Code (of Transa char  */  /*sic_exp.uwm100.branch*/
+                sic_bran.uwm100.dir_ri = sic_exp.uwm100.dir_ri      /*Direct/RI Code (D/R)   logi  */ 
+                sic_bran.uwm100.dept   = sic_exp.uwm100.dept        /*Department code        char  */ 
+                sic_bran.uwm100.cntry  = sic_exp.uwm100.cntry       /*Country where risk is  char  */ 
+                sic_bran.uwm100.agent  = sic_exp.uwm100.agent       /*Agent's Ref. No.       char  */   
+                sic_bran.uwm100.poltyp = sic_exp.uwm100.Poltyp      /*Policy Type            char  */
+                sic_bran.uwm100.insref = sic_exp.uwm100.insref      /*Insured's Ref. No.     char  */
+                sic_bran.uwm100.opnpol = sic_exp.uwm100.opnpol      /*Open Cover/Master Poli char  */
+                sic_bran.uwm100.prvpol = sic_exp.uwm100.policy      /*Previous Policy No.    char  */
+                sic_bran.uwm100.ntitle = sic_exp.uwm100.ntitle      /*Title for Name Mr/Mrs/ char  */
+                sic_bran.uwm100.fname  = sic_exp.uwm100.fname       /*First Name             char  */
+                sic_bran.uwm100.name1  = sic_exp.uwm100.name1       /*Name of Insured Line 1 char  */
+                sic_bran.uwm100.name2  = sic_exp.uwm100.name2       /*Name of Insured Line 2 char  */
+                sic_bran.uwm100.name3  = sic_exp.uwm100.name3.      /*Name of Insured Line 3 char  */
+    
+            ASSIGN                                                  
+                sic_bran.uwm100.addr1  = sic_exp.uwm100.addr1       /*Address 1              char  */
+                sic_bran.uwm100.addr2  = sic_exp.uwm100.addr2       /*Address 2              char  */
+                sic_bran.uwm100.addr3  = sic_exp.uwm100.addr3       /*Address 3              char  */
+                sic_bran.uwm100.addr4  = sic_exp.uwm100.addr4       /*Address 4              char  */
+                sic_bran.uwm100.postcd = sic_exp.uwm100.postcd      /*Postal Code            char  */
+                sic_bran.uwm100.occupn = sic_exp.uwm100.occupn      /*Occupation Description char  */
+                sic_bran.uwm100.comdat = DATE(n_month,n_day,n_year) /*Cover Commencement Dat date  */
+                sic_bran.uwm100.enddat = ?                          /*Endorsement Date       date  */
+                sic_bran.uwm100.accdat = DATE(n_month,n_day,n_year) /*Acceptance Date        date  */
+                sic_bran.uwm100.trndat = TODAY                      /*Transaction Date       date  */
+                sic_bran.uwm100.rendat = sic_exp.uwm100.rendat      /*Date Renewal Notice Pr date  */
+                sic_bran.uwm100.terdat = sic_exp.uwm100.terdat      /*Termination Date       date  */
+                sic_bran.uwm100.fstdat = sic_exp.uwm100.fstdat      /*First Issue Date of Po date  */
+                sic_bran.uwm100.cn_dat = sic_exp.uwm100.cn_dat      /*Cover Note Date        date  */
+                sic_bran.uwm100.cn_no  = sic_exp.uwm100.cn_no       /*Cover Note No.         inte  */
+                sic_bran.uwm100.tranty = "R"                        /*Transaction Type (N/R/ char  */
+                sic_bran.uwm100.undyr  = STRING(n_year)             /*Underwriting Year      char  */
+                sic_bran.uwm100.acno1  = sic_exp.uwm100.acno1       /*Account no. 1          char  */
+                sic_bran.uwm100.acno2  = sic_exp.uwm100.acno2       /*Account no. 2          char  */
+                sic_bran.uwm100.acno3  = sic_exp.uwm100.acno3       /*Account no. 3          char  */
+                sic_bran.uwm100.instot = 1                          /*Total No. of Instalmen deci-0*/
+                sic_bran.uwm100.pstp   = sic_exp.uwm100.pstp        /*Policy Level Stamp     deci-2*/
+                sic_bran.uwm100.pfee   = sic_exp.uwm100.pfee        /*Policy Level Fee       deci-2*/
+                sic_bran.uwm100.ptax   = sic_exp.uwm100.ptax        /*Policy Level Tax       deci-2*/
+                sic_bran.uwm100.rstp_t = sic_exp.uwm100.rstp_t      /*Risk Level Stamp, Tran deci-2*/
+                sic_bran.uwm100.rfee_t = sic_exp.uwm100.rfee_t      /*Risk Level Fee, Tran.  deci-2*/
+                sic_bran.uwm100.rtax_t = sic_exp.uwm100.rtax_t      /*Risk Level Tax, Tran.  deci-2*/
+                sic_bran.uwm100.prem_t = sic_exp.uwm100.prem_t      /*Premium Due, Tran. Tot deci-2*/
+                sic_bran.uwm100.pdco_t = 0                          /*PD Coinsurance, Tran.  deci-2*/
+                sic_bran.uwm100.pdst_t = 0                          /*PD Statutory, Tran. to deci-2*/
+                sic_bran.uwm100.pdfa_t = 0                          /*PD Facultative, Tran.  deci-2*/
+                sic_bran.uwm100.pdty_t = 0                          /*PD Treaty, Tran. Total deci-2*/
+                sic_bran.uwm100.pdqs_t = 0.                         /*PD Quota Share, Tran.  deci-2*/
+            ASSIGN
+                sic_bran.uwm100.com1_t = sic_exp.uwm100.com1_t      /*Commission 1, Tran. To deci-2*/
+                sic_bran.uwm100.com2_t = sic_exp.uwm100.com2_t      /*Commission 2, Tran. To deci-2*/
+                sic_bran.uwm100.com3_t = sic_exp.uwm100.com3_t      /*Commission 3, Tran. To deci-2*/
+                sic_bran.uwm100.com4_t = sic_exp.uwm100.com4_t      /*Commission 4, Tran. To deci-2*/
+                sic_bran.uwm100.coco_t = 0                          /*Comm. Coinsurance, Tra deci-2*/
+                sic_bran.uwm100.cost_t = 0                          /*Comm. Statutory, Tran. deci-2*/
+                sic_bran.uwm100.cofa_t = 0                          /*Comm. Facultative, Tra deci-2*/
+                sic_bran.uwm100.coty_t = 0                          /*Comm. Treaty, Tran. To deci-2*/
+                sic_bran.uwm100.coqs_t = 0                          /*Comm. Quota Share, Tra deci-2*/
+                sic_bran.uwm100.reduc1 = sic_exp.uwm100.reduc1      /*Reducing Balance 1 (Y/ logi  */
+                sic_bran.uwm100.reduc2 = sic_exp.uwm100.reduc2      /*Reducing Balance 2 (Y/ logi  */
+                sic_bran.uwm100.reduc3 = sic_exp.uwm100.reduc3      /*Reducing Balance 3 (Y/ logi  */
+                sic_bran.uwm100.gap_p  = sic_exp.uwm100.gap_p       /*Gross Annual Prem, Pol deci-2*/
+                sic_bran.uwm100.dl1_p  = sic_exp.uwm100.dl1_p       /*Discount/Loading 1, Po deci-2*/
+                sic_bran.uwm100.dl2_p  = sic_exp.uwm100.dl2_p       /*Discount/Loading 2, Po deci-2*/
+                sic_bran.uwm100.dl3_p  = sic_exp.uwm100.dl3_p       /*Discount/Loading 3, Po deci-2*/
+                sic_bran.uwm100.dl2red = sic_exp.uwm100.dl2red      /*Disc./Load 2 Red. Bala logi  */
+                sic_bran.uwm100.dl3red = sic_exp.uwm100.dl3red      /*Disc./Load 3 Red. Bala logi  */
+                sic_bran.uwm100.dl1sch = sic_exp.uwm100.dl1sch      /*Disc./Load 1 Prt on Sc logi  */
+                sic_bran.uwm100.dl2sch = sic_exp.uwm100.dl2sch      /*Disc./Load 2 Prt on Sc logi  */
+                sic_bran.uwm100.dl3sch = sic_exp.uwm100.dl3sch      /*Disc./Load 3 Prt on Sc logi  */
+                sic_bran.uwm100.drnoae = YES                        /*Dr/Cr Note No. (A/E)   logi  */
+                sic_bran.uwm100.insddr = sic_exp.uwm100.insddr      /*Print Insd. Name on Dr logi  */
+                sic_bran.uwm100.trty11 = "M"                        /*Tran. Type (1), A/C No char  */
+                sic_bran.uwm100.trty12 = sic_exp.uwm100.trty12      /*Tran. Type (1), A/C No char  */
+                sic_bran.uwm100.trty13 = sic_exp.uwm100.trty13      /*Tran. Type (1), A/C No char  */
+                sic_bran.uwm100.docno1 = ""                         /*Document No., A/C No.  char  */
+                sic_bran.uwm100.docno2 = ""                         /*Document No., A/C No.  char  */
+                sic_bran.uwm100.docno3 = ""                         /*Document No., A/C No.  char  */
+                sic_bran.uwm100.no_sch = sic_exp.uwm100.no_sch      /*No. to print, Schedule inte  */
+                sic_bran.uwm100.no_dr  = sic_exp.uwm100.no_dr       /*No. to print, Dr/Cr No inte  */
+                sic_bran.uwm100.no_ri  = sic_exp.uwm100.no_ri       /*No. to print, RI Appln inte  */
+                sic_bran.uwm100.no_cer = sic_exp.uwm100.no_cer.     /*No. to print, Certific inte  */
+    
+            ASSIGN
+                n_day   = DAY(nv_expdat)
+                n_month = month(nv_expdat)
+                n_year  = YEAR(nv_expdat).
+    
+            ASSIGN
+                sic_bran.uwm100.li_sch = sic_exp.uwm100.li_sch          /*Print Later/Imm., Sche logi  */
+                sic_bran.uwm100.li_dr  = sic_exp.uwm100.li_dr           /*Print Later/Imm., Dr/C logi  */
+                sic_bran.uwm100.li_ri  = sic_exp.uwm100.li_ri           /*Print Later/Imm., RI A logi  */
+                sic_bran.uwm100.li_cer = sic_exp.uwm100.li_cer          /*Print Later/Imm., Cert logi  */
+                sic_bran.uwm100.scform = ""                             /*Schedule Format        char  */
+                sic_bran.uwm100.enform = ""                             /*Endt. Format (Full/Abb char  */
+                sic_bran.uwm100.apptax = sic_exp.uwm100.apptax          /*Apply risk level tax ( logi  */
+                sic_bran.uwm100.dl1cod = sic_exp.uwm100.dl1cod          /*Discount/Loading Type  char  */
+                sic_bran.uwm100.dl2cod = sic_exp.uwm100.dl2cod          /*Discount/Loading Type  char  */
+                sic_bran.uwm100.dl3cod = sic_exp.uwm100.dl3cod          /*Discount/Loading Type  char  */
+                sic_bran.uwm100.styp20 = "NORM"                         /*Statistic Type Codes ( char  */
+                sic_bran.uwm100.sval20 = sic_exp.uwm100.sval20          /*Statistic Value Codes  char  */
+                sic_bran.uwm100.finint = sic_exp.uwm100.finint          /*Financial Interest Ref char  */
+                sic_bran.uwm100.cedco  = sic_exp.uwm100.cedco           /*Ceding Co. No.         char  */
+                sic_bran.uwm100.cedsi  = sic_exp.uwm100.cedsi           /*Ceding Co. Sum Insured deci-2*/
+                sic_bran.uwm100.cedpol = "MC" + SUBSTR(nv_cr_2,3,10)    /*Ceding Co. Policy No.  char  *//*sic_exp.uwm100.cedpol*/
+                sic_bran.uwm100.cedces = sic_exp.uwm100.cedces          /*Ceding Co. Cession No. char  */
+                sic_bran.uwm100.recip  = sic_exp.uwm100.recip           /*Reciprocal (Y/N/C)     char  */
+                sic_bran.uwm100.short  = sic_exp.uwm100.short           /*Short Term Rates       logi  */
+                sic_bran.uwm100.receit = sic_exp.uwm100.receit          /*Receipt No.            char  */
+                sic_bran.uwm100.coins  = sic_exp.uwm100.coins           /*Is this Coinsurance (Y logi  */
+                sic_bran.uwm100.billco = sic_exp.uwm100.billco          /*Bill Coinsurer's Share char  */
+                sic_bran.uwm100.pmhead = sic_exp.uwm100.pmhead          /*Premium Headings on Sc char  */
+                sic_bran.uwm100.usrid  = n_user                         /*User Id                char  */
+                sic_bran.uwm100.expdat = DATE(n_month,n_day,n_year)     /*Expiry Date            date  */
+                sic_bran.uwm100.entdat = TODAY                          /*Entered Date           date  */
+                sic_bran.uwm100.enttim = STRING(TIME,"HH:MM:SS")        /*Entered Time           char  */
+                sic_bran.uwm100.prog   = "WGWMCGEN"                     /*Program Id that input  char  */
+                sic_bran.uwm100.polsta = "IF"                           /*Policy Status          char  */
+                sic_bran.uwm100.rilate = sic_exp.uwm100.rilate          /*RI to Enter Later      logi  */
+                sic_bran.uwm100.sch_p  = NO                             /*Schedule Printed       logi  */
+                sic_bran.uwm100.drn_p  = NO                             /*Dr/Cr Note Printed     logi  */
+                sic_bran.uwm100.ri_p   = sic_exp.uwm100.ri_p            /*RI Application Printed logi  */
+                sic_bran.uwm100.cert_p = sic_exp.uwm100.cert_p          /*Certificate Printed    logi  */
+                sic_bran.uwm100.dreg_p = sic_exp.uwm100.dreg_p.         /*Daily Prem. Reg. Print logi  */
+            ASSIGN
+                sic_bran.uwm100.langug = sic_exp.uwm100.langug          /*Language               char  */
+                sic_bran.uwm100.sigr_p = sic_exp.uwm100.sigr_p          /*SI Gross Pol. Total    deci-2*/
+                sic_bran.uwm100.sico_p = 0                              /*SI Coinsurance Pol. To deci-2*/
+                sic_bran.uwm100.sist_p = 0                              /*SI Statutory Pol. Tota deci-2*/
+                sic_bran.uwm100.sifa_p = 0                              /*SI Facultative Pol. To deci-2*/
+                sic_bran.uwm100.sity_p = 0                              /*SI Treaty Pol. Total   deci-2*/
+                sic_bran.uwm100.siqs_p = 0                              /*SI Quota Share Pol. To deci-2*/
+                sic_bran.uwm100.renpol = ""                             /*Renewal Policy No.     char  */
+                sic_bran.uwm100.co_per = sic_exp.uwm100.co_per          /*Coinsurance %          deci-2*/
+                sic_bran.uwm100.acctim = sic_exp.uwm100.acctim          /*Acceptance Time        char  */
+                sic_bran.uwm100.agtref = sic_exp.uwm100.agtref          /*Agents Closing Referen char  */
+                sic_bran.uwm100.sckno  = sic_exp.uwm100.sckno           /*sticker no.            inte  */
+                sic_bran.uwm100.anam1  = sic_exp.uwm100.anam1           /*Alternative Insured Na char  */
+                sic_bran.uwm100.sirt_p = sic_exp.uwm100.sirt_p          /*SI RETENTION Pol. tota deci-2*/
+                sic_bran.uwm100.anam2  = sic_exp.uwm100.anam2           /*Alternative Insured Na char  */
+                sic_bran.uwm100.gstrat = sic_exp.uwm100.gstrat          /*GST Rate %             deci-2*/
+                sic_bran.uwm100.prem_g = sic_exp.uwm100.prem_g          /*Premium GST            deci-2*/
+                sic_bran.uwm100.com1_g = sic_exp.uwm100.com1_g          /*Commission 1 GST       deci-2*/
+                sic_bran.uwm100.com3_g = sic_exp.uwm100.com3_g          /*Commission 3 GST       deci-2*/
+                sic_bran.uwm100.com4_g = sic_exp.uwm100.com4_g          /*Commission 4 GST       deci-2*/
+                sic_bran.uwm100.gstae  = sic_exp.uwm100.gstae           /*GST A/E                logi  */
+                sic_bran.uwm100.nr_pol = NO                             /*New Policy No. (Y/N)   logi  */
+                sic_bran.uwm100.issdat = sic_exp.uwm100.issdat          /*Issue date             date  */
+                                                                        
+                sic_bran.uwm100.cr_1   = sic_exp.uwm100.cr_1            /*PRODUCT TYPE                 */
+                sic_bran.uwm100.cr_2   = sic_exp.uwm100.cr_2            /*APPEND POLICY                */
+                sic_bran.uwm100.cr_3   = sic_exp.uwm100.cr_3            /*                             */
+                sic_bran.uwm100.bs_cd  = sic_exp.uwm100.bs_cd           /*VAT CODE                     */
+                                                                        
+                sic_bran.uwm100.rt_er  = sic_exp.uwm100.rt_er           /*Batch Release          logi  */
+                sic_bran.uwm100.endern = sic_exp.uwm100.endern          /*End Date of Earned Pre date  */
+                sic_bran.uwm100.bchyr  = nv_bchyr                       /*Batch Year             INT   */
+                sic_bran.uwm100.bchno  = nv_bchno                       /*Batch NO               Char  */
+                sic_bran.uwm100.bchcnt = nv_bchcnt.                     /*Batch Count            int   */
+    
+            /* ADD, UWD100 */
+            nv_fptr = sic_exp.uwm100.fptr01.
+            nv_bptr = 0.
+            DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr01 <> ? :
+                FIND sic_exp.uwd100 WHERE RECID(sic_exp.uwd100) = nv_fptr
+                NO-LOCK NO-ERROR.
+                IF AVAIL sic_exp.uwd100 THEN DO:
+                    nv_fptr = sic_exp.uwd100.fptr.
+                    CREATE sic_bran.uwd100.
+                    ASSIGN
+                        sic_bran.uwd100.bptr   = nv_bptr
+                        sic_bran.uwd100.endcnt = 0
+                        sic_bran.uwd100.fptr   = 0
+                        sic_bran.uwd100.ltext  = sic_exp.uwd100.ltext
+                        sic_bran.uwd100.policy = nv_cr_2
+                        sic_bran.uwd100.rencnt = nv_renew.
+    
+                    IF nv_bptr <> 0 THEN DO:
+                        FIND wf_uwd100 WHERE RECID(wf_uwd100) = nv_bptr.
+                        wf_uwd100.fptr = RECID(sic_bran.uwd100).
+                    END.
+                    IF nv_bptr = 0 THEN sic_bran.uwm100.fptr01 = RECID(sic_bran.uwd100).
+                       nv_bptr = RECID(sic_bran.uwd100).
+                END.
+                ELSE DO:
+                    MESSAGE "not found " sic_exp.uwd100.policy sic_exp.uwd100.rencnt "/"
+                            sic_exp.uwd100.endcnt " on file uwd100" VIEW-AS ALERT-BOX.
+                    LEAVE.
+                END.
+            END.
+            sic_bran.uwm100.bptr01 = nv_bptr.
+    
+            /* ADD, UWD102 */
+            nv_fptr = sic_exp.uwm100.fptr02.
+            nv_bptr = 0.
+            DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr02 <> ? :
+                FIND sic_exp.uwd102 WHERE RECID(sic_exp.uwd102) = nv_fptr NO-LOCK NO-ERROR.
+                IF AVAIL sic_exp.uwd102 THEN DO:
+                    nv_fptr = sic_exp.uwd102.fptr.
+                    CREATE sic_bran.uwd102.
+                    ASSIGN
+                        sic_bran.uwd102.bptr   = nv_bptr
+                        sic_bran.uwd102.endcnt = 0
+                        sic_bran.uwd102.fptr   = 0
+                        sic_bran.uwd102.ltext  = sic_exp.uwd102.ltext
+                        sic_bran.uwd102.policy = nv_cr_2
+                        sic_bran.uwd102.rencnt = nv_renew.
+    
+                    IF nv_bptr <> 0 THEN DO:
+                        FIND wf_uwd102 WHERE RECID(wf_uwd102) = nv_bptr.
+                        wf_uwd102.fptr = RECID(sic_bran.uwd102).
+                    END.
+                    IF nv_bptr = 0 THEN sic_bran.uwm100.fptr02 = RECID(sic_bran.uwd102).
+                       nv_bptr = RECID(sic_bran.uwd102).
+                END.
+                ELSE DO:
+                    MESSAGE "not found " sic_bran.uwd102.policy sic_bran.uwd102.rencnt "/"
+                            sic_bran.uwd102.endcnt "on file uwd102" VIEW-AS ALERT-BOX.
+                    LEAVE.
+                END.
+            END.
+            sic_bran.uwm100.bptr02 = nv_bptr.
+    
+            /* ADD, UWD105 */
+            nv_fptr = sic_exp.uwm100.fptr03.
+            nv_bptr = 0.
+            DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr03 <> ? :
+                FIND sic_exp.uwd105 WHERE RECID(sic_exp.uwd105) = nv_fptr NO-LOCK NO-ERROR.
+                IF AVAIL sic_exp.uwd105 THEN DO:
+                    nv_fptr = sic_exp.uwd105.fptr.
+                    CREATE sic_bran.uwd105.
+                    ASSIGN
+                        sic_bran.uwd105.bptr   = nv_bptr
+                        sic_bran.uwd105.clause = sic_exp.uwd105.clause
+                        sic_bran.uwd105.endcnt = 0
+                        sic_bran.uwd105.fptr   = 0
+                        sic_bran.uwd105.policy = nv_cr_2
+                        sic_bran.uwd105.rencnt = nv_renew.
+    
+                    IF nv_bptr <> 0 THEN DO:
+                        FIND wf_uwd105 WHERE RECID(wf_uwd105) = nv_bptr.
+                        wf_uwd105.fptr = RECID(sic_bran.uwd105).
+                    END.
+                    IF nv_bptr = 0 THEN sic_bran.uwm100.fptr03 = RECID(sic_bran.uwd105).
+                       nv_bptr = RECID(sic_bran.uwd105).
+                END.
+                ELSE DO:
+                    MESSAGE "not found " sic_bran.uwd105.policy sic_bran.uwd105.rencnt "/"
+                            sic_bran.uwd105.endcnt "on file uwd105" VIEW-AS ALERT-BOX.
+                    LEAVE.
+                END.
+            END.
+            sic_bran.uwm100.bptr03 = nv_bptr.
+    
+            /* ADD, UWD103 */
+            nv_fptr = sic_exp.uwm100.fptr04.
+            nv_bptr = 0.
+            DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr04 <> ? :
+                FIND sic_exp.uwd103 WHERE RECID(sic_exp.uwd103) = nv_fptr NO-LOCK NO-ERROR.
+                IF AVAIL sic_exp.uwd103 THEN DO:
+                    nv_fptr = sic_exp.uwd103.fptr.
+                    CREATE sic_bran.uwd103.
+                    ASSIGN
+                        sic_bran.uwd103.bptr   = nv_bptr
+                        sic_bran.uwd103.endcnt = 0
+                        sic_bran.uwd103.fptr   = 0
+                        sic_bran.uwd103.ltext  = sic_exp.uwd103.ltext
+                        sic_bran.uwd103.policy = nv_cr_2
+                        sic_bran.uwd103.rencnt = nv_renew.
+    
+                    IF nv_bptr <> 0 THEN DO:
+                        FIND wf_uwd103 WHERE RECID(wf_uwd103) = nv_bptr.
+                        wf_uwd103.fptr = RECID(sic_bran.uwd103).
+                    END.
+                    IF nv_bptr = 0 THEN sic_bran.uwm100.fptr04 = RECID(sic_bran.uwd103).
+                       nv_bptr = RECID(sic_bran.uwd103).
+                END.
+                ELSE DO:
+                    MESSAGE "not found " sic_bran.uwd103.policy sic_bran.uwd103.rencnt "/"
+                            sic_bran.uwd103.endcnt "on file uwd103" VIEW-AS ALERT-BOX.
+                    LEAVE.
+                END.
+            END.
+            sic_bran.uwm100.bptr04 = nv_bptr.
+    
+            /*sh_policy = sic_exp.uwm100.policy.
+            sh_rencnt = sic_exp.uwm100.rencnt.
+            sh_endcnt = sic_exp.uwm100.endcnt.*/
+    
+            RUN WGW\WGWRE120(INPUT sic_exp.uwm100.policy,
+                             INPUT sic_exp.uwm100.rencnt,
+                             INPUT sic_exp.uwm100.endcnt,
+                             INPUT nv_cr_2,
+                             INPUT nv_bchyr, 
+                             INPUT nv_bchno, 
+                             INPUT nv_bchcnt,
+                             INPUT-OUTPUT nv_comment,
+                             INPUT-OUTPUT nv_status).
+    
+            RUN WGW\WGWRE130(INPUT sic_exp.uwm100.policy,
+                             INPUT sic_exp.uwm100.rencnt,
+                             INPUT sic_exp.uwm100.endcnt,
+                             INPUT nv_cr_2,
+                             INPUT nv_bchyr, 
+                             INPUT nv_bchno, 
+                             INPUT nv_bchcnt,
+                             INPUT-OUTPUT nv_comment,
+                             INPUT-OUTPUT nv_status).
+    
+            RUN WGW\WGWRE301(INPUT sic_exp.uwm100.policy,
+                             INPUT sic_exp.uwm100.rencnt,
+                             INPUT sic_exp.uwm100.endcnt,
+                             INPUT nv_cr_2,
+                             INPUT nv_vehreg,
+                             INPUT nv_bchyr, 
+                             INPUT nv_bchno, 
+                             INPUT nv_bchcnt,
+                             INPUT-OUTPUT nv_comment,
+                             INPUT-OUTPUT nv_status).
+    
+            RUN WGW\WGWRE306(INPUT sic_exp.uwm100.policy,
+                             INPUT sic_exp.uwm100.rencnt,
+                             INPUT sic_exp.uwm100.endcnt,
+                             INPUT nv_cr_2,
+                             INPUT nv_vehreg,
+                             INPUT nv_bchyr, 
+                             INPUT nv_bchno, 
+                             INPUT nv_bchcnt,
+                             INPUT-OUTPUT nv_comment,
+                             INPUT-OUTPUT nv_status).  
+    
+            ASSIGN
+                nv_name1 = sic_bran.uwm100.name1
+                nv_addr1 = sic_bran.uwm100.addr1
+                nv_addr2 = sic_bran.uwm100.addr2
+                nv_addr3 = sic_bran.uwm100.addr3
+                nv_addr4 = sic_bran.uwm100.addr4.
+    
+            IF nv_status = "Y" THEN sic_bran.uwm100.impflg = YES.
+            ELSE sic_bran.uwm100.impflg = NO.
+        END.    
+    END.
+END.
+/*END OF WGWRE100.P*/
+

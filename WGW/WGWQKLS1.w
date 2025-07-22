@@ -1,0 +1,2921 @@
+&ANALYZE-SUSPEND _VERSION-NUMBER UIB_v8r12 GUI
+&ANALYZE-RESUME
+&Scoped-define WINDOW-NAME cC-Win
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CUSTOM _DEFINITIONS cC-Win 
+/*------------------------------------------------------------------------
+File: 
+Description: 
+Input Parameters:
+      <none>
+Output Parameters:
+      <none>
+Author: 
+Created: 
+------------------------------------------------------------------------*/
+/*          This .W file was created with the Progress UIB.             */
+/*----------------------------------------------------------------------*/
+/* Create an unnamed pool to store all the widgets created 
+     by this procedure. This is a good default which assures
+     that this procedure's triggers and internal procedures 
+     will execute in this procedure's storage, and that proper
+     cleanup will occur on deletion of the procedure. */
+CREATE WIDGET-POOL.
+/* ***************************  Definitions  ************************** */
+/* Parameters Definitions ---                                           */
+/* Local Variable Definitions ---                                       */
+/*++++++++++++++++++++++++++++++++++++++++++++++
+  WGWQKLS1.w :  Query data K-leasing 
+  Create  by  : Kridtiyai . A66-0108 Date. 01/06/2023
+ +++++++++++++++++++++++++++++++++++++++++++++++*/
+Def  Input  parameter  nv_recidtlt  as  recid  .
+Def  var nv_index  as int  init 0.
+DEF  VAR nv_chaidrep AS CHAR . /*A57-0262*/
+DEF VAR n_length  AS INT INIT 0 .
+DEF VAR n_id1   AS char format "x(15)"  init "" . 
+DEF VAR n_id2   AS char format "x(15)"  init "" . 
+DEF VAR n_br    AS char format "x(15)"  init "" . 
+DEF VAR n_char  AS CHAR FORMAT "x(100)" init "" .
+DEF VAR n_comdat    AS CHAR.
+DEF VAR n_expdat    AS CHAR.
+DEF VAR n_comdat72  AS CHAR.
+DEF VAR n_expdat72  AS CHAR.
+Def  Var chNotesSession  As Com-Handle.
+Def  Var chNotesDataBase As Com-Handle.
+Def  Var chDocument      As Com-Handle.
+Def  Var chNotesView     As Com-Handle .
+Def  Var chNavView       As Com-Handle .
+Def  Var chViewEntry     As Com-Handle .
+Def  Var chItem          As Com-Handle .
+Def  Var chData          As Com-Handle .
+Def  Var nv_server       As Char.
+Def  Var nv_tmp          As char .
+
+/* add by A62-0445  */
+DEF VAR nv_ispstatus AS CHAR.
+DEF VAR chSession       AS COM-HANDLE.
+DEF VAR chWorkSpace     AS COM-HANDLE.
+DEF VAR chName          AS COM-HANDLE.
+DEF VAR chDatabase      AS COM-HANDLE.
+DEF VAR chView          AS COM-HANDLE.
+DEF VAR chViewNavigator AS COM-HANDLE.
+DEF VAR chUIDocument    AS COM-HANDLE.
+DEF VAR NotesServer  AS CHAR.
+DEF VAR NotesApp     AS CHAR.
+DEF VAR NotesView    AS CHAR.
+DEF VAR nv_chknotes  AS CHAR.
+DEF VAR nv_chkdoc    AS LOG.
+DEF VAR nv_year      AS CHAR.
+DEF VAR nv_count     AS INT.
+DEF VAR nv_text1     AS CHAR.
+DEF VAR nv_text2     AS CHAR.
+DEF VAR nv_chktext   AS INT.
+/**/
+DEF VAR nv_cha_no  AS CHAR.
+DEF VAR nv_doc_num AS INT.
+DEF VAR nv_licen1  AS CHAR.
+DEF VAR nv_licen2  AS CHAR.
+DEF VAR nv_surcl   AS CHAR.
+DEF VAR nv_docno   AS CHAR.
+DEF VAR nv_damlist       AS CHAR FORMAT "x(150)" INIT "" .
+DEF VAR nv_damage        AS CHAR FORMAT "x(250)" INIT "" .
+DEF VAR nv_totaldam      AS CHAR FORMAT "X(150)" .
+DEF VAR nv_attfile       AS CHAR FORMAT "x(100)" INIT "" .
+DEF VAR nv_device        AS CHAR FORMAT "x(500)" INIT "".
+Def var nv_acc1          as char format "x(50)".   
+Def var nv_acc2          as char format "x(50)".   
+Def var nv_acc3          as char format "x(50)".   
+Def var nv_acc4          as char format "x(50)".   
+Def var nv_acc5          as char format "x(50)".   
+Def var nv_acc6          as char format "x(50)".   
+Def var nv_acc7          as char format "x(50)".   
+Def var nv_acc8          as char format "x(50)".   
+Def var nv_acc9          as char format "x(50)".   
+Def var nv_acc10         as char format "x(50)".   
+Def var nv_acc11         as char format "x(50)".   
+Def var nv_acc12         as char format "x(50)".   
+Def var nv_acctotal      as char format "x(100)".   
+DEF VAR nv_surdata       AS CHAR FORMAT "x(250)".  
+DEF VAR nv_date          AS CHAR FORMAT "x(15)" .
+DEF VAR nv_damdetail     AS LONGCHAR .
+DEF VAR nv_sumsi         AS DECI INIT 0 .
+DEF VAR n_list      AS INT init 0.
+DEF VAR n_count     AS INT init 0.
+DEF VAR n_agent     AS CHAR FORMAT "x(10)" INIT "".
+DEF VAR n_repair    AS CHAR FORMAT "x(10)" init "".
+DEF VAR n_dam       AS CHAR FORMAT "x(10)" init "".
+DEF VAR n_deatil    AS CHAR FORMAT "x(60)" init "".
+DEF VAR nv_damag    AS CHAR FORMAT "x(30)" init "".
+DEF VAR nv_repair   AS CHAR FORMAT "x(30)" init "".
+
+
+DEF VAR nv_name      AS CHAR.
+DEF VAR nv_datim     AS CHAR.
+DEF VAR nv_branch    AS CHAR.
+DEF VAR nv_brname    AS CHAR.
+DEF VAR nv_pattern   AS CHAR.
+DEF VAR nv_model     AS CHAR.
+DEF VAR nv_modelcode AS CHAR.
+DEF VAR nv_makdes    AS CHAR.
+DEF VAR nv_licence1  AS CHAR.
+DEF VAR nv_licence2  AS CHAR.
+/**/
+DEF VAR nv_key1    AS CHAR.
+DEF VAR nv_key2    AS CHAR.
+
+DEF VAR nv_brdesc AS CHAR FORMAT "x(50)" INIT "" .
+DEF VAR nv_brcode AS CHAR FORMAT "x(3)" INIT "" .
+DEF VAR nv_comco AS CHAR FORMAT "x(10)" INIT "" .
+DEF VAR nv_producer AS CHAR FORMAT "x(10)" INIT "" .
+DEF VAR nv_agent AS CHAR FORMAT "x(10)" INIT "" .
+DEF VAR nv_char AS CHAR FORMAT "x(225)" INIT "" .
+DEF VAR nv_length AS INT INIT 0.
+DEF VAR nv_survey        AS CHAR FORMAT "x(25)".
+DEF VAR nv_detail        AS CHAR FORMAT "x(30)".
+DEF VAR nv_remark1       AS CHAR FORMAT "x(250)".
+DEF VAR nv_remark2       AS CHAR FORMAT "x(250)".
+DEF VAR n_day AS INT INIT 0.
+DEF VAR nv_insi AS DECI INIT 0.
+DEF VAR nv_provin AS CHAR FORMAT "x(10)" .
+DEF VAR nv_key3 AS CHAR FORMAT "x(35)" .
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-PREPROCESSOR-BLOCK 
+
+/* ********************  Preprocessor Definitions  ******************** */
+
+&Scoped-define PROCEDURE-TYPE Window
+&Scoped-define DB-AWARE no
+
+/* Name of designated FRAME-NAME and/or first browse and/or first query */
+&Scoped-define FRAME-NAME fr_main
+
+/* Standard List Definitions                                            */
+&Scoped-Define ENABLED-OBJECTS buchk fi_policy fi_polsystem fi_compol ~
+fi_nottime fi_appid fi_contract fi_CMITOTAL_PREMIUM fi_CREATE_PERSON ~
+fi_brand fi_model fi_year fi_WEIGHT fi_eng_no fi_cha_no fi_REGISTER_ID ~
+fi_PROVINCE_ID fi_comdat fi_expdat fi_SUMINSURED fi_TOTAL_PREMIUM ~
+fi_CMINET_PREMIUM fi_sckno fi_NET_PREMIUM fi_garage fi_firstname fi_icno ~
+fi_driv1 fi_birth1 fi_drivid1 fi_driv2 fi_birth2 fi_drivid2 fi_benname ~
+bu_save bu_exit fi_inspace fi_color fi_notifyno fi_moobarn fi_roomnumber ~
+fi_homenumber fi_moo fi_soi fi_road fi_tumbol fi_amphur fi_province1 ~
+fi_post fi_licendri1 fi_licendri2 fi_cc fi_seat fi_ACCESSORIES fi_STAMP ~
+fi_VAT fi_WHT1 fi_CMISTAMP fi_CMIVAT fi_CMIWHT1 fi_notifydate ~
+fi_TYPE_INSURANCE fi_VMI_VEHICLE_CODE fi_PERSON_IN_CHARGE ~
+fi_APPLICATION_SIGN_DATE fi_SRT_POLICY_NO fi_PAYMENT fi_TRACKING fi_POST_NO ~
+fi_POLICY_VOLUNTARY_NO fi_cus_type fi_POLICY_COMPULSURY_NO fi_JOB_STATUS ~
+fi_notify01 fi_ENDORSE_TYPE fi_ENDORSE_DETAIL fi_DEALER fi_AI_CHECK ~
+fi_AI_CHECK_MOBILE fi_ACCESSORIES_DETAIL fi_remark1 fi_remark2 fi_packname ~
+RECT-335 RECT-381 RECT-382 RECT-383 RECT-385 
+&Scoped-Define DISPLAYED-OBJECTS fi_policy fi_type fi_polsystem fi_compol ~
+fi_nottime fi_appid fi_contract fi_CMITOTAL_PREMIUM fi_CREATE_PERSON ~
+fi_brand fi_model fi_year fi_WEIGHT fi_eng_no fi_cha_no fi_REGISTER_ID ~
+fi_PROVINCE_ID fi_comdat fi_expdat fi_SUMINSURED fi_TOTAL_PREMIUM ~
+fi_CMINET_PREMIUM fi_sckno fi_NET_PREMIUM fi_garage fi_firstname fi_icno ~
+fi_driv1 fi_birth1 fi_drivid1 fi_driv2 fi_birth2 fi_drivid2 fi_benname ~
+fi_ldate fi_ltime fi_trndat fi_inspace fi_color fi_notifyno fi_moobarn ~
+fi_roomnumber fi_homenumber fi_moo fi_soi fi_road fi_tumbol fi_amphur ~
+fi_province1 fi_post fi_licendri1 fi_licendri2 fi_cc fi_seat fi_ACCESSORIES ~
+fi_STAMP fi_VAT fi_WHT1 fi_CMISTAMP fi_CMIVAT fi_CMIWHT1 fi_notifydate ~
+fi_TYPE_INSURANCE fi_VMI_VEHICLE_CODE fi_PERSON_IN_CHARGE ~
+fi_APPLICATION_SIGN_DATE fi_SRT_POLICY_NO fi_PAYMENT fi_TRACKING fi_POST_NO ~
+fi_POLICY_VOLUNTARY_NO fi_cus_type fi_POLICY_COMPULSURY_NO fi_JOB_STATUS ~
+fi_notify01 fi_ENDORSE_TYPE fi_ENDORSE_DETAIL fi_DEALER fi_AI_CHECK ~
+fi_AI_CHECK_MOBILE fi_ACCESSORIES_DETAIL fi_remark1 fi_remark2 fi_packname 
+
+/* Custom List Definitions                                              */
+/* List-1,List-2,List-3,List-4,List-5,List-6                            */
+
+/* _UIB-PREPROCESSOR-BLOCK-END */
+&ANALYZE-RESUME
+
+
+
+/* ***********************  Control Definitions  ********************** */
+
+/* Define the widget handle for the window                              */
+DEFINE VAR cC-Win AS WIDGET-HANDLE NO-UNDO.
+
+/* Definitions of the field level widgets                               */
+DEFINE BUTTON buchk 
+     LABEL "ISP" 
+     SIZE 7 BY .81
+     BGCOLOR 2 FGCOLOR 15 FONT 6.
+
+DEFINE BUTTON bu_exit 
+     LABEL "Exit" 
+     SIZE 8 BY 1
+     FONT 6.
+
+DEFINE BUTTON bu_save 
+     LABEL "Save" 
+     SIZE 8 BY 1
+     FONT 6.
+
+DEFINE VARIABLE fi_ACCESSORIES AS CHARACTER FORMAT "X(25)":U 
+     VIEW-AS FILL-IN 
+     SIZE 5 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_ACCESSORIES_DETAIL AS CHARACTER FORMAT "X(250)":U 
+     VIEW-AS FILL-IN 
+     SIZE 96 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_AI_CHECK AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 8 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_AI_CHECK_MOBILE AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_amphur AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_appid AS CHARACTER FORMAT "X(40)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_APPLICATION_SIGN_DATE AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_benname AS CHARACTER FORMAT "X(65)":U 
+     VIEW-AS FILL-IN 
+     SIZE 86 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_birth1 AS CHARACTER FORMAT "X(15)":U INITIAL "0" 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_birth2 AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_brand AS CHARACTER FORMAT "X(40)":U 
+     VIEW-AS FILL-IN 
+     SIZE 17.5 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_cc AS INTEGER FORMAT "->,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_cha_no AS CHARACTER FORMAT "X(45)":U 
+     VIEW-AS FILL-IN 
+     SIZE 23.33 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CMINET_PREMIUM AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CMISTAMP AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 10.5 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CMITOTAL_PREMIUM AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CMIVAT AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 11 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CMIWHT1 AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_color AS CHARACTER FORMAT "X(25)":U INITIAL "0" 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_comdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_compol AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .95
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_contract AS CHARACTER FORMAT "X(30)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_CREATE_PERSON AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_cus_type AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_DEALER AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_driv1 AS CHARACTER FORMAT "X(120)":U 
+     VIEW-AS FILL-IN 
+     SIZE 47 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_driv2 AS CHARACTER FORMAT "X(60)":U 
+     VIEW-AS FILL-IN 
+     SIZE 47 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_drivid1 AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_drivid2 AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_ENDORSE_DETAIL AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_ENDORSE_TYPE AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_eng_no AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_expdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_firstname AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 62 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_garage AS CHARACTER FORMAT "X(30)":U INITIAL ? 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_homenumber AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_icno AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_inspace AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .81
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_JOB_STATUS AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_ldate AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_licendri1 AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_licendri2 AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_ltime AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_model AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 27 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_moo AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 5 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_moobarn AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_NET_PREMIUM AS DECIMAL FORMAT "->>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_notify01 AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_notifydate AS CHARACTER FORMAT "X(40)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11.5 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_notifyno AS CHARACTER FORMAT "X(25)":U 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_nottime AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 10 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_packname AS CHARACTER FORMAT "X(500)":U 
+     VIEW-AS FILL-IN 
+     SIZE 78 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_PAYMENT AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_PERSON_IN_CHARGE AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 16 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_policy AS CHARACTER FORMAT "X(256)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21 BY 1
+     BGCOLOR 15 FGCOLOR 2  NO-UNDO.
+
+DEFINE VARIABLE fi_POLICY_COMPULSURY_NO AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_POLICY_VOLUNTARY_NO AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_polsystem AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .95
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_post AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_POST_NO AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_province1 AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_PROVINCE_ID AS CHARACTER FORMAT "X(35)":U 
+     VIEW-AS FILL-IN 
+     SIZE 14 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_REGISTER_ID AS CHARACTER FORMAT "X(30)":U 
+     VIEW-AS FILL-IN 
+     SIZE 13.5 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_remark1 AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 115 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_remark2 AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 115 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_road AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_roomnumber AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 6 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_sckno AS CHARACTER FORMAT "X(150)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18.33 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_seat AS INTEGER FORMAT "->,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 8 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_soi AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_SRT_POLICY_NO AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 18 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_STAMP AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_SUMINSURED AS DECIMAL FORMAT "->>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 17 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_TOTAL_PREMIUM AS DECIMAL FORMAT "->>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_TRACKING AS CHARACTER FORMAT "X(250)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .81
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_trndat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15 BY .91
+     BGCOLOR 10 FGCOLOR 4 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_tumbol AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21 BY .91
+     BGCOLOR 15 FGCOLOR 0  NO-UNDO.
+
+DEFINE VARIABLE fi_type AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.33 BY 1
+     BGCOLOR 1 FGCOLOR 7 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_TYPE_INSURANCE AS CHARACTER FORMAT "X(20)":U INITIAL ? 
+     VIEW-AS FILL-IN 
+     SIZE 9 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_VAT AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 13 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_VMI_VEHICLE_CODE AS CHARACTER FORMAT "X(20)":U INITIAL "0" 
+     VIEW-AS FILL-IN 
+     SIZE 8 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_WEIGHT AS INTEGER FORMAT "->,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_WHT1 AS DECIMAL FORMAT "->>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE VARIABLE fi_year AS CHARACTER FORMAT "X(4)":U INITIAL "0" 
+     VIEW-AS FILL-IN 
+     SIZE 6 BY .91
+     BGCOLOR 15 FGCOLOR 1  NO-UNDO.
+
+DEFINE RECTANGLE RECT-335
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 130 BY 8.48
+     BGCOLOR 3 FGCOLOR 2 .
+
+DEFINE RECTANGLE RECT-381
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 10.5 BY 1.52
+     BGCOLOR 11 FGCOLOR 2 .
+
+DEFINE RECTANGLE RECT-382
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 10.5 BY 1.52
+     BGCOLOR 6 FGCOLOR 0 .
+
+DEFINE RECTANGLE RECT-383
+     EDGE-PIXELS 2 GRAPHIC-EDGE  NO-FILL   
+     SIZE 130 BY 2.62
+     BGCOLOR 29 .
+
+DEFINE RECTANGLE RECT-385
+     EDGE-PIXELS 2 GRAPHIC-EDGE  NO-FILL   
+     SIZE 130 BY 6.38.
+
+
+/* ************************  Frame Definitions  *********************** */
+
+DEFINE FRAME fr_main
+     buchk AT ROW 23.81 COL 92.17
+     fi_policy AT ROW 1.19 COL 38.33 COLON-ALIGNED NO-LABEL
+     fi_type AT ROW 1.19 COL 3.17 NO-LABEL
+     fi_polsystem AT ROW 1.19 COL 75.67 COLON-ALIGNED NO-LABEL
+     fi_compol AT ROW 1.19 COL 109.33 COLON-ALIGNED NO-LABEL
+     fi_nottime AT ROW 2.81 COL 96.67 COLON-ALIGNED NO-LABEL
+     fi_appid AT ROW 3.81 COL 36.17 COLON-ALIGNED NO-LABEL
+     fi_contract AT ROW 3.81 COL 64.33 COLON-ALIGNED NO-LABEL
+     fi_CMITOTAL_PREMIUM AT ROW 17.05 COL 96.5 COLON-ALIGNED NO-LABEL
+     fi_CREATE_PERSON AT ROW 20.19 COL 52.17 COLON-ALIGNED NO-LABEL
+     fi_brand AT ROW 12 COL 55.67 COLON-ALIGNED NO-LABEL
+     fi_model AT ROW 12 COL 81.83 COLON-ALIGNED NO-LABEL
+     fi_year AT ROW 13.05 COL 122.33 COLON-ALIGNED NO-LABEL
+     fi_WEIGHT AT ROW 14.05 COL 67.67 COLON-ALIGNED NO-LABEL
+     fi_eng_no AT ROW 13.05 COL 46.5 COLON-ALIGNED NO-LABEL
+     fi_cha_no AT ROW 13.05 COL 11.83 COLON-ALIGNED NO-LABEL
+     fi_REGISTER_ID AT ROW 13.05 COL 78.5 COLON-ALIGNED NO-LABEL
+     fi_PROVINCE_ID AT ROW 13.05 COL 101.5 COLON-ALIGNED NO-LABEL
+     fi_comdat AT ROW 3.81 COL 89.5 COLON-ALIGNED NO-LABEL
+     fi_expdat AT ROW 3.81 COL 116.17 COLON-ALIGNED NO-LABEL
+     fi_SUMINSURED AT ROW 14.05 COL 95.67 COLON-ALIGNED NO-LABEL
+     fi_TOTAL_PREMIUM AT ROW 16.05 COL 94.5 COLON-ALIGNED NO-LABEL
+     fi_CMINET_PREMIUM AT ROW 17.05 COL 19.67 COLON-ALIGNED NO-LABEL
+     fi_sckno AT ROW 22.91 COL 77.67 COLON-ALIGNED NO-LABEL
+     fi_NET_PREMIUM AT ROW 16.05 COL 17.67 COLON-ALIGNED NO-LABEL
+     fi_garage AT ROW 12 COL 11 COLON-ALIGNED NO-LABEL
+     fi_firstname AT ROW 5.38 COL 10.5 COLON-ALIGNED NO-LABEL
+     fi_icno AT ROW 5.38 COL 107.33 COLON-ALIGNED NO-LABEL
+     fi_driv1 AT ROW 9.38 COL 12.33 COLON-ALIGNED NO-LABEL
+     fi_birth1 AT ROW 9.38 COL 67 COLON-ALIGNED NO-LABEL
+     fi_drivid1 AT ROW 9.38 COL 88.67 COLON-ALIGNED NO-LABEL
+     fi_driv2 AT ROW 10.38 COL 12.33 COLON-ALIGNED NO-LABEL
+     fi_birth2 AT ROW 10.38 COL 67 COLON-ALIGNED NO-LABEL
+     fi_drivid2 AT ROW 10.38 COL 88.67 COLON-ALIGNED NO-LABEL
+     fi_benname AT ROW 8.38 COL 17.83 COLON-ALIGNED NO-LABEL
+     bu_save AT ROW 23.29 COL 111.5
+     bu_exit AT ROW 23.29 COL 122.5
+     fi_ldate AT ROW 2.81 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_ltime AT ROW 2.81 COL 45.67 COLON-ALIGNED NO-LABEL
+     fi_trndat AT ROW 2.81 COL 75.5 COLON-ALIGNED NO-LABEL
+     fi_inspace AT ROW 23.81 COL 71.67 COLON-ALIGNED NO-LABEL
+     fi_color AT ROW 12 COL 116 COLON-ALIGNED NO-LABEL
+     fi_notifyno AT ROW 3.81 COL 15.5 COLON-ALIGNED NO-LABEL WIDGET-ID 8
+     fi_moobarn AT ROW 6.38 COL 10.5 COLON-ALIGNED NO-LABEL WIDGET-ID 10 NO-TAB-STOP 
+     fi_roomnumber AT ROW 6.38 COL 37 COLON-ALIGNED NO-LABEL WIDGET-ID 14 NO-TAB-STOP 
+     fi_homenumber AT ROW 6.38 COL 49 COLON-ALIGNED NO-LABEL WIDGET-ID 18 NO-TAB-STOP 
+     fi_moo AT ROW 6.38 COL 75.83 COLON-ALIGNED NO-LABEL WIDGET-ID 22 NO-TAB-STOP 
+     fi_soi AT ROW 6.38 COL 85.83 COLON-ALIGNED NO-LABEL WIDGET-ID 26 NO-TAB-STOP 
+     fi_road AT ROW 6.38 COL 109.33 COLON-ALIGNED NO-LABEL WIDGET-ID 30 NO-TAB-STOP 
+     fi_tumbol AT ROW 7.38 COL 10.5 COLON-ALIGNED NO-LABEL WIDGET-ID 34 NO-TAB-STOP 
+     fi_amphur AT ROW 7.38 COL 38.17 COLON-ALIGNED NO-LABEL WIDGET-ID 38 NO-TAB-STOP 
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_main
+     fi_province1 AT ROW 7.38 COL 66 COLON-ALIGNED NO-LABEL WIDGET-ID 42 NO-TAB-STOP 
+     fi_post AT ROW 7.38 COL 92 COLON-ALIGNED NO-LABEL WIDGET-ID 46 NO-TAB-STOP 
+     fi_licendri1 AT ROW 9.38 COL 115.83 COLON-ALIGNED NO-LABEL WIDGET-ID 50
+     fi_licendri2 AT ROW 10.38 COL 115.83 COLON-ALIGNED NO-LABEL WIDGET-ID 54
+     fi_cc AT ROW 14.05 COL 44.83 COLON-ALIGNED NO-LABEL WIDGET-ID 62
+     fi_seat AT ROW 14.05 COL 30 COLON-ALIGNED NO-LABEL WIDGET-ID 66
+     fi_ACCESSORIES AT ROW 15.05 COL 14.17 COLON-ALIGNED NO-LABEL WIDGET-ID 70
+     fi_STAMP AT ROW 16.05 COL 41.5 COLON-ALIGNED NO-LABEL WIDGET-ID 74
+     fi_VAT AT ROW 16.05 COL 61.67 COLON-ALIGNED NO-LABEL WIDGET-ID 78
+     fi_WHT1 AT ROW 16.05 COL 116.83 COLON-ALIGNED NO-LABEL WIDGET-ID 82
+     fi_CMISTAMP AT ROW 17.05 COL 43.83 COLON-ALIGNED NO-LABEL WIDGET-ID 86
+     fi_CMIVAT AT ROW 17.05 COL 63.5 COLON-ALIGNED NO-LABEL WIDGET-ID 90
+     fi_CMIWHT1 AT ROW 17.05 COL 116.83 COLON-ALIGNED NO-LABEL WIDGET-ID 94
+     fi_notifydate AT ROW 2.81 COL 116.67 COLON-ALIGNED NO-LABEL WIDGET-ID 98
+     fi_TYPE_INSURANCE AT ROW 12 COL 37.5 COLON-ALIGNED NO-LABEL WIDGET-ID 102
+     fi_VMI_VEHICLE_CODE AT ROW 14.05 COL 14.17 COLON-ALIGNED NO-LABEL WIDGET-ID 106
+     fi_PERSON_IN_CHARGE AT ROW 20.19 COL 20.5 COLON-ALIGNED NO-LABEL WIDGET-ID 110
+     fi_APPLICATION_SIGN_DATE AT ROW 20.19 COL 85 COLON-ALIGNED NO-LABEL WIDGET-ID 114
+     fi_SRT_POLICY_NO AT ROW 20.19 COL 111.5 COLON-ALIGNED NO-LABEL WIDGET-ID 118
+     fi_PAYMENT AT ROW 21.1 COL 10.17 COLON-ALIGNED NO-LABEL WIDGET-ID 122
+     fi_TRACKING AT ROW 21.1 COL 34.83 COLON-ALIGNED NO-LABEL WIDGET-ID 126
+     fi_POST_NO AT ROW 21.1 COL 59.5 COLON-ALIGNED NO-LABEL WIDGET-ID 130
+     fi_POLICY_VOLUNTARY_NO AT ROW 22 COL 21.5 COLON-ALIGNED NO-LABEL WIDGET-ID 134
+     fi_cus_type AT ROW 5.38 COL 80.83 COLON-ALIGNED NO-LABEL WIDGET-ID 138
+     fi_POLICY_COMPULSURY_NO AT ROW 22 COL 62.5 COLON-ALIGNED NO-LABEL WIDGET-ID 142
+     fi_JOB_STATUS AT ROW 21.1 COL 87.17 COLON-ALIGNED NO-LABEL WIDGET-ID 146
+     fi_notify01 AT ROW 22 COL 91.5 COLON-ALIGNED NO-LABEL WIDGET-ID 150
+     fi_ENDORSE_TYPE AT ROW 22.91 COL 16.33 COLON-ALIGNED NO-LABEL WIDGET-ID 154
+     fi_ENDORSE_DETAIL AT ROW 22.91 COL 48.17 COLON-ALIGNED NO-LABEL WIDGET-ID 158
+     fi_DEALER AT ROW 21.1 COL 109 COLON-ALIGNED NO-LABEL WIDGET-ID 162
+     fi_AI_CHECK AT ROW 23.81 COL 12.33 COLON-ALIGNED NO-LABEL WIDGET-ID 166
+     fi_AI_CHECK_MOBILE AT ROW 23.81 COL 41.17 COLON-ALIGNED NO-LABEL WIDGET-ID 170
+     fi_ACCESSORIES_DETAIL AT ROW 15.05 COL 32.83 COLON-ALIGNED NO-LABEL WIDGET-ID 174
+     fi_remark1 AT ROW 18.05 COL 13.67 COLON-ALIGNED NO-LABEL WIDGET-ID 176
+     fi_remark2 AT ROW 19 COL 13.67 COLON-ALIGNED NO-LABEL WIDGET-ID 178
+     fi_packname AT ROW 24.71 COL 18.67 COLON-ALIGNED NO-LABEL WIDGET-ID 180
+     "ฺ Birth :":30 VIEW-AS TEXT
+          SIZE 7 BY .91 AT ROW 9.38 COL 61.67
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "WHT :":25 VIEW-AS TEXT
+          SIZE 6.5 BY .91 AT ROW 16.05 COL 111.83 WIDGET-ID 84
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_main
+     "วันที่คุ้มครอง:":35 VIEW-AS TEXT
+          SIZE 12.5 BY .91 AT ROW 3.81 COL 78.67
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "Licen_ID :" VIEW-AS TEXT
+          SIZE 10.5 BY .91 AT ROW 10.38 COL 107 WIDGET-ID 56
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "  ชื่อ-สกุล:":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 5.38 COL 3
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " ยี่ห้อรถ :":30 VIEW-AS TEXT
+          SIZE 8.33 BY .91 AT ROW 12 COL 48.83
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "เลขสติ๊กเกอร์ :":30 VIEW-AS TEXT
+          SIZE 12.67 BY .81 AT ROW 22.91 COL 66.67
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "NET_PREMIUM-C:":30 VIEW-AS TEXT
+          SIZE 18 BY .91 AT ROW 17.05 COL 3
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "STAMP-C :":25 VIEW-AS TEXT
+          SIZE 10 BY .91 AT ROW 17.05 COL 35.17 WIDGET-ID 88
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "VAT-C :":25 VIEW-AS TEXT
+          SIZE 8 BY .91 AT ROW 17.05 COL 56.83 WIDGET-ID 92
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " จังหวัด :":30 VIEW-AS TEXT
+          SIZE 8.5 BY .91 AT ROW 13.05 COL 94.33
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "Acc_DETAIL:":20 VIEW-AS TEXT
+          SIZE 13 BY .91 AT ROW 15.05 COL 21.5 WIDGET-ID 72
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "WHT :":25 VIEW-AS TEXT
+          SIZE 6.5 BY .91 AT ROW 17.05 COL 112 WIDGET-ID 96
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " ข้อมูลการแจ้งงาน" VIEW-AS TEXT
+          SIZE 17 BY .81 AT ROW 2.24 COL 2
+          BGCOLOR 3 FGCOLOR 7 FONT 6
+     "Contract:":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 3.81 COL 57
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "SEAT :":30 VIEW-AS TEXT
+          SIZE 7 BY .91 AT ROW 14.05 COL 24.5 WIDGET-ID 60
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "วันที่แจ้ง:":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 2.81 COL 109.17 WIDGET-ID 100
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "TYPE_INS :":35 VIEW-AS TEXT
+          SIZE 11 BY .91 AT ROW 12 COL 28.17 WIDGET-ID 104
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "     Remark :":30 VIEW-AS TEXT
+          SIZE 12 BY .91 AT ROW 18.05 COL 3
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "    VEHICLE:":20 VIEW-AS TEXT
+          SIZE 12.5 BY .91 AT ROW 14.05 COL 3 WIDGET-ID 108
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "   หมู่บ้าน:":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 6.38 COL 3 WIDGET-ID 12
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "เลขที่:":30 VIEW-AS TEXT
+          SIZE 5 BY .91 AT ROW 6.38 COL 45.5 WIDGET-ID 20
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " เบอร์ พรบ  :":35 VIEW-AS TEXT
+          SIZE 12.67 BY .95 AT ROW 1.19 COL 98
+          BGCOLOR 2 FGCOLOR 7 FONT 6
+     " เวลาโหลด :":30 VIEW-AS TEXT
+          SIZE 11 BY .91 AT ROW 2.81 COL 36
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "person_in_Charge :":30 VIEW-AS TEXT
+          SIZE 19 BY .81 AT ROW 20.19 COL 3 WIDGET-ID 112
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "ผู้รับผลประโยชน์ :":30 VIEW-AS TEXT
+          SIZE 16.5 BY .91 AT ROW 8.38 COL 3
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_main
+     "app_Sign_Date:":30 VIEW-AS TEXT
+          SIZE 16 BY .81 AT ROW 20.19 COL 70.5 WIDGET-ID 116
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "ถนน:":30 VIEW-AS TEXT
+          SIZE 5 BY .91 AT ROW 6.38 COL 106.17 WIDGET-ID 32
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "อำเภอ:":30 VIEW-AS TEXT
+          SIZE 6 BY .91 AT ROW 7.38 COL 33.67 WIDGET-ID 40
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "SUMINSURED:":35 VIEW-AS TEXT
+          SIZE 15 BY .91 AT ROW 14.05 COL 82.33
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "srt_policy_no:":30 VIEW-AS TEXT
+          SIZE 13.5 BY .81 AT ROW 20.19 COL 99.5 WIDGET-ID 120
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "IC_no:":30 VIEW-AS TEXT
+          SIZE 6 BY .91 AT ROW 5.38 COL 103.17
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "payment :":30 VIEW-AS TEXT
+          SIZE 9 BY .81 AT ROW 21.1 COL 3 WIDGET-ID 124
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " เลขตัวถัง :":20 VIEW-AS TEXT
+          SIZE 10.5 BY .91 AT ROW 13.05 COL 3
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "รหัส :":30 VIEW-AS TEXT
+          SIZE 5 BY .91 AT ROW 7.38 COL 88.5 WIDGET-ID 48
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " Dri ID :" VIEW-AS TEXT
+          SIZE 8 BY .91 AT ROW 10.38 COL 82.33
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "NET_PREMIUM:":25 VIEW-AS TEXT
+          SIZE 16 BY .91 AT ROW 16.05 COL 3
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " ทะเบียน :":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 13.05 COL 71
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "TYPE :":30 VIEW-AS TEXT
+          SIZE 7.5 BY .91 AT ROW 5.38 COL 75 WIDGET-ID 140
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "  CC :":30 VIEW-AS TEXT
+          SIZE 6 BY .91 AT ROW 14.05 COL 40.5 WIDGET-ID 64
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "ชื่อผู้ขับขี่ 1 :":30 VIEW-AS TEXT
+          SIZE 11 BY .91 AT ROW 9.38 COL 3
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "policy_compulsury_no :":30 VIEW-AS TEXT
+          SIZE 22 BY .81 AT ROW 22 COL 42 WIDGET-ID 144
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " วันที่หมดอายุ:":35 VIEW-AS TEXT
+          SIZE 13 BY .91 AT ROW 3.81 COL 104.83
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "job_status :":30 VIEW-AS TEXT
+          SIZE 12 BY .81 AT ROW 21.1 COL 76.83 WIDGET-ID 148
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "STAMP:":25 VIEW-AS TEXT
+          SIZE 8 BY .91 AT ROW 16.05 COL 35.17 WIDGET-ID 76
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " สีรถ :":30 VIEW-AS TEXT
+          SIZE 6.5 BY .91 AT ROW 12 COL 111
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "เลขรับแจ้ง":30 VIEW-AS TEXT
+          SIZE 10 BY .81 AT ROW 22 COL 83 WIDGET-ID 152
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " Dri ID :" VIEW-AS TEXT
+          SIZE 8 BY .91 AT ROW 9.38 COL 82.33
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "endorse_type :":30 VIEW-AS TEXT
+          SIZE 15 BY .81 AT ROW 22.91 COL 3 WIDGET-ID 156
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "     เลขรับแจ้ง :":35 VIEW-AS TEXT
+          SIZE 14 BY .91 AT ROW 3.81 COL 3 WIDGET-ID 6
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_main
+     "ื กรมธรรม์ใหม่  :":35 VIEW-AS TEXT
+          SIZE 15 BY .95 AT ROW 1.19 COL 62.17
+          BGCOLOR 2 FGCOLOR 7 FONT 6
+     " Birth :":30 VIEW-AS TEXT
+          SIZE 7 BY .91 AT ROW 10.38 COL 61.67
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "endorse_detail :":30 VIEW-AS TEXT
+          SIZE 15 BY .81 AT ROW 22.91 COL 34.67 WIDGET-ID 160
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "หมู่:":30 VIEW-AS TEXT
+          SIZE 4 BY .91 AT ROW 6.38 COL 73.33 WIDGET-ID 24
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "ชื่อผู้ขับขี่ 2 :":30 VIEW-AS TEXT
+          SIZE 11 BY .91 AT ROW 10.38 COL 3
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "     วันที่โหลด  :":30 VIEW-AS TEXT
+          SIZE 14 BY .91 AT ROW 2.81 COL 3
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "dealer":30 VIEW-AS TEXT
+          SIZE 6 BY .81 AT ROW 21.1 COL 104.5 WIDGET-ID 164
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " กรมธรรม์เดิม  :":35 VIEW-AS TEXT
+          SIZE 15 BY .95 AT ROW 1.19 COL 24.83
+          BGCOLOR 4 FGCOLOR 7 FONT 6
+     " ปีรถ :":35 VIEW-AS TEXT
+          SIZE 6 BY .91 AT ROW 13.05 COL 118
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "AI_CHECK:":30 VIEW-AS TEXT
+          SIZE 11 BY .81 AT ROW 23.81 COL 3 WIDGET-ID 168
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     " เลขเครื่อง :":35 VIEW-AS TEXT
+          SIZE 10.5 BY .91 AT ROW 13.05 COL 37.5
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "TOTAL_PREMIUM-C :":35 VIEW-AS TEXT
+          SIZE 20.5 BY .91 AT ROW 17.05 COL 77
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "AI_CHECK_MOBILE:":30 VIEW-AS TEXT
+          SIZE 20 BY .81 AT ROW 23.81 COL 22.83 WIDGET-ID 172
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "tracking :":30 VIEW-AS TEXT
+          SIZE 9 BY .81 AT ROW 21.1 COL 27.5 WIDGET-ID 128
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "WEIGHT :":30 VIEW-AS TEXT
+          SIZE 10 BY .91 AT ROW 14.05 COL 59.17
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " ข้อรถและการประกันภัย" VIEW-AS TEXT
+          SIZE 21 BY .76 AT ROW 11.33 COL 3.33
+          BGCOLOR 3 FGCOLOR 7 FONT 6
+     "เลขตรวจสภาพ :":30 VIEW-AS TEXT
+          SIZE 14.5 BY .81 AT ROW 23.81 COL 58.67
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "เวลา :":35 VIEW-AS TEXT
+          SIZE 5 BY .91 AT ROW 2.81 COL 93.17
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "App_id:":35 VIEW-AS TEXT
+          SIZE 7 BY .91 AT ROW 3.81 COL 30.83
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "วันที่ไฟล์แจ้งงาน :" VIEW-AS TEXT
+          SIZE 16.5 BY .91 AT ROW 2.81 COL 60.17
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "TOTAL_PREMIUM :":30 VIEW-AS TEXT
+          SIZE 19 BY .91 AT ROW 16.05 COL 77.17
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " การซ่อม :":35 VIEW-AS TEXT
+          SIZE 9.5 BY .91 AT ROW 12 COL 3
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " รุ่นรถ :":30 VIEW-AS TEXT
+          SIZE 7.67 BY .91 AT ROW 12 COL 75.67
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     " ข้อมูลลูกค้า" VIEW-AS TEXT
+          SIZE 11.5 BY .81 AT ROW 4.86 COL 3.5
+          BGCOLOR 3 FGCOLOR 7 FONT 6
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_main
+     "post_no :":30 VIEW-AS TEXT
+          SIZE 9 BY .81 AT ROW 21.1 COL 52.17 WIDGET-ID 132
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "ห้อง:":30 VIEW-AS TEXT
+          SIZE 5 BY .91 AT ROW 6.38 COL 33.67 WIDGET-ID 16
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "PACKAGE_NAME:":30 VIEW-AS TEXT
+          SIZE 17 BY .81 AT ROW 24.71 COL 3 WIDGET-ID 182
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "     ตำบล:":30 VIEW-AS TEXT
+          SIZE 9 BY .91 AT ROW 7.38 COL 3 WIDGET-ID 36
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "create_person :":30 VIEW-AS TEXT
+          SIZE 15 BY .81 AT ROW 20.19 COL 38.83
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "policy_voluntary_no :":30 VIEW-AS TEXT
+          SIZE 20 BY .81 AT ROW 22 COL 3 WIDGET-ID 136
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "ซอย:":30 VIEW-AS TEXT
+          SIZE 4.5 BY .91 AT ROW 6.38 COL 83.17 WIDGET-ID 28
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "จังหวัด:":30 VIEW-AS TEXT
+          SIZE 7 BY .91 AT ROW 7.38 COL 60.67 WIDGET-ID 44
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "Licen_ID :" VIEW-AS TEXT
+          SIZE 10.5 BY .91 AT ROW 9.38 COL 107 WIDGET-ID 52
+          BGCOLOR 19 FGCOLOR 2 FONT 6
+     "Accessories:":20 VIEW-AS TEXT
+          SIZE 12.5 BY .91 AT ROW 15.05 COL 3 WIDGET-ID 68
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "VAT :":25 VIEW-AS TEXT
+          SIZE 6.5 BY .91 AT ROW 16.05 COL 56.83 WIDGET-ID 80
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     RECT-335 AT ROW 11.57 COL 2
+     RECT-381 AT ROW 23.05 COL 110.5
+     RECT-382 AT ROW 23.05 COL 121.5
+     RECT-383 AT ROW 2.43 COL 2
+     RECT-385 AT ROW 5.14 COL 2
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.1
+         SIZE 133 BY 25.57
+         BGCOLOR 3 FGCOLOR 1 .
+
+
+/* *********************** Procedure Settings ************************ */
+
+&ANALYZE-SUSPEND _PROCEDURE-SETTINGS
+/* Settings for THIS-PROCEDURE
+   Type: Window
+   Allow: Basic,Browse,DB-Fields,Window,Query
+   Other Settings: COMPILE
+ */
+&ANALYZE-RESUME _END-PROCEDURE-SETTINGS
+
+/* *************************  Create Window  ************************** */
+
+&ANALYZE-SUSPEND _CREATE-WINDOW
+IF SESSION:DISPLAY-TYPE = "GUI":U THEN
+  CREATE WINDOW cC-Win ASSIGN
+         HIDDEN             = YES
+         TITLE              = "Update Data K-LEASING (NEW/RENEW)"
+         HEIGHT             = 25.86
+         WIDTH              = 133.83
+         MAX-HEIGHT         = 45.76
+         MAX-WIDTH          = 238.83
+         VIRTUAL-HEIGHT     = 45.76
+         VIRTUAL-WIDTH      = 238.83
+         RESIZE             = yes
+         SCROLL-BARS        = no
+         STATUS-AREA        = no
+         BGCOLOR            = ?
+         FGCOLOR            = ?
+         KEEP-FRAME-Z-ORDER = yes
+         THREE-D            = yes
+         MESSAGE-AREA       = no
+         SENSITIVE          = yes.
+ELSE {&WINDOW-NAME} = CURRENT-WINDOW.
+
+&IF '{&WINDOW-SYSTEM}' NE 'TTY' &THEN
+IF NOT cC-Win:LOAD-ICON("wimage\safety":U) THEN
+    MESSAGE "Unable to load icon: wimage\safety"
+            VIEW-AS ALERT-BOX WARNING BUTTONS OK.
+&ENDIF
+/* END WINDOW DEFINITION                                                */
+&ANALYZE-RESUME
+
+
+
+/* ***********  Runtime Attributes and AppBuilder Settings  *********** */
+
+&ANALYZE-SUSPEND _RUN-TIME-ATTRIBUTES
+/* SETTINGS FOR WINDOW cC-Win
+  VISIBLE,,RUN-PERSISTENT                                               */
+/* SETTINGS FOR FRAME fr_main
+   FRAME-NAME Custom                                                    */
+/* SETTINGS FOR FILL-IN fi_ldate IN FRAME fr_main
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_ltime IN FRAME fr_main
+   NO-ENABLE                                                            */
+ASSIGN 
+       fi_nottime:READ-ONLY IN FRAME fr_main        = TRUE.
+
+/* SETTINGS FOR FILL-IN fi_trndat IN FRAME fr_main
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_type IN FRAME fr_main
+   NO-ENABLE ALIGN-L                                                    */
+ASSIGN 
+       fi_type:READ-ONLY IN FRAME fr_main        = TRUE.
+
+IF SESSION:DISPLAY-TYPE = "GUI":U AND VALID-HANDLE(cC-Win)
+THEN cC-Win:HIDDEN = no.
+
+/* _RUN-TIME-ATTRIBUTES-END */
+&ANALYZE-RESUME
+
+ 
+
+
+
+/* ************************  Control Triggers  ************************ */
+
+&Scoped-define SELF-NAME cC-Win
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL cC-Win cC-Win
+ON END-ERROR OF cC-Win /* Update Data K-LEASING (NEW/RENEW) */
+OR ENDKEY OF {&WINDOW-NAME} ANYWHERE DO:
+  /* This case occurs when the user presses the "Esc" key.
+     In a persistently run window, just ignore this.  If we did not, the
+     application would exit. */
+  IF THIS-PROCEDURE:PERSISTENT THEN RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL cC-Win cC-Win
+ON WINDOW-CLOSE OF cC-Win /* Update Data K-LEASING (NEW/RENEW) */
+DO:
+  /* This event will close the window and terminate the procedure.  */
+  APPLY "CLOSE":U TO THIS-PROCEDURE.
+  RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME buchk
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL buchk cC-Win
+ON CHOOSE OF buchk IN FRAME fr_main /* ISP */
+DO: 
+    ASSIGN  
+        nv_docno    = ""   
+        nv_year      = STRING(YEAR(TODAY))
+        nv_year      = SUBSTR(nv_year,3,2) 
+        /* real database*/ 
+        nv_server  = "Safety_NotesServer/Safety"
+        nv_tmp     = "safety\uw\inspect" + nv_year + ".nsf"
+        /* test database  
+        nv_server  = ""
+        nv_tmp     = "D:\Lotus\Notes\Data\inspect" + nv_year + ".nsf"  */
+        NotesView    = "chassis_no" /* วิวซ่อนของเลขตัวถัง */ /*A62-0219*/
+        nv_chkdoc    = NO  
+        nv_count     = 0
+        nv_text1     = ""
+        nv_text2     = ""
+        nv_chktext   = 0
+        nv_cha_no    = TRIM(fi_cha_no) .  
+
+    nv_licence1 = trim(fi_REGISTER_ID). 
+
+    IF TRIM(nv_licence1) = "" OR TRIM(nv_cha_no)   = "" THEN DO:
+        MESSAGE "ทะเบียนรถ หรือ เลขตัวถัง เป็นค่าว่าง" SKIP
+            "กรุณาระบุข้อมูลให้ครบถ้วน !" 
+            VIEW-AS ALERT-BOX ERROR.
+        RETURN NO-APPLY.
+    END.
+    IF TRIM(fi_PROVINCE_ID) <> "" THEN DO:
+        FIND FIRST brstat.insure USE-INDEX Insure05   WHERE   /*use-index fname */
+            brstat.insure.compno = "999" AND 
+            brstat.insure.FName  = TRIM(fi_PROVINCE_ID) NO-LOCK NO-WAIT NO-ERROR.
+        IF AVAIL brstat.insure THEN  ASSIGN nv_provin = brstat.Insure.LName.
+        ELSE ASSIGN nv_provin = TRIM(fi_PROVINCE_ID).
+    END.
+    nv_licence2 = trim(nv_licence1)  .
+    IF trim(nv_licence2) <> "" THEN DO:
+        ASSIGN nv_licence2 = REPLACE(nv_licence2," ","").
+        RUN proc_chkpattern.  
+    END.
+    CREATE "Notes.NotesSession" chSession.                              
+    CREATE "Notes.NotesUIWorkSpace" chWorkSpace.    
+    chDatabase = chSession:GetDatabase(nv_server,nv_tmp).    
+    IF chDatabase:isOpen = NO THEN DO: 
+        MESSAGE "Can not open Database !" VIEW-AS ALERT-BOX.
+        RETURN NO-APPLY.
+    END.
+    ELSE DO: 
+        chName   = chSession:CreateName(chSession:UserName).        
+        nv_name  = chName:Abbreviated.                                         
+        nv_datim = STRING(TODAY,"99/99/9999") + " " + STRING(TIME,"HH:MM:SS"). 
+        /* Check Record Duplication */        
+        chWorkspace:OpenDatabase(nv_server,nv_tmp,NotesView,"",FALSE,FALSE).
+        chView = chDatabase:GetView(NotesView).        
+        IF VALID-HANDLE(chView) = NO THEN DO:
+            nv_chkdoc = NO.
+        END.
+        ELSE DO:                
+            chViewNavigator = chView:CreateViewNavFromCategory(nv_cha_no).            
+            nv_doc_num      = chViewNavigator:COUNT.      
+            IF nv_doc_num = 0 THEN DO:                
+                nv_chkdoc = YES.
+            END.                
+            ELSE DO:                                                  
+                chViewEntry = chViewNavigator:GetFirstDocument.
+                IF VALID-HANDLE(chViewEntry) = NO THEN 
+                    nv_chkdoc  = YES.                                                                      
+                ELSE chDocument = chViewEntry:Document. 
+
+                loop_chkrecord:
+                REPEAT:
+                    IF VALID-HANDLE(chDocument) = NO THEN DO:
+                        nv_chkdoc = YES.
+                        LEAVE loop_chkrecord.
+                    END.
+                    ELSE DO:
+                        /* add by : A64-0244 */
+                        chitem       = chDocument:Getfirstitem("SurveyClose").    /* สเตตัสปิดเรื่อง */
+                        IF chitem <> 0 THEN nv_surcl   = chitem:TEXT. 
+                        ELSE nv_surcl  = "".
+
+                        chitem       = chDocument:Getfirstitem("docno"). 
+                        IF chitem <> 0 THEN nv_docno   = chitem:TEXT. 
+                        ELSE nv_docno = "".
+
+                        nv_chkdoc = NO.
+                        LEAVE loop_chkrecord.
+                    END. /*  else  */
+                END.     /* end repeate */
+            END.  
+            IF nv_chkdoc = NO THEN DO:
+                IF nv_docno <> ""  THEN DO:
+                     RUN proc_getisp .
+                     ASSIGN 
+                     /*fi_remark2   = trim(nv_detail + " " + nv_damlist + " " + nv_totaldam) + " " + TRIM(nv_device + " " + nv_acctotal) */ /*comment kridtiya i. A66-0107*/
+                     //fi_ispdetail = trim(nv_detail + " " + nv_damlist + " " + nv_damdetail) + " " + TRIM(nv_device + " " + nv_acctotal)      /*Add kridtiya i. A66-0107*/
+                     fi_inspace   = TRIM(nv_docno).                                          
+                END.
+            END.
+            /****
+            ELSE DO:
+                
+                    chDocument = chDatabase:CreateDocument.
+                    ASSIGN
+                        chDocument:FORM        = "Inspection"                        
+                        chDocument:createdBy   = nv_name
+                        chDocument:createdOn   = nv_datim 
+                        chDocument:dateS       = brstat.tlt.gendat                            
+                        chDocument:dateE       = brstat.tlt.expodat                           
+                        chDocument:ReqType_sub = "ลูกค้า/ตัวแทน/นายหน้าเป็นผู้ส่งรูปตรวจสภาพ"
+                        /*chDocument:BranchReq   = "Business Unit 3"  */ /*A64-0244*/    
+                        chDocument:BranchReq   = "Bank & Finance"      /*A64-0244*/ 
+                        chDocument:Tname       = "บุคคล"                             
+                        chDocument:Fname       = SUBSTR(brstat.tlt.ins_name,1,INDEX(brstat.tlt.ins_name," ") - 1)                         
+                        chDocument:Lname       = SUBSTR(brstat.tlt.ins_name,R-INDEX(brstat.tlt.ins_name," ") + 1)                        
+                        chDocument:phone1      = ""
+                        chDocument:garage      = trim(fi_garage)
+                        chDocument:PolicyNo    = ""                          
+                        chDocument:agentCode   = trim(fi_producer)                         
+                        chDocument:agentName   = nv_brname                           
+                        chDocument:Premium     = STRING(fi_gross_amt)                          
+                        chDocument:model       = brstat.tlt.brand   /*nv_model    */                        
+                        chDocument:modelCode   = brstat.tlt.model   /*nv_modelcode*/                        
+                        chDocument:Year        = brstat.tlt.lince2                            
+                        chDocument:carCC       = nv_cha_no                           
+                        chDocument:LicenseType = "รถเก๋ง/กระบะ/บรรทุก"               
+                        chDocument:PatternLi1  = nv_pattern                          
+                        chDocument:LicenseNo_1 = nv_licence1                         
+                        chDocument:LicenseNo_2 = nv_provin     
+                        chDocument:App         = 0                                   
+                        chDocument:Chk         = 0                                   
+                        chDocument:StList      = 0                                   
+                        chDocument:stHide      = 0                                   
+                        chDocument:SendTo      = ""                                  
+                        chDocument:SendCC      = ""                                  
+                        chDocument:SendClose   = ""
+                        chDocument:SurveyClose = ""                    
+                        chDocument:docno       = "".   
+                    chDocument:SAVE(TRUE,FALSE).
+                    chWorkSpace:ViewRefresh.  
+                    chUIDocument = chWorkSpace:CurrentDocument.                                         
+                    chUIDocument = chWorkSpace:EditDocument(FALSE,chDocument) NO-ERROR.
+                
+            END.
+            --------------*/
+        END.
+    END.
+    
+    MESSAGE "Check data Inspection complete " VIEW-AS ALERT-BOX.
+
+    RELEASE OBJECT chSession       NO-ERROR.
+    RELEASE OBJECT chWorkSpace     NO-ERROR.
+    RELEASE OBJECT chName          NO-ERROR.
+    RELEASE OBJECT chDatabase      NO-ERROR.
+    RELEASE OBJECT chView          NO-ERROR.
+    RELEASE OBJECT chViewEntry     NO-ERROR.    
+    RELEASE OBJECT chViewNavigator NO-ERROR.
+    RELEASE OBJECT chDocument      NO-ERROR.
+    RELEASE OBJECT chUIDocument    NO-ERROR.   
+
+    DISP fi_inspace   WITH FRAME fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME bu_exit
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_exit cC-Win
+ON CHOOSE OF bu_exit IN FRAME fr_main /* Exit */
+DO:
+  Apply "Close"  To this-procedure.
+  Return no-apply.
+ 
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME bu_save
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_save cC-Win
+ON CHOOSE OF bu_save IN FRAME fr_main /* Save */
+DO:
+    
+    MESSAGE "Do you want SAVE  !!!!"        
+        VIEW-AS ALERT-BOX QUESTION BUTTONS YES-NO     /*-CANCEL */    
+        TITLE "" UPDATE choice AS LOGICAL.
+    CASE choice:         
+        WHEN TRUE THEN /* Yes */ 
+            DO: 
+            Find  brstat.tlt Where  Recid(brstat.tlt)  =  nv_recidtlt.
+            If  avail  brstat.tlt Then do:
+                Assign
+                    tlt.lotno           = fi_appid               /*  APPLICATION_ID  */
+                    tlt.safe2           = fi_contract            /*  ALO_CONTRACT_NUMBER     */
+                    tlt.gendat          = fi_comdat              /*  EFFECTIVE_DATE  */
+                    tlt.expodat         = fi_expdat              /*  EXPIRED_DATE    */
+                    tlt.ins_name        = fi_firstname           /*  CUSTOMER_NAME   */
+                    tlt.ins_brins       = fi_cus_type            /*  CUS_TYPE        */
+                    tlt.ins_icno        = fi_icno                /*  CUSTOMER_ID     */
+                    tlt.hrg_vill        = fi_moobarn             /*  MOOBARN */
+                    tlt.hrg_room        = fi_roomnumber          /*  ROOM_NUMBER     */
+                    tlt.hrg_no          = fi_homenumber          /*  HOME_NUMBER     */
+                    tlt.hrg_moo         = fi_moo                 /*  MOO     */
+                    tlt.hrg_soi         = fi_soi                 /*  SOI     */
+                    tlt.hrg_street      = fi_road                /*  ROAD    */
+                    tlt.hrg_subdistrict = fi_tumbol              /*  TUMBOL  */
+                    tlt.hrg_district    = fi_amphur              /*  AMPHUR  */
+                    tlt.hrg_prov        = fi_province1           /*  PROVINCE        */
+                    tlt.hrg_postcd      = fi_post                /*  POST_CODE       */
+                    tlt.ben83           = fi_benname             /*  BENEFICIARY     */
+                    tlt.dri_name1       = fi_driv1               /*  DRIVERNAME1     */
+                    tlt.dri_no1         = fi_birth1              /*  D_BIRTH1        */
+                    tlt.dri_ic1         = fi_drivid1             /*  D_ID1   */
+                    tlt.dri_lic1        = fi_licendri1           /*  D_DRIVE_ID1     */
+                    tlt.dri_name2       = fi_driv2               /*  DRIVERNAME2     */
+                    tlt.dri_no2         = fi_birth2              /*  D_BIRTH2        */
+                    tlt.dri_ic2         = fi_drivid2             /*  D_ID2   */
+                    tlt.dri_lic2        = fi_licendri2           /*  D_DRIVE_ID2     */
+                    tlt.pack            = fi_garage              /*  GARAGE_TYPE     */
+                    tlt.packnme         = fi_TYPE_INSURANCE      /*  TYPE_INSURANCE  */
+                    tlt.brand           = fi_brand               /*  MAKE_DESCRIPTION1       */
+                    tlt.model           = fi_model               /*  MODEL_DESCRIPTION       */
+                    tlt.cha_no          = fi_cha_no              /*  CHASSIS */
+                    tlt.eng_no          = fi_eng_no              /*  ENGINE  */
+                    tlt.lince1          = fi_REGISTER_ID         /*  REGISTER_ID     */
+                    tlt.lince2          = fi_PROVINCE_ID         /*  PROVINCE_ID     */
+                    tlt.lince3          = fi_year                /*  YEAR    */
+                    tlt.colorcode       = fi_color               /*  COLOR   */
+                    tlt.vehuse          = fi_VMI_VEHICLE_CODE    /*  VMI_VEHICLE_CODE        */
+                    tlt.note1           = string(fi_seat)        /*  SEAT    */
+                    tlt.cc_weight       =  fi_cc           /*  CC      */
+                    tlt.note2           = string(fi_WEIGHT)      /*  WEIGHT  */
+                    tlt.nor_coamt       = fi_SUMINSURED          /*  SUMINSURED      */
+                    tlt.note3           = fi_ACCESSORIES         /*  ACCESSORIES     */
+                    tlt.note4           = fi_ACCESSORIES_DETAIL        /*  ACCESSORIES_DETAIL      */
+                    tlt.note5           = string(fi_NET_PREMIUM)       /*  V_NET_PREMIUM   */
+                    tlt.note6           = string(fi_STAMP)             /*  V_STAMP */
+                    tlt.note7           = string(fi_VAT)               /*  V_VAT   */
+                    tlt.note8           = string(fi_TOTAL_PREMIUM)     /*  V_TOTAL_PREMIUM */
+                    tlt.note9           = string(fi_WHT1)              /*  V_WHT1  */
+                    tlt.note10          = string(fi_CMINET_PREMIUM)    /*  C_NET_PREMIUM   */
+                    tlt.note11          = string(fi_CMISTAMP)          /*  C_STAMP */
+                    tlt.note12          = string(fi_CMIVAT)            /*  C_VAT   */
+                    tlt.note13          = string(fi_CMITOTAL_PREMIUM)  /*  C_TOTAL_PREMIUM */
+                    tlt.note14          = string(fi_CMIWHT1)           /*  C_WHT1  */
+                     tlt.note15          = fi_remark1                /*   REMARK  */
+                    tlt.note16          = fi_PERSON_IN_CHARGE       /*      PERSON_IN_CHARGE        */
+                    tlt.note17          = fi_CREATE_PERSON          /*      CREATE_PERSON   */
+                    tlt.note18          = fi_APPLICATION_SIGN_DATE  /*      APPLICATION_SIGN_DATE   */
+                    tlt.note19          = fi_SRT_POLICY_NO          /*      SRT_POLICY_NO   */
+                    tlt.note20          = fi_PAYMENT                /*      PAYMENT */
+                    tlt.note21          = fi_TRACKING               /*      TRACKING        */
+                    tlt.note22          = fi_POST_NO                /*      POST_NO */
+                    tlt.note23          = fi_POLICY_VOLUNTARY_NO    /*      POLICY_VOLUNTARY_NO     */
+                    tlt.note24          = fi_POLICY_COMPULSURY_NO   /*      POLICY_COMPULSURY_NO    */
+                    tlt.note25          = fi_JOB_STATUS             /*      JOB_STATUS      */
+                    tlt.note26          = fi_notify01               /*      เลขรับแจ้ง      */
+                    tlt.note27          = fi_ENDORSE_TYPE           /*      ENDORSE_TYPE    */
+                    tlt.note28          = fi_ENDORSE_DETAIL         /*      ENDORSE_DETAIL  */
+                    tlt.nor_noti_tlt    = fi_notifyno                   /*      เลขรับแจ้ง      */
+                    tlt.comp_sck        = fi_sckno                      /*      เลข_พรบ */
+                    tlt.dealer          = fi_DEALER                 /*      DEALER  */
+                    tlt.note29          = fi_AI_CHECK               /*      AI_CHECK        */
+                    tlt.note30          = fi_AI_CHECK_MOBILE        /*      AI_CHECK_MOBILE */
+                    tlt.flag            = fi_type                
+                    tlt.safe3           = fi_packname     
+                    tlt.rec_addr3       = fi_inspace  
+                    tlt.nor_usr_tlt     = fi_policy        
+                    tlt.nor_noti_ins    = fi_polsystem     
+                    tlt.comp_noti_tlt   = fi_compol   
+                    .       
+                        
+            END.
+            Apply "Close" to this-procedure.
+            Return no-apply.
+        END.
+        WHEN FALSE THEN /* No */          
+            DO:   
+            APPLY "entry" TO fi_packname.
+            RETURN NO-APPLY.
+        END.
+        END CASE.
+RELEASE brstat.tlt. 
+
+ 
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_ACCESSORIES
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_ACCESSORIES cC-Win
+ON LEAVE OF fi_ACCESSORIES IN FRAME fr_main
+DO:
+  fi_cha_no  =  Input  fi_cha_no.
+  Disp  fi_cha_no with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_ACCESSORIES_DETAIL
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_ACCESSORIES_DETAIL cC-Win
+ON LEAVE OF fi_ACCESSORIES_DETAIL IN FRAME fr_main
+DO:
+  fi_ACCESSORIES_DETAIL = INPUT fi_ACCESSORIES_DETAIL .
+  DISP fi_ACCESSORIES_DETAIL WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_AI_CHECK
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_AI_CHECK cC-Win
+ON LEAVE OF fi_AI_CHECK IN FRAME fr_main
+DO:
+  fi_AI_CHECK = INPUT fi_AI_CHECK .
+  DISP fi_AI_CHECK WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_AI_CHECK_MOBILE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_AI_CHECK_MOBILE cC-Win
+ON LEAVE OF fi_AI_CHECK_MOBILE IN FRAME fr_main
+DO:
+  fi_AI_CHECK_MOBILE = INPUT fi_AI_CHECK_MOBILE .
+  DISP fi_AI_CHECK_MOBILE WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_amphur
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_amphur cC-Win
+ON LEAVE OF fi_amphur IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_appid
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_appid cC-Win
+ON LEAVE OF fi_appid IN FRAME fr_main
+DO:
+    fi_appid = INPUT fi_appid .
+    DISP fi_appid WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_APPLICATION_SIGN_DATE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_APPLICATION_SIGN_DATE cC-Win
+ON LEAVE OF fi_APPLICATION_SIGN_DATE IN FRAME fr_main
+DO:
+  fi_APPLICATION_SIGN_DATE = INPUT fi_APPLICATION_SIGN_DATE .
+  DISP fi_APPLICATION_SIGN_DATE WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_benname
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_benname cC-Win
+ON LEAVE OF fi_benname IN FRAME fr_main
+DO:
+  fi_benname = INPUT fi_benname .
+  DISP fi_benname WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_birth1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_birth1 cC-Win
+ON LEAVE OF fi_birth1 IN FRAME fr_main
+DO:
+  fi_birth1 = INPUT fi_birth1.
+  DISPLAY fi_birth1 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_birth2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_birth2 cC-Win
+ON LEAVE OF fi_birth2 IN FRAME fr_main
+DO:
+  fi_birth2 = INPUT fi_birth2 .
+  DISP fi_birth2 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_brand
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_brand cC-Win
+ON LEAVE OF fi_brand IN FRAME fr_main
+DO:
+  fi_brand = INPUT fi_brand .
+  DISP fi_brand WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_cc
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_cc cC-Win
+ON LEAVE OF fi_cc IN FRAME fr_main
+DO:
+  fi_cc =  Input  fi_cc.
+  Disp  fi_cc with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_cha_no
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_cha_no cC-Win
+ON LEAVE OF fi_cha_no IN FRAME fr_main
+DO:
+  fi_cha_no  =  Input  fi_cha_no.
+  Disp  fi_cha_no with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CMINET_PREMIUM
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CMINET_PREMIUM cC-Win
+ON LEAVE OF fi_CMINET_PREMIUM IN FRAME fr_main
+DO:
+  fi_CMINET_PREMIUM = INPUT fi_CMINET_PREMIUM.
+  DISP fi_CMINET_PREMIUM WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CMISTAMP
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CMISTAMP cC-Win
+ON LEAVE OF fi_CMISTAMP IN FRAME fr_main
+DO:
+  fi_CMISTAMP = INPUT fi_CMISTAMP .
+  DISP fi_CMISTAMP WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CMITOTAL_PREMIUM
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CMITOTAL_PREMIUM cC-Win
+ON LEAVE OF fi_CMITOTAL_PREMIUM IN FRAME fr_main
+DO:
+    fi_CMITOTAL_PREMIUM = INPUT fi_CMITOTAL_PREMIUM  .
+    DISP fi_CMITOTAL_PREMIUM WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CMIVAT
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CMIVAT cC-Win
+ON LEAVE OF fi_CMIVAT IN FRAME fr_main
+DO:
+ fi_CMIVAT = INPUT fi_CMIVAT .
+  DISP fi_CMIVAT WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CMIWHT1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CMIWHT1 cC-Win
+ON LEAVE OF fi_CMIWHT1 IN FRAME fr_main
+DO:
+fi_CMIWHT1 = INPUT fi_CMIWHT1 .
+  DISP fi_CMIWHT1 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_color
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_color cC-Win
+ON LEAVE OF fi_color IN FRAME fr_main
+DO:
+  fi_color  =  Input  fi_color.
+  Disp  fi_color with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_comdat
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_comdat cC-Win
+ON LEAVE OF fi_comdat IN FRAME fr_main
+DO:
+  fi_comdat = INPUT fi_comdat.
+  DISP fi_comdat WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_compol
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_compol cC-Win
+ON LEAVE OF fi_compol IN FRAME fr_main
+DO:
+  fi_compol  =  Input  fi_compol.
+  Disp  fi_compol with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_contract
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_contract cC-Win
+ON LEAVE OF fi_contract IN FRAME fr_main
+DO:
+    fi_contract = INPUT fi_contract.
+    DISP fi_contract WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_CREATE_PERSON
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_CREATE_PERSON cC-Win
+ON LEAVE OF fi_CREATE_PERSON IN FRAME fr_main
+DO:
+  fi_CREATE_PERSON = INPUT fi_CREATE_PERSON .
+  DISP fi_CREATE_PERSON WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_cus_type
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_cus_type cC-Win
+ON LEAVE OF fi_cus_type IN FRAME fr_main
+DO:
+    fi_cus_type = INPUT fi_cus_type .
+    DISP fi_cus_type WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_DEALER
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_DEALER cC-Win
+ON LEAVE OF fi_DEALER IN FRAME fr_main
+DO:
+  fi_DEALER = INPUT fi_DEALER .
+  DISP fi_DEALER WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_driv1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_driv1 cC-Win
+ON LEAVE OF fi_driv1 IN FRAME fr_main
+DO:
+    fi_driv1 = INPUT fi_driv1 .
+    DISP fi_driv1 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_driv2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_driv2 cC-Win
+ON LEAVE OF fi_driv2 IN FRAME fr_main
+DO:
+  fi_driv2 = INPUT fi_driv2.
+  DISP fi_driv2 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_drivid1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_drivid1 cC-Win
+ON LEAVE OF fi_drivid1 IN FRAME fr_main
+DO:
+  fi_drivid1 = INPUT fi_drivid1 .
+    DISP fi_drivid1 WITH FRAM fr_main.
+  
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_drivid2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_drivid2 cC-Win
+ON LEAVE OF fi_drivid2 IN FRAME fr_main
+DO:
+  fi_drivid2 = INPUT fi_drivid2 .
+    DISP fi_drivid2 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_ENDORSE_DETAIL
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_ENDORSE_DETAIL cC-Win
+ON LEAVE OF fi_ENDORSE_DETAIL IN FRAME fr_main
+DO:
+  fi_ENDORSE_DETAIL = INPUT fi_ENDORSE_DETAIL .
+  DISP fi_ENDORSE_DETAIL WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_ENDORSE_TYPE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_ENDORSE_TYPE cC-Win
+ON LEAVE OF fi_ENDORSE_TYPE IN FRAME fr_main
+DO:
+  fi_ENDORSE_TYPE = INPUT fi_ENDORSE_TYPE .
+  DISP fi_ENDORSE_TYPE WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_eng_no
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_eng_no cC-Win
+ON LEAVE OF fi_eng_no IN FRAME fr_main
+DO:
+  fi_eng_no  =  Input  fi_eng_no.
+  Disp  fi_eng_no with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_expdat
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_expdat cC-Win
+ON LEAVE OF fi_expdat IN FRAME fr_main
+DO:
+  fi_expdat = INPUT fi_expdat.
+  DISP fi_expdat WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_firstname
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_firstname cC-Win
+ON LEAVE OF fi_firstname IN FRAME fr_main
+DO:
+  fi_firstname = INPUT fi_firstname .
+  DISP fi_firstname WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_garage
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_garage cC-Win
+ON LEAVE OF fi_garage IN FRAME fr_main
+DO:
+  fi_garage =  Input  fi_garage.
+  Disp  fi_garage with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_homenumber
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_homenumber cC-Win
+ON LEAVE OF fi_homenumber IN FRAME fr_main
+DO:
+/*  fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_icno
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_icno cC-Win
+ON LEAVE OF fi_icno IN FRAME fr_main
+DO:
+    fi_icno = INPUT fi_icno .
+    DISP fi_icno WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_inspace
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_inspace cC-Win
+ON LEAVE OF fi_inspace IN FRAME fr_main
+DO:
+    fi_inspace = INPUT fi_inspace .
+    DISP fi_inspace WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_JOB_STATUS
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_JOB_STATUS cC-Win
+ON LEAVE OF fi_JOB_STATUS IN FRAME fr_main
+DO:
+  fi_JOB_STATUS = INPUT fi_JOB_STATUS .
+  DISP fi_JOB_STATUS WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_licendri1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_licendri1 cC-Win
+ON LEAVE OF fi_licendri1 IN FRAME fr_main
+DO:
+  fi_drivid1 = INPUT fi_drivid1 .
+    DISP fi_drivid1 WITH FRAM fr_main.
+  
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_licendri2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_licendri2 cC-Win
+ON LEAVE OF fi_licendri2 IN FRAME fr_main
+DO:
+  fi_drivid2 = INPUT fi_drivid2 .
+    DISP fi_drivid2 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_model
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_model cC-Win
+ON LEAVE OF fi_model IN FRAME fr_main
+DO:
+  fi_model =  Input  fi_model.
+  Disp  fi_model with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_moo
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_moo cC-Win
+ON LEAVE OF fi_moo IN FRAME fr_main
+DO:
+/*  fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_moobarn
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_moobarn cC-Win
+ON LEAVE OF fi_moobarn IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_NET_PREMIUM
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_NET_PREMIUM cC-Win
+ON LEAVE OF fi_NET_PREMIUM IN FRAME fr_main
+DO:
+  fi_NET_PREMIUM = INPUT fi_NET_PREMIUM .
+  DISP fi_NET_PREMIUM WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_notify01
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_notify01 cC-Win
+ON LEAVE OF fi_notify01 IN FRAME fr_main
+DO:
+  fi_notify01 = INPUT fi_notify01 .
+  DISP fi_notify01 WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_notifydate
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_notifydate cC-Win
+ON LEAVE OF fi_notifydate IN FRAME fr_main
+DO:
+  fi_notifydate = INPUT fi_notifydate .
+  DISP fi_notifydate WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_notifyno
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_notifyno cC-Win
+ON LEAVE OF fi_notifyno IN FRAME fr_main
+DO:
+  fi_notifyno = INPUT fi_notifyno.
+  DISP fi_notifyno WITH FRAM fr_main. 
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_packname
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_packname cC-Win
+ON LEAVE OF fi_packname IN FRAME fr_main
+DO:
+  fi_packname = INPUT fi_packname .
+  DISP fi_packname WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_PAYMENT
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_PAYMENT cC-Win
+ON LEAVE OF fi_PAYMENT IN FRAME fr_main
+DO:
+  fi_PAYMENT = INPUT fi_PAYMENT .
+  DISP fi_PAYMENT WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_PERSON_IN_CHARGE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_PERSON_IN_CHARGE cC-Win
+ON LEAVE OF fi_PERSON_IN_CHARGE IN FRAME fr_main
+DO:
+  fi_PERSON_IN_CHARGE = INPUT fi_PERSON_IN_CHARGE .
+  DISP fi_PERSON_IN_CHARGE WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_POLICY_COMPULSURY_NO
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_POLICY_COMPULSURY_NO cC-Win
+ON LEAVE OF fi_POLICY_COMPULSURY_NO IN FRAME fr_main
+DO:
+  fi_POLICY_COMPULSURY_NO = INPUT fi_POLICY_COMPULSURY_NO .
+  DISP fi_POLICY_COMPULSURY_NO WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_POLICY_VOLUNTARY_NO
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_POLICY_VOLUNTARY_NO cC-Win
+ON LEAVE OF fi_POLICY_VOLUNTARY_NO IN FRAME fr_main
+DO:
+  fi_POLICY_VOLUNTARY_NO = INPUT fi_POLICY_VOLUNTARY_NO .
+  DISP fi_POLICY_VOLUNTARY_NO WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_polsystem
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_polsystem cC-Win
+ON LEAVE OF fi_polsystem IN FRAME fr_main
+DO:
+  fi_polsystem  =  Input  fi_polsystem.
+  Disp  fi_polsystem with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_post
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_post cC-Win
+ON LEAVE OF fi_post IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_POST_NO
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_POST_NO cC-Win
+ON LEAVE OF fi_POST_NO IN FRAME fr_main
+DO:
+  fi_POST_NO = INPUT fi_POST_NO .
+  DISP fi_POST_NO WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_province1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_province1 cC-Win
+ON LEAVE OF fi_province1 IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_PROVINCE_ID
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_PROVINCE_ID cC-Win
+ON LEAVE OF fi_PROVINCE_ID IN FRAME fr_main
+DO:
+  fi_PROVINCE_ID =  Input  fi_PROVINCE_ID.
+  Disp  fi_PROVINCE_ID with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_REGISTER_ID
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_REGISTER_ID cC-Win
+ON LEAVE OF fi_REGISTER_ID IN FRAME fr_main
+DO:
+  fi_REGISTER_ID =  Input  fi_REGISTER_ID.
+  Disp  fi_REGISTER_ID with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_remark1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_remark1 cC-Win
+ON LEAVE OF fi_remark1 IN FRAME fr_main
+DO:
+  fi_remark1 = INPUT fi_remark1 .
+  DISP fi_remark1 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_remark2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_remark2 cC-Win
+ON LEAVE OF fi_remark2 IN FRAME fr_main
+DO:
+  fi_remark2 = INPUT fi_remark2 .
+  DISP fi_remark2 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_road
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_road cC-Win
+ON LEAVE OF fi_road IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_roomnumber
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_roomnumber cC-Win
+ON LEAVE OF fi_roomnumber IN FRAME fr_main
+DO:
+  /*fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_sckno
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_sckno cC-Win
+ON LEAVE OF fi_sckno IN FRAME fr_main
+DO:
+  fi_sckno = INPUT fi_sckno .
+  DISP fi_sckno WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_seat
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_seat cC-Win
+ON LEAVE OF fi_seat IN FRAME fr_main
+DO:
+  fi_seat  =  Input  fi_seat.
+  Disp  fi_seat with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_soi
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_soi cC-Win
+ON LEAVE OF fi_soi IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_SRT_POLICY_NO
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_SRT_POLICY_NO cC-Win
+ON LEAVE OF fi_SRT_POLICY_NO IN FRAME fr_main
+DO:
+  fi_SRT_POLICY_NO = INPUT fi_SRT_POLICY_NO .
+  DISP fi_SRT_POLICY_NO WITH FRAM fr_main.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_STAMP
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_STAMP cC-Win
+ON LEAVE OF fi_STAMP IN FRAME fr_main
+DO:
+  fi_STAMP = INPUT fi_STAMP .
+  DISP fi_STAMP WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_SUMINSURED
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_SUMINSURED cC-Win
+ON LEAVE OF fi_SUMINSURED IN FRAME fr_main
+DO:
+    fi_SUMINSURED = INPUT fi_SUMINSURED.
+    DISP fi_SUMINSURED WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_TOTAL_PREMIUM
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_TOTAL_PREMIUM cC-Win
+ON LEAVE OF fi_TOTAL_PREMIUM IN FRAME fr_main
+DO:
+  fi_TOTAL_PREMIUM = INPUT fi_TOTAL_PREMIUM.
+  DISP fi_TOTAL_PREMIUM WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_TRACKING
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_TRACKING cC-Win
+ON LEAVE OF fi_TRACKING IN FRAME fr_main
+DO:
+  fi_TRACKING = INPUT fi_TRACKING .
+  DISP fi_TRACKING WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_tumbol
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_tumbol cC-Win
+ON LEAVE OF fi_tumbol IN FRAME fr_main
+DO:
+ /* fi_addr1 = INPUT fi_addr1 .
+  DISP fi_addr1 WITH FRAM fr_main.*/
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_TYPE_INSURANCE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_TYPE_INSURANCE cC-Win
+ON LEAVE OF fi_TYPE_INSURANCE IN FRAME fr_main
+DO:
+  fi_garage =  Input  fi_garage.
+  Disp  fi_garage with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_VAT
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_VAT cC-Win
+ON LEAVE OF fi_VAT IN FRAME fr_main
+DO:
+  fi_VAT = INPUT fi_VAT .
+  DISP fi_VAT WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_VMI_VEHICLE_CODE
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_VMI_VEHICLE_CODE cC-Win
+ON LEAVE OF fi_VMI_VEHICLE_CODE IN FRAME fr_main
+DO:
+  fi_VMI_VEHICLE_CODE  =  Input  fi_VMI_VEHICLE_CODE.
+  Disp  fi_VMI_VEHICLE_CODE with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_WEIGHT
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_WEIGHT cC-Win
+ON LEAVE OF fi_WEIGHT IN FRAME fr_main
+DO:
+  fi_WEIGHT  =  Input fi_WEIGHT.
+  Disp  fi_WEIGHT with frame  fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_WHT1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_WHT1 cC-Win
+ON LEAVE OF fi_WHT1 IN FRAME fr_main
+DO:
+  fi_WHT1 = INPUT fi_WHT1 .
+  DISP fi_WHT1 WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_year
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_year cC-Win
+ON LEAVE OF fi_year IN FRAME fr_main
+DO:
+  fi_year = INPUT fi_year .
+  DISP fi_year WITH FRAM fr_main.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&UNDEFINE SELF-NAME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CUSTOM _MAIN-BLOCK cC-Win 
+
+
+/* ***************************  Main Block  *************************** */
+/* Set CURRENT-WINDOW: this will parent dialog-boxes and frames.        */
+ASSIGN CURRENT-WINDOW                = {&WINDOW-NAME} 
+       THIS-PROCEDURE:CURRENT-WINDOW = {&WINDOW-NAME}.
+
+/* The CLOSE event can be used from inside or outside the procedure to  */
+/* terminate it.                                                        */
+ON CLOSE OF THIS-PROCEDURE 
+   RUN disable_UI.
+/* Best default for GUI applications is...                              */
+PAUSE 0 BEFORE-HIDE.
+/* Now enable the interface and wait for the exit condition.            */
+/* (NOTE: handle ERROR and END-KEY so cleanup code will always fire.    */
+MAIN-BLOCK:
+DO ON ERROR   UNDO MAIN-BLOCK, LEAVE MAIN-BLOCK
+   ON END-KEY UNDO MAIN-BLOCK, LEAVE MAIN-BLOCK:
+  RUN enable_UI.
+     /********************  T I T L E   F O R  C - W I N  ****************/
+  DEF  VAR  gv_prgid   AS   CHAR.
+  DEF  VAR  gv_prog    AS   CHAR.
+  
+  gv_prgid = "WGWQKLS1".
+  gv_prog  = "Query & Update Data  (K-LEASING) ".
+  RUN  WUT\WUTHEAD ({&WINDOW-NAME}:handle,gv_prgid,gv_prog).
+/*********************************************************************/ 
+ /*  RUN Wut\WutwiCen ({&WINDOW-NAME}:HANDLE). */ 
+  /*CURRENT-WINDOW:WINDOW-STATE = WINDOW-MAXIMIZED.*/
+  SESSION:DATA-ENTRY-RETURN = YES.
+  
+  Find  brstat.tlt  Where  Recid(brstat.tlt)  =  nv_recidtlt NO-LOCK NO-ERROR NO-WAIT .
+  If  avail  brstat.tlt  Then do:
+      RUN proc_assignfi.
+      DISP
+          fi_ldate                fi_ltime            fi_trndat           fi_appid             fi_contract                 
+          fi_comdat               fi_expdat           fi_firstname        fi_cus_type          fi_icno                 
+          fi_moobarn              fi_roomnumber       fi_homenumber       fi_moo               fi_soi                   
+          fi_road                 fi_tumbol           fi_amphur           fi_province1         fi_post                  
+          fi_benname              fi_driv1            fi_birth1           fi_drivid1           fi_licendri1      
+          fi_driv2                fi_birth2           fi_drivid2          fi_licendri2         fi_garage                     
+          fi_TYPE_INSURANCE       fi_brand            fi_model            fi_cha_no            fi_eng_no                     
+          fi_REGISTER_ID          fi_PROVINCE_ID      fi_year             fi_color             fi_VMI_VEHICLE_CODE        
+          fi_seat                 fi_cc               fi_WEIGHT           fi_SUMINSURED        fi_ACCESSORIES            
+          fi_ACCESSORIES_DETAIL   fi_NET_PREMIUM      fi_STAMP            fi_VAT               fi_TOTAL_PREMIUM      
+          fi_WHT1                 fi_CMINET_PREMIUM   fi_CMISTAMP         fi_CMIVAT            fi_CMITOTAL_PREMIUM           
+          fi_CMIWHT1              fi_remark1          fi_PERSON_IN_CHARGE fi_CREATE_PERSON     fi_APPLICATION_SIGN_DATE 
+          fi_SRT_POLICY_NO        fi_PAYMENT          fi_TRACKING         fi_POST_NO           fi_POLICY_VOLUNTARY_NO   
+          fi_POLICY_COMPULSURY_NO fi_JOB_STATUS       fi_notify01         fi_ENDORSE_TYPE      fi_ENDORSE_DETAIL        
+          fi_notifyno             fi_sckno            fi_DEALER           fi_AI_CHECK          fi_AI_CHECK_MOBILE 
+          fi_type                 fi_packname         fi_inspace          fi_policy            fi_polsystem   fi_compol  
+
+          With frame  fr_main. 
+       
+  END.
+  IF NOT THIS-PROCEDURE:PERSISTENT THEN
+    WAIT-FOR CLOSE OF THIS-PROCEDURE.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+/* **********************  Internal Procedures  *********************** */
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE disable_UI cC-Win  _DEFAULT-DISABLE
+PROCEDURE disable_UI :
+/*------------------------------------------------------------------------------
+  Purpose:     DISABLE the User Interface
+  Parameters:  <none>
+  Notes:       Here we clean-up the user-interface by deleting
+               dynamic widgets we have created and/or hide 
+               frames.  This procedure is usually called when
+               we are ready to "clean-up" after running.
+------------------------------------------------------------------------------*/
+  /* Delete the WINDOW we created */
+  IF SESSION:DISPLAY-TYPE = "GUI":U AND VALID-HANDLE(cC-Win)
+  THEN DELETE WIDGET cC-Win.
+  IF THIS-PROCEDURE:PERSISTENT THEN DELETE PROCEDURE THIS-PROCEDURE.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE enable_UI cC-Win  _DEFAULT-ENABLE
+PROCEDURE enable_UI :
+/*------------------------------------------------------------------------------
+  Purpose:     ENABLE the User Interface
+  Parameters:  <none>
+  Notes:       Here we display/view/enable the widgets in the
+               user-interface.  In addition, OPEN all queries
+               associated with each FRAME and BROWSE.
+               These statements here are based on the "Other 
+               Settings" section of the widget Property Sheets.
+------------------------------------------------------------------------------*/
+  DISPLAY fi_policy fi_type fi_polsystem fi_compol fi_nottime fi_appid 
+          fi_contract fi_CMITOTAL_PREMIUM fi_CREATE_PERSON fi_brand fi_model 
+          fi_year fi_WEIGHT fi_eng_no fi_cha_no fi_REGISTER_ID fi_PROVINCE_ID 
+          fi_comdat fi_expdat fi_SUMINSURED fi_TOTAL_PREMIUM fi_CMINET_PREMIUM 
+          fi_sckno fi_NET_PREMIUM fi_garage fi_firstname fi_icno fi_driv1 
+          fi_birth1 fi_drivid1 fi_driv2 fi_birth2 fi_drivid2 fi_benname fi_ldate 
+          fi_ltime fi_trndat fi_inspace fi_color fi_notifyno fi_moobarn 
+          fi_roomnumber fi_homenumber fi_moo fi_soi fi_road fi_tumbol fi_amphur 
+          fi_province1 fi_post fi_licendri1 fi_licendri2 fi_cc fi_seat 
+          fi_ACCESSORIES fi_STAMP fi_VAT fi_WHT1 fi_CMISTAMP fi_CMIVAT 
+          fi_CMIWHT1 fi_notifydate fi_TYPE_INSURANCE fi_VMI_VEHICLE_CODE 
+          fi_PERSON_IN_CHARGE fi_APPLICATION_SIGN_DATE fi_SRT_POLICY_NO 
+          fi_PAYMENT fi_TRACKING fi_POST_NO fi_POLICY_VOLUNTARY_NO fi_cus_type 
+          fi_POLICY_COMPULSURY_NO fi_JOB_STATUS fi_notify01 fi_ENDORSE_TYPE 
+          fi_ENDORSE_DETAIL fi_DEALER fi_AI_CHECK fi_AI_CHECK_MOBILE 
+          fi_ACCESSORIES_DETAIL fi_remark1 fi_remark2 fi_packname 
+      WITH FRAME fr_main IN WINDOW cC-Win.
+  ENABLE buchk fi_policy fi_polsystem fi_compol fi_nottime fi_appid fi_contract 
+         fi_CMITOTAL_PREMIUM fi_CREATE_PERSON fi_brand fi_model fi_year 
+         fi_WEIGHT fi_eng_no fi_cha_no fi_REGISTER_ID fi_PROVINCE_ID fi_comdat 
+         fi_expdat fi_SUMINSURED fi_TOTAL_PREMIUM fi_CMINET_PREMIUM fi_sckno 
+         fi_NET_PREMIUM fi_garage fi_firstname fi_icno fi_driv1 fi_birth1 
+         fi_drivid1 fi_driv2 fi_birth2 fi_drivid2 fi_benname bu_save bu_exit 
+         fi_inspace fi_color fi_notifyno fi_moobarn fi_roomnumber fi_homenumber 
+         fi_moo fi_soi fi_road fi_tumbol fi_amphur fi_province1 fi_post 
+         fi_licendri1 fi_licendri2 fi_cc fi_seat fi_ACCESSORIES fi_STAMP fi_VAT 
+         fi_WHT1 fi_CMISTAMP fi_CMIVAT fi_CMIWHT1 fi_notifydate 
+         fi_TYPE_INSURANCE fi_VMI_VEHICLE_CODE fi_PERSON_IN_CHARGE 
+         fi_APPLICATION_SIGN_DATE fi_SRT_POLICY_NO fi_PAYMENT fi_TRACKING 
+         fi_POST_NO fi_POLICY_VOLUNTARY_NO fi_cus_type fi_POLICY_COMPULSURY_NO 
+         fi_JOB_STATUS fi_notify01 fi_ENDORSE_TYPE fi_ENDORSE_DETAIL fi_DEALER 
+         fi_AI_CHECK fi_AI_CHECK_MOBILE fi_ACCESSORIES_DETAIL fi_remark1 
+         fi_remark2 fi_packname RECT-335 RECT-381 RECT-382 RECT-383 RECT-385 
+      WITH FRAME fr_main IN WINDOW cC-Win.
+  {&OPEN-BROWSERS-IN-QUERY-fr_main}
+  VIEW cC-Win.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE proc_assignfi cC-Win 
+PROCEDURE proc_assignfi :
+/*------------------------------------------------------------------------------
+  Purpose:     
+  Parameters:  <none>
+  Notes:       
+------------------------------------------------------------------------------*/
+
+Assign
+     
+    fi_ldate    =  brstat.tlt.trndat                    
+    fi_ltime    =  brstat.tlt.enttim                    
+    fi_trndat   =  brstat.tlt.entdat                    
+    /*fi_nottime        =       */                      
+    /*fi_notifydate     =  */                   
+                /*=     tlt.safe1       /*      TH_NAME */*/
+    fi_appid                =   tlt.lotno       /*      APPLICATION_ID  */
+    fi_contract             =   tlt.safe2       /*      ALO_CONTRACT_NUMBER     */
+    fi_comdat                =  tlt.gendat      /*      EFFECTIVE_DATE  */
+    fi_expdat                =  tlt.expodat     /*      EXPIRED_DATE    */
+    fi_firstname                 =      tlt.ins_name    /*      CUSTOMER_NAME   */
+    fi_cus_type              =  tlt.ins_brins   /*      CUS_TYPE        */
+    fi_icno                      =      tlt.ins_icno    /*      CUSTOMER_ID     */
+    fi_moobarn               =  tlt.hrg_vill    /*      MOOBARN */
+    fi_roomnumber                =      tlt.hrg_room    /*      ROOM_NUMBER     */
+    fi_homenumber                =      tlt.hrg_no      /*      HOME_NUMBER     */
+    fi_moo                       =      tlt.hrg_moo     /*      MOO     */
+    fi_soi                       =      tlt.hrg_soi     /*      SOI     */
+    fi_road                      =      tlt.hrg_street  /*      ROAD    */
+    fi_tumbol                =  tlt.hrg_subdistrict     /*      TUMBOL  */
+    fi_amphur                =  tlt.hrg_district        /*      AMPHUR  */
+    fi_province1                 =      tlt.hrg_prov            /*      PROVINCE        */
+    fi_post                      =      tlt.hrg_postcd          /*      POST_CODE       */
+    fi_benname               =  tlt.ben83               /*      BENEFICIARY     */
+    fi_driv1                 =  tlt.dri_name1           /*      DRIVERNAME1     */
+    fi_birth1                =  tlt.dri_no1             /*      D_BIRTH1        */
+    fi_drivid1               =  tlt.dri_ic1     /*      D_ID1   */
+    fi_licendri1                 =      tlt.dri_lic1    /*      D_DRIVE_ID1     */
+    fi_driv2                 =  tlt.dri_name2           /*      DRIVERNAME2     */
+    fi_birth2                =  tlt.dri_no2             /*      D_BIRTH2        */
+    fi_drivid2               =  tlt.dri_ic2     /*      D_ID2   */
+    fi_licendri2                 =      tlt.dri_lic2    /*      D_DRIVE_ID2     */
+    fi_garage                =  tlt.pack                /*      GARAGE_TYPE     */
+    fi_TYPE_INSURANCE        =  tlt.packnme             /*      TYPE_INSURANCE  */
+    fi_brand                 =  tlt.brand       /*      MAKE_DESCRIPTION1       */
+    fi_model                 =  tlt.model       /*      MODEL_DESCRIPTION       */
+    fi_cha_no                =  tlt.cha_no      /*      CHASSIS */
+    fi_eng_no                =  tlt.eng_no      /*      ENGINE  */
+    fi_REGISTER_ID               =      tlt.lince1      /*      REGISTER_ID     */
+    fi_PROVINCE_ID               =      tlt.lince2      /*      PROVINCE_ID     */
+    fi_year                      =      tlt.lince3      /*      YEAR    */
+    fi_color                 =  tlt.colorcode           /*      COLOR   */
+    fi_VMI_VEHICLE_CODE      =  tlt.vehuse      /*      VMI_VEHICLE_CODE        */
+    fi_seat                      =      inte(tlt.note1)         /*      SEAT    */
+    fi_cc                        =      inte(tlt.cc_weight)     /*      CC      */
+    fi_WEIGHT                =  inte(tlt.note2)         /*      WEIGHT  */
+    fi_SUMINSURED                =      tlt.nor_coamt   /*      SUMINSURED      */
+    fi_ACCESSORIES               =      tlt.note3       /*      ACCESSORIES     */
+    fi_ACCESSORIES_DETAIL    = tlt.note4        /*      ACCESSORIES_DETAIL      */
+ 
+    fi_NET_PREMIUM           = deci(tlt.note5)          /*      V_NET_PREMIUM   */
+    fi_STAMP                 = deci(tlt.note6)          /*      V_STAMP */
+    fi_VAT                   = deci(tlt.note7)          /*      V_VAT   */
+    fi_TOTAL_PREMIUM         = deci(tlt.note8)          /*      V_TOTAL_PREMIUM */
+    fi_WHT1                  = deci(tlt.note9)          /*      V_WHT1  */
+    fi_CMINET_PREMIUM        = deci(tlt.note10)         /*      C_NET_PREMIUM   */
+    fi_CMISTAMP              = deci(tlt.note11)         /*      C_STAMP */
+    fi_CMIVAT                = deci(tlt.note12)         /*      C_VAT   */
+    fi_CMITOTAL_PREMIUM      = deci(tlt.note13)         /*      C_TOTAL_PREMIUM */
+    fi_CMIWHT1               = deci(tlt.note14)         /*      C_WHT1  */
+     
+    fi_remark1               = tlt.note15       /*      REMARK  */
+    fi_PERSON_IN_CHARGE      = tlt.note16       /*      PERSON_IN_CHARGE        */
+    fi_CREATE_PERSON         = tlt.note17       /*      CREATE_PERSON   */
+    fi_APPLICATION_SIGN_DATE = tlt.note18       /*      APPLICATION_SIGN_DATE   */
+    fi_SRT_POLICY_NO         = tlt.note19       /*      SRT_POLICY_NO   */
+    fi_PAYMENT               = tlt.note20       /*      PAYMENT */
+    fi_TRACKING              = tlt.note21       /*      TRACKING        */
+    fi_POST_NO               = tlt.note22       /*      POST_NO */
+    fi_POLICY_VOLUNTARY_NO   = tlt.note23       /*      POLICY_VOLUNTARY_NO     */
+    fi_POLICY_COMPULSURY_NO  = tlt.note24       /*      POLICY_COMPULSURY_NO    */
+    fi_JOB_STATUS            = tlt.note25       /*      JOB_STATUS      */
+    fi_notify01              = tlt.note26       /*      เลขรับแจ้ง      */
+    fi_ENDORSE_TYPE          = tlt.note27       /*      ENDORSE_TYPE    */
+    fi_ENDORSE_DETAIL        = tlt.note28       /*      ENDORSE_DETAIL  */
+    fi_notifyno              = tlt.nor_noti_tlt         /*      เลขรับแจ้ง      */
+    fi_sckno                 = tlt.comp_sck             /*      เลข_พรบ */
+    fi_DEALER                = tlt.dealer       /*      DEALER  */
+    fi_AI_CHECK              = tlt.note29       /*      AI_CHECK        */
+    fi_AI_CHECK_MOBILE       = tlt.note30      /*      AI_CHECK_MOBILE */
+    fi_type                  = tlt.flag 
+    fi_packname              = tlt.safe3 
+    fi_inspace               = tlt.rec_addr3 
+    fi_policy                = tlt.nor_usr_tlt  
+    fi_polsystem             = tlt.nor_noti_ins 
+    fi_compol                = tlt.comp_noti_tlt
+    .
+
+        
+         
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE proc_chkpattern cC-Win 
+PROCEDURE proc_chkpattern :
+/*------------------------------------------------------------------------------
+  Purpose:     
+  Parameters:  <none>
+  Notes: create by A63-0450        
+------------------------------------------------------------------------------*/
+DO:
+   /* IF INDEX("0123456789",SUBSTR(wdetail.licence,1,1)) <> 0 THEN DO:
+          IF LENGTH(nv_licen) = 4 THEN 
+             ASSIGN nv_Pattern1 = "yxx-y-xx"
+                    nv_licen    = SUBSTR(nv_licen,1,3) + " " + SUBSTR(nv_licen,4,1).
+          ELSE IF LENGTH(nv_licen) = 5 THEN
+              ASSIGN nv_Pattern1 = "yxx-yy-xx"
+                     nv_licen    = SUBSTR(nv_licen,1,3) + " " + SUBSTR(nv_licen,4,2).
+          ELSE IF LENGTH(nv_licen) = 6 THEN DO:
+              IF INDEX("0123456789",SUBSTR(nv_licen,2,1)) <> 0 THEN
+                  ASSIGN nv_Pattern1 = "yy-yyyy-xx"
+                         nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,4).
+              ELSE IF INDEX("0123456789",SUBSTR(nv_licen,3,1)) <> 0 THEN
+                  ASSIGN nv_Pattern1 = "yx-yyyy-xx"
+                         nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,4).
+              ELSE 
+                  ASSIGN nv_Pattern1 = "yxx-yyy-xx"
+                         nv_licen    = SUBSTR(nv_licen,1,3) + " " + SUBSTR(nv_licen,4,3). 
+          END.
+          ELSE 
+              ASSIGN nv_Pattern1 = "yxx-yyyy-xx"
+                     nv_licen    = SUBSTR(nv_licen,1,3) + " " + SUBSTR(nv_licen,4,4).
+       END.
+       ELSE DO:
+           IF LENGTH(nv_licen) = 3 THEN 
+             ASSIGN nv_Pattern1 = "xx-y-xx"
+                    nv_licen    = SUBSTR(nv_licen,1,2) + " "  + SUBSTR(nv_licen,3,1) .
+           ELSE IF LENGTH(nv_licen) = 4 THEN
+              ASSIGN nv_Pattern1 = "xx-yy-xx"
+                     nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,2) .
+           ELSE IF LENGTH(nv_licen) = 6 THEN
+              IF INDEX("0123456789",SUBSTR(nv_licen,3,1)) <> 0 THEN
+              ASSIGN nv_Pattern1 = "xx-yyyy-xx" 
+                     nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,4) .
+              ELSE ASSIGN nv_Pattern1 = "xxx-yyy-xx" 
+                     nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,4) .
+           ELSE IF LENGTH(nv_licen) = 5 THEN DO:
+               IF INDEX("0123456789",SUBSTR(nv_licen,2,1)) <> 0 THEN
+                  ASSIGN nv_Pattern1 = "x-yyyy-xx"
+                         nv_licen    = SUBSTR(nv_licen,1,1) + " " + SUBSTR(nv_licen,2,4).
+               ELSE 
+                  ASSIGN nv_Pattern1 = "xx-yyy-xx" 
+                         nv_licen    = SUBSTR(nv_licen,1,2) + " " + SUBSTR(nv_licen,3,3).
+           END.
+       END.
+END.*/
+
+
+
+    IF INDEX("0123456789",SUBSTR(nv_licence2,1,1)) <> 0 THEN DO:
+          IF LENGTH(nv_licence2) = 4 THEN 
+             ASSIGN nv_Pattern = "yxx-y-xx"
+                    nv_licence2    = SUBSTR(nv_licence2,1,3) + " " + SUBSTR(nv_licence2,4,1).
+          ELSE IF LENGTH(nv_licence2) = 5 THEN
+              ASSIGN nv_Pattern = "yxx-yy-xx"
+                     nv_licence2    = SUBSTR(nv_licence2,1,3) + " " + SUBSTR(nv_licence2,4,2).
+          ELSE IF LENGTH(nv_licence2) = 6 THEN DO:
+              IF INDEX("0123456789",SUBSTR(nv_licence2,2,1)) <> 0 THEN
+                  ASSIGN nv_Pattern = "yy-yyyy-xx"
+                         nv_licence2    = SUBSTR(nv_licence2,1,2) + " " + SUBSTR(nv_licence2,3,4).
+              ELSE IF INDEX("0123456789",SUBSTR(nv_licence2,3,1)) <> 0 THEN
+                  ASSIGN nv_Pattern = "yx-yyyy-xx"
+                         nv_licence2    = SUBSTR(nv_licence2,1,2) + " " + SUBSTR(nv_licence2,3,4).
+              ELSE 
+                  ASSIGN nv_Pattern = "yxx-yyy-xx"
+                         nv_licence2    = SUBSTR(nv_licence2,1,3) + " " + SUBSTR(nv_licence2,4,3). 
+          END.
+          ELSE 
+              ASSIGN nv_Pattern = "yxx-yyyy-xx"
+                     nv_licence2    = SUBSTR(nv_licence2,1,3) + " " + SUBSTR(nv_licence2,4,4).
+       END.
+       ELSE DO:
+           IF LENGTH(nv_licence2) = 3 THEN 
+             ASSIGN nv_Pattern = "xx-y-xx"
+                    nv_licence2    = SUBSTR(nv_licence2,1,2) + " "  + SUBSTR(nv_licence2,3,1) .
+           ELSE IF LENGTH(nv_licence2) = 4 THEN
+              ASSIGN nv_Pattern = "xx-yy-xx"
+                     nv_licence2    = SUBSTR(nv_licence2,1,2) + " " + SUBSTR(nv_licence2,3,2) .
+           ELSE IF LENGTH(nv_licence2) = 6 THEN
+              ASSIGN nv_Pattern = "xx-yyyy-xx" 
+                     nv_licence2    = SUBSTR(nv_licence2,1,2) + " " + SUBSTR(nv_licence2,3,4) .
+           ELSE IF LENGTH(nv_licence2) = 5 THEN DO:
+               IF INDEX("0123456789",SUBSTR(nv_licence2,2,1)) <> 0 THEN
+                  ASSIGN nv_Pattern = "x-yyyy-xx"
+                         nv_licence2    = SUBSTR(nv_licence2,1,1) + " " + SUBSTR(nv_licence2,2,4).
+               ELSE 
+                  ASSIGN nv_Pattern = "xx-yyy-xx" 
+                         nv_licence2    = SUBSTR(nv_licence2,1,2) + " " + SUBSTR(nv_licence2,3,3).
+           END.
+           ELSE ASSIGN nv_Pattern   = "xxx-yyy-xx" 
+                       nv_licence2  = SUBSTR(nv_licence2,1,3) + " " + SUBSTR(nv_licence2,4,3).
+       END.
+
+END.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE proc_getisp cC-Win 
+PROCEDURE proc_getisp :
+/*------------------------------------------------------------------------------
+  Purpose:     
+  Parameters:  <none>
+  Notes:  Create by A62-0454 Date 16/10/2019       
+------------------------------------------------------------------------------*/
+/*DEF VAR n_list      AS INT init 0.
+DEF VAR n_count     AS INT init 0.
+DEF VAR n_agent     AS CHAR FORMAT "x(10)" INIT "".
+DEF VAR n_repair    AS CHAR FORMAT "x(10)" init "".
+DEF VAR n_dam       AS CHAR FORMAT "x(10)" init "".
+DEF VAR n_deatil    AS CHAR FORMAT "x(60)" init "".
+DEF VAR nv_damag    AS CHAR FORMAT "x(30)" init "".
+DEF VAR nv_repair   AS CHAR FORMAT "x(30)" init "".*/
+DO:
+      chitem       = chDocument:Getfirstitem("ConsiderDate").      /*วันที่ปิดเรื่อง*/
+      IF chitem <> 0 THEN nv_date = chitem:TEXT. 
+      ELSE nv_date = "".
+
+      chitem       = chDocument:Getfirstitem("docno").      /*เลขตรวจสภาพ*/
+      IF chitem <> 0 THEN nv_docno = chitem:TEXT. 
+      ELSE nv_docno = "".
+      
+      chitem       = chDocument:Getfirstitem("SurveyClose").    /* สเตตัสปิดเรื่อง */
+      IF chitem <> 0 THEN nv_survey  = chitem:TEXT. 
+      ELSE nv_survey = "".
+
+      chitem       = chDocument:Getfirstitem("SurveyResult").  /*ผลการตรวจ*/
+      IF chitem <> 0 THEN  nv_detail = chitem:TEXT. 
+      ELSE nv_detail = "".
+
+      IF nv_detail = "ติดปัญหา" THEN DO:
+          chitem       = chDocument:Getfirstitem("DamageC").    /*ข้อมูลการติดปัญหา */
+          IF chitem <> 0 THEN nv_damage    = chitem:TEXT.
+          ELSE nv_damage = "".
+      END.
+      IF nv_detail = "มีความเสียหาย"  THEN DO:
+          chitem       = chDocument:Getfirstitem("DamageList").  /* รายการความเสียหาย */
+          IF chitem <> 0 THEN nv_damlist  = chitem:TEXT.
+          ELSE nv_damlist = "".
+          chitem       = chDocument:Getfirstitem("TotalExpensive").  /* ราคาความเสียหาย */
+          IF chitem <> 0 THEN nv_totaldam  = chitem:TEXT.
+          ELSE nv_totaldam = "".
+
+          IF nv_damlist <> "" THEN DO: 
+              ASSIGN    n_list     = INT(nv_damlist) 
+                        nv_damlist = " " + nv_damlist + " รายการ " .
+          END.
+          IF nv_totaldam <> "" THEN ASSIGN nv_totaldam = "รวมความเสียหาย " + nv_totaldam + " บาท " .
+          
+          IF n_list > 0  THEN DO:
+            ASSIGN  n_count = 1 .
+            loop_damage:
+            REPEAT:
+                IF n_count <= n_list THEN DO:
+                    ASSIGN  n_dam    = "List"   + STRING(n_count) 
+                            n_repair = "Repair" + STRING(n_count) .
+
+                    chitem       = chDocument:Getfirstitem(n_dam).
+                    IF chitem <> 0 THEN  nv_damag  = chitem:TEXT. 
+                    ELSE nv_damag = "".   
+                    chitem       = chDocument:Getfirstitem(n_repair).
+                    IF chitem <> 0 THEN  nv_repair = chitem:TEXT. 
+                    ELSE nv_repair = "".
+
+                    IF nv_damag <> "" THEN  
+                        ASSIGN nv_damdetail = nv_damdetail + STRING(n_count) + "." + nv_damag + " " + nv_repair + " , " .
+                        
+                    n_count = n_count + 1.
+                END.
+                ELSE LEAVE loop_damage.
+            END.
+          END.
+      END.
+      /*-- ข้อมูลอื่น ๆ ---*/
+      chitem       = chDocument:Getfirstitem("SurveyData").
+      IF chitem <> 0 THEN  nv_surdata = chitem:TEXT. 
+      ELSE nv_surdata = "".
+      IF trim(nv_surdata) <> "" THEN  nv_surdata = "ข้อมูลอื่นๆ :"  +  nv_surdata .
+      
+     /*-- อุปกรณ์เสริม --*/  
+      chitem       = chDocument:Getfirstitem("device1").
+      IF chitem <> 0 THEN  nv_device = chitem:TEXT. 
+      ELSE nv_device = "".
+      IF nv_device <> "" THEN DO:
+          chitem       = chDocument:Getfirstitem("PricesTotal").  /* ราคารวมอุปกรณ์เสริม */
+          IF chitem <> 0 THEN  nv_acctotal = chitem:TEXT. 
+          ELSE nv_acctotal = "".
+          chitem       = chDocument:Getfirstitem("DType1").
+          IF chitem <> 0 THEN  nv_acc1 = chitem:TEXT. 
+          ELSE nv_acc1 = "".
+          chitem       = chDocument:Getfirstitem("DType2").
+          IF chitem <> 0 THEN  nv_acc2 = chitem:TEXT. 
+          ELSE nv_acc2 = "".
+          chitem       = chDocument:Getfirstitem("DType3").
+          IF chitem <> 0 THEN  nv_acc3 = chitem:TEXT. 
+          ELSE nv_acc3 = "".
+          chitem       = chDocument:Getfirstitem("DType4").
+          IF chitem <> 0 THEN  nv_acc4 = chitem:TEXT. 
+          ELSE nv_acc4 = "".
+          chitem       = chDocument:Getfirstitem("DType5").
+          IF chitem <> 0 THEN  nv_acc5 = chitem:TEXT. 
+          ELSE nv_acc5 = "".
+          chitem       = chDocument:Getfirstitem("DType6").
+          IF chitem <> 0 THEN  nv_acc6 = chitem:TEXT. 
+          ELSE nv_acc6 = "".
+          chitem       = chDocument:Getfirstitem("DType7").
+          IF chitem <> 0 THEN  nv_acc7 = chitem:TEXT. 
+          ELSE nv_acc7 = "".
+          chitem       = chDocument:Getfirstitem("DType8").
+          IF chitem <> 0 THEN  nv_acc8 = chitem:TEXT. 
+          ELSE nv_acc8 = "".
+          chitem       = chDocument:Getfirstitem("DType9").
+          IF chitem <> 0 THEN  nv_acc9 = chitem:TEXT. 
+          ELSE nv_acc9 = "".
+          chitem       = chDocument:Getfirstitem("DType10").
+          IF chitem <> 0 THEN  nv_acc10 = chitem:TEXT. 
+          ELSE nv_acc10 = "".
+          chitem       = chDocument:Getfirstitem("DType11").
+          IF chitem <> 0 THEN  nv_acc11 = chitem:TEXT. 
+          ELSE nv_acc11 = "".
+          chitem       = chDocument:Getfirstitem("DType12").
+          IF chitem <> 0 THEN  nv_acc12 = chitem:TEXT. 
+          ELSE nv_acc12 = "".
+          
+          nv_device = "" .
+          IF TRIM(nv_acc1)  <> "" THEN nv_device = nv_device + TRIM(nv_acc1).
+          IF TRIM(nv_acc2)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc2).
+          IF TRIM(nv_acc3)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc3).
+          IF TRIM(nv_acc4)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc4).
+          IF TRIM(nv_acc5)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc5).
+          IF TRIM(nv_acc6)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc6).
+          IF TRIM(nv_acc7)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc7).
+          IF TRIM(nv_acc8)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc8).
+          IF TRIM(nv_acc9)  <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc9).
+          IF TRIM(nv_acc10) <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc10).
+          IF TRIM(nv_acc11) <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc11).
+          IF TRIM(nv_acc12) <> "" THEN nv_device = nv_device + " , " + TRIM(nv_acc12) .
+          nv_device   = " อุปกรณ์เสริม :" + TRIM(nv_device).
+          nv_acctotal = " ราคารวม" + nv_acctotal + " บาท " .
+
+      END.
+
+END.
+
+
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+

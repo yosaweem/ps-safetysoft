@@ -1,0 +1,355 @@
+/* sup program UWTALCM0.p
+*********************************************************************************/
+/*CREATE BY : Jiraphon P.   A61-0023   25/01/2018
+            : เพิ่มการ Allocate งาน Motor   Transfer Policy ที่เข้าเงื่อนไขการ Allocate ให้ Auto Allocate
+/*Modify BY : Jiraphon P. A64-0380 06/06/2022
+            : Change Table Allocate Treaty Code (xmm025 > run uwetr225)         */  
+/*Modefy BY  : Jiraphon P. A64-0380 01/01/2023
+             : แก้ไข Comm. Allocate ให้เก็บทศนิยม 2 ตำแหน่ง  
+               Truncate(com,0) >> Round(com,2)*/  
+/* Modify by : Jiraphon P. A64-0380 Date 06/07/2023
+             : ปรับเงื่อนไขการดึงพารามิเตอร์  Treaty Code 
+               โดยเช็คจากวัน Com.date ของกรมธรรม์ ให้อยู่ในช่วง
+               ของ Com.date and Ter.date ใน Table xmm225 */  
+/* Modify By : Jiraphon P. F67-0001 ตัวแปร ที่ Shared temp-table ไม่ครบ ทำให้มี Error */                                                                 
+*********************************************************************************/
+DEFINE INPUT PARAMETER nv_rico1         LIKE XMM068.xol1no.    /* XOL Treaty 1 No. */
+DEFINE INPUT PARAMETER nv_rico2         LIKE XMM068.xol2no.    /* XOL Treaty 2 No. */
+DEFINE INPUT PARAMETER nv_rico3         LIKE XMM068.xol3no.    /* XOL Treaty 3 No. */                                       
+DEFINE INPUT PARAMETER nv_name1         LIKE XMM068.xol1na.    /* XOL Treaty 1 Name */
+DEFINE INPUT PARAMETER nv_name2         LIKE XMM068.xol2na.    /* XOL Treaty 2 Name */
+DEFINE INPUT PARAMETER nv_name3         LIKE XMM068.xol3na.    /* XOL Treaty 3 Name */                                 
+DEFINE INPUT PARAMETER nv_perlim1       LIKE XMM068.xollt.     /* XOL Treaty 1 Cover */
+DEFINE INPUT PARAMETER nv_perlim2       LIKE XMM068.xol2lt.    /* XOL Treaty 2 Cover */
+DEFINE INPUT PARAMETER nv_perlim3       LIKE XMM068.xol3lt.    /* XOL Treaty 3 Cover */
+        
+DEFINE OUTPUT PARAMETER  nv_si_0ret     AS  DECIMAL FORMAT ">>,>>>,>>9.99".  /*---Amparat C. A55-0332 --*/
+DEFINE OUTPUT PARAMETER  nv_si_0rq      AS  DECIMAL FORMAT ">>,>>>,>>9.99".   
+DEFINE OUTPUT PARAMETER  nv_si_othr     AS  DECIMAL FORMAT ">>,>>>,>>9.99".            
+DEFINE OUTPUT PARAMETER  nv_ripr1       LIKE uwd200.ripr   INITIAL 0  NO-UNDO.  
+DEFINE OUTPUT PARAMETER  nv_ripr2       LIKE uwd200.ripr   INITIAL 0  NO-UNDO.
+DEFINE OUTPUT PARAMETER  nv_ripr3       LIKE uwd200.ripr   INITIAL 0  NO-UNDO.
+DEFINE OUTPUT PARAMETER  nv_com1_p      AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE OUTPUT PARAMETER  nv_com2_p      AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE OUTPUT PARAMETER  nv_com3_p      AS   DECIMAL FORMAT ">>>,>>9.99-" INITIAL 0.
+DEFINE OUTPUT PARAMETER  n_csftq1       LIKE uwm200.csftq.
+DEFINE OUTPUT PARAMETER  n_name1        LIKE xmm600.abname.
+DEFINE OUTPUT PARAMETER  n_csftq2       LIKE uwm200.csftq.
+DEFINE OUTPUT PARAMETER  n_name2        LIKE xmm600.abname.
+DEFINE OUTPUT PARAMETER  n_csftq3       LIKE uwm200.csftq.
+DEFINE OUTPUT PARAMETER  n_name3        LIKE xmm600.abname.
+DEFINE VAR nv_si              AS DECI FORMAT ">>>,>>>,>>9.99".
+DEFINE SHARED  VAR  s_recid1  AS RECID NO-UNDO.
+DEFINE SHARED  VAR  s_recid4  AS RECID NO-UNDO.
+DEFINE VAR totalsum           AS DECI FORMAT ">>>,>>>,>>9.99".   /*ทุนประกัน*/
+DEFINE VAR nv_si1             AS DECI FORMAT ">>>,>>>,>>9.99".   /*ทุนประกัน*/
+DEFINE VAR nv_si2             AS DECI FORMAT ">>>,>>>,>>9.99".   /*ทุนประกัน*/
+DEFINE VAR nv_si3             AS DECI FORMAT ">>>,>>>,>>9.99".   /*ทุนประกัน*/
+DEFINE VAR nv_sico            AS DECI FORMAT ">>>,>>>,>>9.99".   /*sum insured coinsurance*/  
+DEFINE VAR n_ric1    LIKE uwd200.ric1  INITIAL 0  NO-UNDO.
+DEFINE VAR n_ric2    LIKE uwd200.ric2  INITIAL 0  NO-UNDO.
+DEFINE VAR n_ric3    LIKE uwd200.ric2  INITIAL 0  NO-UNDO.
+DEFINE VAR nv_com1   AS  DECIMAL INITIAL 0.
+DEFINE VAR nv_com2   AS  DECIMAL INITIAL 0.
+DEFINE VAR nv_com3   AS  DECIMAL INITIAL 0.
+DEFINE VAR nv_comall AS  DECIMAL INIT    0.
+DEFINE VAR nv_coma2  AS  DECIMAL INIT    0.
+DEFINE VAR nv_comck  AS  LOGICAL INIT   NO.
+DEFINE VAR n_red1yn  LIKE uwm100.reduc1.
+DEFINE VAR n_red2yn  LIKE uwm100.reduc2.
+DEFINE VAR n_red3yn  LIKE uwm100.reduc3.
+DEFINE VAR nv_date   AS DATE  INIT ?. /*Add A64-0380*/
+
+DEF SHARED TEMP-TABLE t_csftq 
+    FIELD rico  AS CHAR INIT ""
+    FIELD csftq AS CHAR INIT ""
+    FIELD nname AS CHAR INIT ""
+    FIELD rip1  AS DECI INIT 0
+    field rip1ae  as  logical init no  
+    field rip2ae  as  logical init no    
+    field rip2    as  DECI init 0
+    field com2gn  as  LOGICAL INIT NO
+    FIELD ricomm    AS DATE INIT ?      /*Add F67-0001*/
+    FIELD riexp     AS DATE INIT ?      /*Add F67-0001*/
+    FIELD treaty_yr AS CHAR INIT "".    /*Add F67-0001*/
+
+
+PROCEDURE pd_cal:
+    IF nv_comck = NO THEN DO:
+        nv_coma2 = uwm120.com1p .
+
+        IF uwm120.com2p <> 0 AND n_red1yn = YES THEN DO:
+          nv_coma2 = nv_coma2 + ((100 - uwm120.com1p)
+                                    * uwm120.com2p) / 100 .
+        END.
+        ELSE nv_coma2 = uwm120.com2p + nv_coma2.
+        
+        IF uwm120.com3p <> 0 AND n_red2yn = YES THEN DO:
+          nv_coma2 = nv_coma2 + ((100 - uwm120.com1p - uwm120.com2p) * uwm120.com3p) / 100.
+        END.
+        ELSE nv_coma2 = uwm120.com3p + nv_coma2.
+        
+        IF uwm120.com4p <> 0 AND n_red3yn = YES THEN DO:
+          nv_coma2 = nv_coma2 + ((100 - uwm120.com1p - uwm120.com2p - uwm120.com3p) * uwm120.com4p) / 100.
+        END.
+        ELSE nv_coma2 = uwm120.com4p + nv_coma2. 
+        nv_comck = YES.
+    END.
+
+END PROCEDURE.
+FIND uwm100 WHERE RECID(uwm100) = s_recid1 NO-LOCK NO-ERROR.
+FIND uwm120 WHERE RECID(uwm120) = s_recid4 NO-LOCK NO-ERROR.
+/*Add Jiraphon P. A64-0380*/
+nv_date = ?.
+nv_date = IF uwm100.poltyp = "C90" THEN uwm100.accdat ELSE uwm100.comdat.
+/*End Add Jiraphon P. A64-0380*/
+nv_comall = ((uwm100.com1_t + uwm100.com2_t + uwm100.com3_t +
+              uwm100.com4_t) * 100) / uwm100.prem_t .
+IF nv_comall < 0 THEN nv_comall = nv_comall * -1.
+IF nv_comall = ? THEN nv_comall = 0. 
+
+IF uwm100.billco = "N" THEN nv_sico = (uwm120.sigr * uwm100.co_per) / 100 .
+                       ELSE nv_sico = uwm120.sico.
+
+nv_si = uwm120.sigr - nv_sico.    
+
+
+IF nv_si > 0 THEN DO:
+
+    IF 100 - nv_perlim1 > 0 THEN DO:
+        nv_si1 = ((nv_si * nv_perlim1)  / 100).
+    END.
+    ELSE nv_si1 = nv_si.
+END.
+IF nv_si - nv_si1 > 0  THEN DO:
+    IF (100 - nv_perlim1) - nv_perlim2  > 0 THEN DO:
+        nv_si2 =  ((nv_si * nv_perlim2)  / 100).
+    END.
+    ELSE nv_si2 = nv_si - nv_si1.
+END.
+IF (nv_si - nv_si1) - nv_si2 > 0  THEN DO:
+
+    IF 100 - (nv_perlim1 - nv_perlim2 - nv_perlim3) > 0 THEN nv_si3 = ((nv_si * nv_perlim3)  / 100).
+    ELSE nv_si3 = nv_si - nv_si1 - nv_si2.
+END.
+
+IF nv_si1 <> 0  THEN nv_si_0ret  = nv_si1.
+IF nv_si2 <> 0  THEN nv_si_0rq   = nv_si2.
+IF nv_si3 <> 0  THEN nv_si_othr  = nv_si3.
+
+
+IF nv_rico1 <> "" THEN DO:
+    IF nv_rico1 = "STAT" THEN DO:
+       n_name1  = "Statutory".
+       n_csftq1 = "D".            
+    END.
+    ELSE DO:
+        FIND xmm600 USE-INDEX xmm60001 WHERE xmm600.acno = nv_rico1 NO-LOCK NO-ERROR.
+        IF AVAIL xmm600 THEN  DO:
+            n_name1  = xmm600.abname.
+            n_csftq1 = "F".
+           
+        END.
+        ELSE DO:
+            IF SUBSTRING(nv_rico1,4,2) <>
+               SUBSTRING(uwm120.policy,3,2) AND
+               (nv_rico1 <> "0RET") THEN DO:
+               MESSAGE COLOR W/MA "Reinsurer Code. Mismatch With Policy Type.". PAUSE 3 NO-MESSAGE.
+            END.
+            /*Add A64-0380 06/07/2023*/
+            FIND FIRST xmm225 USE-INDEX xmm22504 WHERE
+                 xmm225.comdat <= nv_date AND
+                 xmm225.terdat >= nv_date AND
+                 xmm225.treaty = nv_rico1
+            NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO:
+                n_name1  = xmm225.trdes.
+                n_csftq1 = "T".
+            END.
+            /*End A64-0380 06/07/2023*/
+
+            /*--Comment A64-0380 06/07/2023
+            FIND xmm225 USE-INDEX xmm22501 WHERE xmm225.treaty = nv_rico1 AND
+                 xmm225.tryear = YEAR(nv_date) NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO:
+                n_name1  = xmm225.trdes.
+                n_csftq1 = "T".
+            END. --*/
+            /*Comment Jiraphon P. A64-0380
+            FIND xmm025 USE-INDEX xmm02501 WHERE xmm025.treaty = nv_rico1 NO-LOCK NO-ERROR.
+            IF AVAILABLE xmm025 THEN DO:
+               n_name1  = xmm025.trdes.
+               n_csftq1 = "T".             
+            END.
+            --*/
+        END.
+    END.
+END.
+IF nv_rico2 <> "" THEN DO:
+    IF nv_rico2 = "STAT" THEN DO:
+       n_name2  = "Statutory".
+       n_csftq2 = "D".
+       
+    END.
+    ELSE DO:
+        FIND xmm600 USE-INDEX xmm60001 WHERE xmm600.acno = nv_rico2 NO-LOCK NO-ERROR.
+        IF AVAIL xmm600 THEN  DO:
+            n_name2  = xmm600.abname.
+            n_csftq2 = "F".
+            
+        END.
+        ELSE DO:
+            IF SUBSTRING(nv_rico2,4,2) <>
+               SUBSTRING(uwm120.policy,3,2) AND
+               (nv_rico2 <> "0RET") THEN DO:
+               MESSAGE COLOR W/MA "Reinsurer Code. Mismatch With Policy Type.". PAUSE 3 NO-MESSAGE.
+            END.
+            /*Add A64-0380 06/07/2023*/
+            FIND FIRST xmm225 USE-INDEX xmm22504 WHERE
+                 xmm225.comdat <= nv_date AND
+                 xmm225.terdat >= nv_date AND
+                 xmm225.treaty = nv_rico2
+            NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO:
+                n_name2  = xmm225.trdes.
+                n_csftq2 = "T".
+            END.
+            /*End A64-0380 06/07/2023*/
+            /*--Comment A64-0380 06/07/2023
+            FIND xmm225 USE-INDEX xmm22501 WHERE xmm225.treaty = nv_rico2 AND
+                 xmm225.tryear = YEAR(nv_date) NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO:
+                n_name2  = xmm225.trdes.
+                n_csftq2 = "T". 
+            END. --*/
+            /*comment Jiraphon P. A64-0380
+            FIND xmm025 USE-INDEX xmm02501 WHERE xmm025.treaty = nv_rico2 NO-LOCK NO-ERROR.
+            IF AVAILABLE xmm025 THEN DO:
+               n_name2  = xmm025.trdes.
+               n_csftq2 = "T". 
+            END.
+            --*/
+        END.
+    END.
+END.
+IF nv_rico3 <> "" THEN DO:
+    IF nv_rico3 = "STAT" THEN DO:
+       n_name3  = "Statutory".
+       n_csftq3 = "D".      
+    END.
+    ELSE DO:
+        FIND xmm600 USE-INDEX xmm60001 WHERE xmm600.acno = nv_rico3 NO-LOCK NO-ERROR.
+        IF AVAIL xmm600 THEN  DO:
+            n_name3  = xmm600.abname.
+            n_csftq3 = "F".           
+        END.
+        ELSE DO:
+            IF SUBSTRING(nv_rico3,4,2) <>
+               SUBSTRING(uwm120.policy,3,2) AND
+               (nv_rico3 <> "0RET") THEN DO:
+               MESSAGE COLOR W/MA "Reinsurer Code. Mismatch With Policy Type.". PAUSE 3 NO-MESSAGE.
+            END.
+            /*Add A64-0380 06/07/2023*/
+            FIND FIRST xmm225 USE-INDEX xmm22504 WHERE
+                 xmm225.comdat <= nv_date AND
+                 xmm225.terdat >= nv_date AND
+                 xmm225.treaty = nv_rico3
+            NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO:
+                n_name3  = xmm225.trdes.
+                n_csftq3 = "T". 
+            END.
+            /*End A64-0380 06/07/2023*/
+            /*--Comment A64-0380
+            FIND xmm225 USE-INDEX xmm22501 WHERE xmm225.treaty = nv_rico3 AND
+                 xmm225.tryear = YEAR(nv_date) NO-LOCK NO-ERROR.
+            IF AVAIL xmm225 THEN DO: 
+                n_name3  = xmm225.trdes.
+                n_csftq3 = "T". 
+            END. --*/
+            /*Comment Jiraphon P. A64-0380
+            FIND xmm025 USE-INDEX xmm02501 WHERE xmm025.treaty = nv_rico3 NO-LOCK NO-ERROR.
+            IF AVAILABLE xmm025 THEN DO:
+               n_name3  = xmm025.trdes.
+               n_csftq3 = "T".              
+            END.
+            --*/
+        END.
+    END.
+END.
+
+/*commission*/
+IF n_csftq1 = "T" OR n_csftq1 = "F" THEN DO:  
+    FIND FIRST t_csftq  WHERE t_csftq.rico = nv_rico1 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL t_csftq THEN DO:
+        nv_com1 = t_csftq.rip1 .
+        IF n_csftq1 = "F" OR t_csftq.rip1ae THEN DO:
+            nv_com1 = nv_comall.
+        END. 
+    END.
+END.
+ELSE DO:
+    RUN pd_cal.
+    nv_com1 = nv_coma2.
+END.
+nv_ripr1 = TRUNCATE((((uwm120.prem_r * nv_perlim1) / 100 ) * ((100 - uwm100.co_per) / 100)),0).  /** -1*/
+/*nv_com1_p = TRUNCATE((nv_ripr1 * nv_com1) / 100, 0).  Comment A64-0380*/
+nv_com1_p = ROUND((nv_ripr1 * nv_com1) / 100, 2). /*Add A64-0380*/
+
+IF n_csftq2 = "T" OR n_csftq2 = "F" THEN DO:  
+    FIND FIRST t_csftq  WHERE t_csftq.rico = nv_rico2 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL t_csftq THEN DO:
+        nv_com2 = t_csftq.rip1 .
+        IF n_csftq2 = "F" OR t_csftq.rip1ae THEN DO:
+            nv_com2 = nv_comall.
+        END. 
+    END.
+END.
+ELSE DO:
+    RUN pd_cal.
+    nv_com1 = nv_coma2.
+END.
+nv_ripr2 = TRUNCATE((((uwm120.prem_r * nv_perlim2) / 100 ) * ((100 - uwm100.co_per) / 100)),0).  /** -1*/
+/*nv_com2_p = TRUNCATE((nv_ripr2 * nv_com2) / 100, 0). Comment A64-0380*/
+nv_com2_p = ROUND((nv_ripr2 * nv_com2) / 100, 2). /*Add A64-0380*/
+
+IF n_csftq3 = "T" OR n_csftq3 = "F" THEN DO:  
+    FIND FIRST t_csftq  WHERE t_csftq.rico = nv_rico3 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL t_csftq THEN DO:
+        nv_com3 = t_csftq.rip1 .
+        IF n_csftq3 = "F" OR t_csftq.rip1ae THEN DO:
+            nv_com3 = nv_comall.
+        END. 
+    END.
+END.
+ELSE DO:
+    RUN pd_cal.
+    nv_com1 = nv_coma2.
+END.
+nv_ripr3 = TRUNCATE((((uwm120.prem_r * nv_perlim3) / 100 ) * ((100 - uwm100.co_per) / 100)),0).  /** -1*/
+/*nv_com3_p = TRUNCATE((nv_ripr3 * nv_com3) / 100, 0). Comment A64-0380*/
+nv_com3_p = ROUND((nv_ripr3 * nv_com3) / 100, 2). /*Add A64-0380*/
+
+
+totalsum = uwm120.prem_r - (TRUNCATE(nv_ripr1,0) + TRUNCATE(nv_ripr2,0) + TRUNCATE(nv_ripr3,0)). 
+
+IF nv_rico1 = "0RET" AND totalsum <> 0 THEN DO: 
+    nv_ripr1 = TRUNCATE(nv_ripr1,0) + totalsum.
+END.
+
+IF nv_rico2 = "0RET" AND totalsum <> 0 THEN DO: 
+    nv_ripr2 = TRUNCATE(nv_ripr2,0) + totalsum.
+END.
+
+IF nv_rico3 = "0RET" AND totalsum <> 0 THEN DO: 
+    nv_ripr3 = TRUNCATE(nv_ripr3,0) + totalsum. 
+END.
+
+IF nv_ripr1 > 0 AND nv_rico1 <> "0RET" THEN nv_ripr1 = truncate(nv_ripr1 * -1,0). 
+IF nv_ripr2 > 0 AND nv_rico2 <> "0RET" THEN nv_ripr2 = TRUNCATE(nv_ripr2 * -1,0).
+IF nv_ripr3 > 0 AND nv_rico3 <> "0RET" THEN nv_ripr3 = truncate(nv_ripr3 * -1,0).
+
+          
+/*
+END.
+*/

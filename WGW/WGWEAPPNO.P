@@ -1,0 +1,40 @@
+/* UWEAPPNO.P : Running Application No. For Print R/I Application Form  */ 
+/* Copyright  : Safety Insurance Public Company Limited                 */
+/*			    บริษัท ประกันคุ้มภัย จำกัด (มหาชน)   	                */   
+/* Create By  : Chutikarn.S 26/10/2010   [A53-0332]                     */ 
+                
+DEFINE INPUT        PARAMETER n_policy    AS CHAR      FORMAT "X(16)"  NO-UNDO.
+DEFINE INPUT        PARAMETER n_year      AS INTEGER   FORMAT "9999"   NO-UNDO.
+DEFINE INPUT        PARAMETER n_type      AS CHAR      FORMAT "X(3)"   NO-UNDO.
+DEFINE INPUT-OUTPUT PARAMETER n_appno     AS INTEGER                   NO-UNDO.
+DEFINE INPUT-OUTPUT PARAMETER n_rino      AS CHARACTER                 NO-UNDO.
+DEFINE INPUT-OUTPUT PARAMETER n_message   AS CHARACTER                 NO-UNDO.
+
+loop_xmm055:
+REPEAT:
+   FIND FIRST xmm055 USE-INDEX xmm05501 
+        WHERE SUBSTR(xmm055.treaty,2,2) = SUBSTR(n_policy,1,2) AND
+              xmm055.tranyr             = n_year AND
+              xmm055.dept               = n_type NO-WAIT NO-ERROR .
+   IF NOT AVAILABLE xmm055 THEN DO:
+      IF LOCKED xmm055 THEN  n_message = " Record is being used !!! ".
+      ELSE  n_message = " Not Found Parameter (Running Application No. For Year " + STRING(n_year,"9999") + ") !!! ".
+   END.
+   ELSE DO: 
+      ASSIGN 
+        n_appno      = xmm055.n_ces
+        xmm055.n_ces = xmm055.n_ces + 1 
+        n_rino       = TRIM(xmm055.treaty) +
+                       SUBSTR(xmm055.dept,2,2)  +
+                       SUBSTR(STRING(n_year + 543,"9999"),3,2) +
+                       STRING(n_appno, "999999").  /* FD01053000001 */        
+
+   END.
+
+   LEAVE loop_xmm055.
+
+END.
+
+RELEASE xmm055.
+
+RETURN.

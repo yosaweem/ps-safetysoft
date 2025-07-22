@@ -1,0 +1,328 @@
+/*----------------------------------------------------------------------------------
+ WGWRE130.P : CREATE TABLE UWM130 FOR RENEW 
+ ASSIGN NO. : A57-0228   DATE : 15/04/2014
+ MODIFY BY  : PORNTIWA P.
+ BEFORE PROGRAM : WGWRE100.P
+
+/*CONNECT : STAT ; EXPIRY -LD SIC_EXP ; GW_SAFE -LD SIC_BRAN ; GW_STAT -LD BRSTAT*/
+-----------------------------------------------------------------------------------*/
+
+DEFINE INPUT PARAMETER nv_policy AS CHAR.
+DEFINE INPUT PARAMETER nv_rencnt AS INTE.
+DEFINE INPUT PARAMETER nv_endcnt AS INTE.
+DEFINE INPUT PARAMETER nv_cr_2   AS CHAR.
+DEFINE INPUT PARAMETER nv_bchyr  AS INTE.
+DEFINE INPUT PARAMETER nv_bchno  AS CHAR.
+DEFINE INPUT PARAMETER nv_bchcnt AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nv_comment AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nv_status  AS CHAR.
+
+DEFINE VAR nv_renew   AS INTE.
+DEFINE VAR nv_policy1 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_policy2 AS CHAR FORMAT "X(30)".
+DEFINE VAR nv_fptr    AS INTE.
+DEFINE VAR nv_bptr    AS INTE.
+DEFINE BUFFER wf_uwd130 FOR sic_bran.uwd130.
+DEFINE BUFFER wf_uwd131 FOR sic_bran.uwd131.
+DEFINE BUFFER wf_uwd132 FOR sic_bran.uwd132.
+DEFINE BUFFER wf_uwd134 FOR sic_bran.uwd134.
+DEFINE BUFFER wf_uwd136 FOR sic_bran.uwd136.
+
+nv_renew = nv_rencnt + 1.
+
+FOR EACH sic_exp.uwm130 WHERE
+         sic_exp.uwm130.policy = nv_policy NO-LOCK:
+
+    FIND sic_bran.uwm130 USE-INDEX uwm13001 WHERE
+         sic_bran.uwm130.policy = nv_cr_2               AND
+         sic_bran.uwm130.rencnt = nv_renew              AND
+         sic_bran.uwm130.endcnt = 0                     AND
+         sic_bran.uwm130.riskgp = sic_exp.uwm130.riskgp AND
+         sic_bran.uwm130.riskno = sic_exp.uwm130.riskno AND
+         sic_bran.uwm130.itemno = sic_exp.uwm130.itemno NO-ERROR.
+    IF NOT AVAIL sic_bran.uwm130 THEN DO:
+        CREATE sic_bran.uwm130.
+    END.
+
+    ASSIGN
+        sic_bran.uwm130.bptr01     = 0
+        sic_bran.uwm130.bptr02     = 0
+        sic_bran.uwm130.bptr03     = 0
+        sic_bran.uwm130.bptr04     = 0
+        sic_bran.uwm130.bptr05     = 0
+        sic_bran.uwm130.dl1per     = sic_exp.uwm130.dl1per
+        sic_bran.uwm130.dl2per     = sic_exp.uwm130.dl2per
+        sic_bran.uwm130.dl3per     = sic_exp.uwm130.dl3per
+        sic_bran.uwm130.endcnt     = 0 
+        sic_bran.uwm130.fptr01     = 0
+        sic_bran.uwm130.fptr02     = 0
+        sic_bran.uwm130.fptr03     = 0
+        sic_bran.uwm130.fptr04     = 0
+        sic_bran.uwm130.fptr05     = 0
+        sic_bran.uwm130.itemno     = sic_exp.uwm130.itemno
+        sic_bran.uwm130.itmdel     = NO
+        sic_bran.uwm130.i_text     = sic_exp.uwm130.i_text
+        sic_bran.uwm130.policy     = nv_cr_2
+        sic_bran.uwm130.rencnt     = nv_renew
+        sic_bran.uwm130.riskgp     = sic_exp.uwm130.riskgp
+        sic_bran.uwm130.riskno     = sic_exp.uwm130.riskno
+        sic_bran.uwm130.styp20     = ""
+        sic_bran.uwm130.sval20     = ""
+        sic_bran.uwm130.uom1_c     = sic_exp.uwm130.uom1_c
+        sic_bran.uwm130.uom1_u     = sic_exp.uwm130.uom1_u
+        sic_bran.uwm130.uom1_v     = sic_exp.uwm130.uom1_v
+        sic_bran.uwm130.uom2_c     = sic_exp.uwm130.uom2_c
+        sic_bran.uwm130.uom2_u     = sic_exp.uwm130.uom2_u
+        sic_bran.uwm130.uom2_v     = sic_exp.uwm130.uom2_v
+        sic_bran.uwm130.uom3_c     = sic_exp.uwm130.uom3_c
+        sic_bran.uwm130.uom3_u     = sic_exp.uwm130.uom3_u
+        sic_bran.uwm130.uom3_v     = sic_exp.uwm130.uom3_v
+        sic_bran.uwm130.uom4_c     = sic_exp.uwm130.uom4_c
+        sic_bran.uwm130.uom4_u     = sic_exp.uwm130.uom4_u
+        sic_bran.uwm130.uom4_v     = sic_exp.uwm130.uom4_v
+        sic_bran.uwm130.uom5_c     = sic_exp.uwm130.uom5_c
+        sic_bran.uwm130.uom5_u     = sic_exp.uwm130.uom5_u
+        sic_bran.uwm130.uom5_v     = sic_exp.uwm130.uom5_v
+        sic_bran.uwm130.uom6_c     = sic_exp.uwm130.uom6_c
+        sic_bran.uwm130.uom6_u     = sic_exp.uwm130.uom6_u
+        sic_bran.uwm130.uom6_v     = sic_exp.uwm130.uom6_v
+        sic_bran.uwm130.uom7_c     = sic_exp.uwm130.uom7_c
+        sic_bran.uwm130.uom7_u     = sic_exp.uwm130.uom7_u
+        sic_bran.uwm130.uom7_v     = sic_exp.uwm130.uom7_v
+        sic_bran.uwm130.uom8_c     = sic_exp.uwm130.uom8_c
+        sic_bran.uwm130.uom8_v     = sic_exp.uwm130.uom8_v
+        sic_bran.uwm130.uom9_c     = sic_exp.uwm130.uom9_c
+        sic_bran.uwm130.uom9_v     = sic_exp.uwm130.uom9_v
+        sic_bran.uwm130.bchyr      = nv_bchyr 
+        sic_bran.uwm130.bchno      = nv_bchno 
+        sic_bran.uwm130.bchcnt     = nv_bchcnt.
+
+    /* Insured Item Upper Text */
+    nv_fptr = sic_exp.uwm130.fptr01.
+    nv_bptr = 0.
+    DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr01 <> ? :
+        FIND sic_bran.uwd130 WHERE RECID(sic_bran.uwd130) = nv_fptr NO-LOCK NO-ERROR.
+        IF AVAIL sic_exp.uwd130 THEN DO:
+            nv_fptr = sic_exp.uwd130.fptr.
+            CREATE sic_bran.uwd130.
+            ASSIGN
+                sic_bran.uwd130.bptr   = nv_bptr
+                sic_bran.uwd130.endcnt = 0
+                sic_bran.uwd130.fptr   = 0
+                sic_bran.uwd130.itemno = sic_exp.uwd130.itemno
+                sic_bran.uwd130.ltext  = sic_exp.uwd130.ltext
+                sic_bran.uwd130.policy = nv_cr_2
+                sic_bran.uwd130.rencnt = nv_renew
+                sic_bran.uwd130.riskgp = sic_exp.uwd130.riskgp
+                sic_bran.uwd130.riskno = sic_exp.uwd130.riskno.
+
+            IF nv_bptr <> 0 THEN DO:
+                FIND wf_uwd130 WHERE RECID(wf_uwd130) = nv_bptr.
+                wf_uwd130.fptr = RECID(sic_bran.uwd130).
+            END.
+            IF nv_bptr = 0 THEN sic_bran.uwm130.fptr01 = RECID(sic_bran.uwd130).
+            nv_bptr = RECID(sic_bran.uwd130).
+        END.
+        ELSE DO:
+            MESSAGE "not found " sic_exp.uwd130.policy sic_exp.uwd130.rencnt "/"
+                    sic_exp.uwd130.endcnt "on file uwd130".
+            LEAVE.
+        END.
+    END.
+    sic_bran.uwm130.bptr01 = nv_bptr.
+
+    /* Insured Item Lower Text */
+    nv_fptr = sic_exp.uwm130.fptr02.
+    nv_bptr = 0.
+    DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr02 <> ? :
+        FIND sic_exp.uwd131 WHERE RECID(sic_exp.uwd131) = nv_fptr NO-LOCK NO-ERROR.
+        IF AVAIL sic_exp.uwd131 THEN DO:
+            nv_fptr = sic_exp.uwd131.fptr.
+            CREATE sic_bran.uwd131.
+            ASSIGN
+                sic_bran.uwd131.bptr   = nv_bptr
+                sic_bran.uwd131.endcnt = 0
+                sic_bran.uwd131.fptr   = 0
+                sic_bran.uwd131.itemno = sic_exp.uwd131.itemno
+                sic_bran.uwd131.ltext  = sic_exp.uwd131.ltext
+                sic_bran.uwd131.policy = nv_cr_2
+                sic_bran.uwd131.rencnt = nv_renew
+                sic_bran.uwd131.riskgp = sic_exp.uwd131.riskgp
+                sic_bran.uwd131.riskno = sic_exp.uwd131.riskno.
+
+            IF nv_bptr <> 0 THEN DO:
+                FIND wf_uwd131 WHERE RECID(wf_uwd131) = nv_bptr.
+                wf_uwd131.fptr = RECID(sic_bran.uwd131).
+            END.
+            IF nv_bptr = 0 THEN sic_bran.uwm130.fptr02 = RECID(sic_bran.uwd131).
+            nv_bptr = RECID(sic_bran.uwd131).
+        END.
+        ELSE DO:
+            MESSAGE "not found " sic_exp.uwd131.policy sic_exp.uwd131.rencnt "/"
+                    sic_exp.uwd131.endcnt "on file uwd131".
+            LEAVE.
+        END.
+    END.
+    sic_bran.uwm130.bptr02 = nv_bptr.
+
+    /* Insured Item Benefit & Premium */
+    nv_fptr = sic_exp.uwm130.fptr03.
+    nv_bptr = 0.
+    DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr03 <> ? :
+        FIND sic_exp.uwd132 WHERE RECID(sic_exp.uwd132) = nv_fptr NO-LOCK NO-ERROR.
+        IF AVAIL sic_exp.uwd132 THEN DO:
+            nv_fptr = sic_exp.uwd132.fptr.
+            CREATE sic_bran.uwd132.
+            ASSIGN
+                sic_bran.uwd132.bencod   = sic_exp.uwd132.bencod
+                sic_bran.uwd132.benvar   = sic_exp.uwd132.benvar
+                sic_bran.uwd132.bptr     = nv_bptr
+                sic_bran.uwd132.dl1_c    = sic_exp.uwd132.dl1_c
+                sic_bran.uwd132.dl2_c    = sic_exp.uwd132.dl2_c
+                sic_bran.uwd132.dl3_c    = sic_exp.uwd132.dl3_c
+                sic_bran.uwd132.endcnt   = 0
+                sic_bran.uwd132.fptr     = 0
+                sic_bran.uwd132.gap_ae   = sic_exp.uwd132.gap_ae
+                sic_bran.uwd132.gap_c    = sic_exp.uwd132.gap_c
+                sic_bran.uwd132.itemno   = sic_exp.uwd132.itemno
+                sic_bran.uwd132.pd_aep   = sic_exp.uwd132.pd_aep
+                sic_bran.uwd132.policy   = nv_cr_2
+                sic_bran.uwd132.prem_c   = sic_exp.uwd132.gap_c
+                sic_bran.uwd132.rate     = sic_exp.uwd132.rate
+                sic_bran.uwd132.rateae   = sic_exp.uwd132.rateae
+                sic_bran.uwd132.rencnt   = nv_renew
+                sic_bran.uwd132.riskgp   = sic_exp.uwd132.riskgp
+                sic_bran.uwd132.riskno   = sic_exp.uwd132.riskno.
+
+            IF nv_bptr <> 0 THEN DO:
+                FIND wf_uwd132 WHERE RECID(wf_uwd132) = nv_bptr.
+                wf_uwd132.fptr = RECID(sic_bran.uwd132).
+            END.
+            IF nv_bptr = 0 THEN sic_bran.uwm130.fptr03 = RECID(sic_bran.uwd132).
+            nv_bptr = RECID(sic_bran.uwd132).
+        END.
+        ELSE DO:
+            MESSAGE "not found " sic_exp.uwd132.policy sic_exp.uwd132.rencnt "/"
+                    sic_exp.uwd132.endcnt "on file uwd132".
+            LEAVE.
+        END.
+    END.
+    sic_bran.uwm130.bptr03 = nv_bptr.
+
+    /* Insured Item Endorsement Text */
+    nv_fptr = sic_exp.uwm130.fptr04.
+    nv_bptr = 0.
+    DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr04 <> ? :
+        FIND sic_exp.uwd134 WHERE RECID(sic_exp.uwd134) = nv_fptr NO-LOCK NO-ERROR.
+        IF AVAIL sic_exp.uwd134 THEN DO:
+            nv_fptr = sic_exp.uwd134.fptr.
+            CREATE sic_bran.uwd134.
+            ASSIGN
+                sic_bran.uwd134.bptr    = nv_bptr
+                sic_bran.uwd134.endcnt  = 0
+                sic_bran.uwd134.fptr    = 0
+                sic_bran.uwd134.itemno  = sic_exp.uwd134.itemno
+                sic_bran.uwd134.ltext   = sic_exp.uwd134.ltext
+                sic_bran.uwd134.policy  = nv_cr_2
+                sic_bran.uwd134.rencnt  = nv_renew
+                sic_bran.uwd134.riskgp  = sic_exp.uwd134.riskgp
+                sic_bran.uwd134.riskno  = sic_exp.uwd134.riskno.
+
+            IF nv_bptr <> 0 THEN DO:
+                FIND wf_uwd134 WHERE RECID(wf_uwd134) = nv_bptr.
+                IF NOT AVAIL sic_exp.uwd134 THEN LEAVE.
+                wf_uwd134.fptr = RECID(sic_bran.uwd134).
+            END.
+            IF nv_bptr = 0 THEN sic_bran.uwm130.fptr04 = RECID(sic_bran.uwd134).
+            nv_bptr = RECID(sic_bran.uwd134).
+        END.
+        ELSE DO:
+            MESSAGE "not found " sic_exp.uwd134.policy sic_exp.uwd134.rencnt "/"
+                    sic_exp.uwd134.endcnt "on file uwd134".
+            LEAVE.
+        END.
+    END.
+    sic_bran.uwm130.bptr04 = nv_bptr.
+
+    /* Insured Item Endorsement Clauses */
+    nv_fptr = sic_bran.uwm130.fptr05.
+    nv_bptr = 0.
+    DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr05 <> ? :
+        FIND sic_exp.uwd136 WHERE RECID(sic_exp.uwd136) = nv_fptr NO-LOCK NO-ERROR.
+        IF AVAIL sic_exp.uwd136 THEN DO:
+            nv_fptr = sic_exp.uwd136.fptr.
+            CREATE sic_bran.uwd136.
+            ASSIGN
+                sic_bran.uwd136.bptr   = nv_bptr
+                sic_bran.uwd136.endcls = sic_exp.uwd136.endcls
+                sic_bran.uwd136.endcnt = 0
+                sic_bran.uwd136.fptr   = 0
+                sic_bran.uwd136.itemno = sic_exp.uwd136.itemno
+                sic_bran.uwd136.policy = nv_cr_2
+                sic_bran.uwd136.rencnt = nv_renew
+                sic_bran.uwd136.riskgp = sic_exp.uwd136.riskgp
+                sic_bran.uwd136.riskno = sic_exp.uwd136.riskno.
+
+            IF nv_bptr <> 0 THEN DO:
+                FIND wf_uwd136 WHERE RECID(wf_uwd136) = nv_bptr.
+                wf_uwd136.fptr = RECID(sic_bran.uwd136).
+            END.
+            IF nv_bptr = 0 THEN sic_bran.uwm130.fptr05 = RECID(sic_bran.uwd136).
+            nv_bptr = RECID(sic_bran.uwd136).
+        END.
+        ELSE DO:
+            MESSAGE "not found " sic_exp.uwd136.policy sic_exp.uwd136.rencnt "/"
+                    sic_exp.uwd136.endcnt "on file uwd136".
+            LEAVE.
+        END.
+    END.
+    sic_bran.uwm130.bptr05 = nv_bptr.
+
+END.
+
+/* ADD, Driver Name */
+FOR EACH sic_bran.uwm130 WHERE
+         sic_bran.uwm130.policy = nv_cr_2  AND
+         sic_bran.uwm130.rencnt = nv_renew AND
+         sic_bran.uwm130.endcnt = 0        NO-LOCK:
+
+    nv_policy1 = TRIM(sic_bran.uwm130.policy)         +
+                 STRING(sic_bran.uwm130.rencnt,"99")  +
+                 STRING(sic_bran.uwm130.endcnt,"999") +
+                 STRING(sic_bran.uwm130.riskno,"999") +
+                 STRING(sic_bran.uwm130.itemno,"999").
+
+    FOR EACH sic_exp.uwm130 WHERE
+             sic_exp.uwm130.policy = nv_policy  AND
+             sic_exp.uwm130.rencnt = nv_rencnt  AND
+             sic_exp.uwm130.endcnt = nv_endcnt  NO-LOCK:
+
+        nv_policy2 = TRIM(sic_exp.uwm130.policy)         +
+                     STRING(sic_exp.uwm130.rencnt,"99")  +
+                     STRING(sic_exp.uwm130.endcnt,"999") +
+                     STRING(sic_exp.uwm130.riskno,"999") +
+                     STRING(sic_exp.uwm130.itemno,"999").
+
+        FIND FIRST sic_exp.s0m009 WHERE
+                   sic_exp.s0m009.key1 = nv_policy2  AND
+                   INTEGER(sic_exp.s0m009.noseq) = 1 NO-LOCK NO-ERROR NO-WAIT.
+        IF AVAIL sic_exp.s0m009 THEN DO:
+            FOR EACH brstat.mailtxt_fil WHERE
+                     brstat.mailtxt_fil.policy = nv_policy1 :
+                DELETE brstat.mailtxt_fil.
+            END.
+
+            FOR EACH sic_exp.s0m009 WHERE
+                     sic_exp.s0m009.key1 = nv_policy2 :
+                CREATE brstat.maktab_fil.
+                ASSIGN
+                    brstat.mailtxt_fil.policy  = nv_policy1
+                    brstat.mailtxt_fil.lnumber = INTEGER(sic_exp.s0m009.noseq)
+                    brstat.mailtxt_fil.ltext   = sic_exp.s0m009.fld1
+                    brstat.mailtxt_fil.ltext2  = sic_exp.s0m009.fld2.
+            END.
+        END.           
+    END.
+END.
+/*END OF WGWRE130.P*/
+

@@ -1,0 +1,17 @@
+/************************************************************************/
+/* wgwtrno3.p   Transfer Gw to Premium   Release     				    */
+/* Copyright	: Tokio Marine Safety Insurance (Thailand) PCL.         */
+/*			  บริษัท คุ้มภัยโตเกียวมารีนประกันภัย (ประเทศไทย)			*/
+/* CREATE BY	: Chaiyong W.  ASSIGN A65-0185  DATE 22/07/2022 		*/
+/************************************************************************/
+DEF VAR nv_srel  AS CHAR INIT "".
+DEF VAR nv_oth1  AS CHAR INIT "".
+DEF VAR nv_oth2  AS CHAR INIT "".
+DEF VAR nv_oth3  AS CHAR INIT "".
+
+nv_srel = "Release Motor".
+
+RUN wgw\wgwtrnon(INPUT nv_srel,
+                 INPUT nv_oth1 ,
+                 INPUT nv_oth2 ,
+                 INPUT nv_oth3).

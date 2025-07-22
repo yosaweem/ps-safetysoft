@@ -1,0 +1,94 @@
+/********************************************************************/ 
+/* PROGRAM ID   : WGWEXSCB1.P                                       */
+/* CREATE BY    : TONTAWAN S.                                       */
+/* DESCRIPTION  : โปรแกรม Check ความคุ้มครอง ,ทุน ,เบี้ย, การซ่อม   */
+/*              : ของใบเตือนกับ Brstat (File)                       */
+/********************************************************************/                
+DEFINE INPUT  PARAMETER n_prepol      AS CHAR FORMAT "X(20)" INIT "".
+DEFINE INPUT  PARAMETER n_comdat      AS DATE INIT ?.
+DEFINE INPUT  PARAMETER n_si          AS DECI INIT 0.
+DEFINE INPUT  PARAMETER n_garage      AS CHAR FORMAT "X(5)".
+DEFINE INPUT  PARAMETER n_gapprm      AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_engno       AS CHAR FORMAT "X(30)" INIT "".
+DEFINE OUTPUT PARAMETER n_person      AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_peracc      AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_pd          AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_si411       AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_si42        AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_si43        AS DECI INIT 0.
+DEFINE OUTPUT PARAMETER n_err         AS CHAR FORMAT "X(256)".
+
+DEFINE VAR exp_comdat   AS DATE INIT ?.
+DEFINE VAR exp_expdat   AS DATE INIT ?.
+DEFINE VAR exp_si       AS DECI INIT 0.
+DEFINE VAR exp_garage   AS CHAR FORMAT "X(10)" INIT "".
+DEFINE VAR exp_gapprm   AS DECI INIT 0.
+
+FIND LAST sic_exp.uwm100  WHERE sic_exp.uwm100.policy = n_prepol NO-LOCK NO-ERROR NO-WAIT.
+IF AVAILABLE sic_exp.uwm100 THEN DO:
+    ASSIGN
+        exp_comdat = sic_exp.uwm100.comdat
+        exp_expdat = sic_exp.uwm100.expdat.
+
+    /*--- เช็ควันที่คุ้มครอง : Com Date - Exp Date ---*/
+    IF exp_expdat <> n_comdat THEN DO:
+        IF n_err <> "" THEN n_err = n_err + " ," + "!!!วันคุ้มครองไม่ตรง: " + STRING(n_comdat) + " ใบเตือน: " + STRING(exp_expdat).
+        ELSE n_err = "!!!วันคุ้มครองไม่ตรง: " + STRING(n_comdat) + " ใบเตือน: " + STRING(exp_expdat).
+    END.
+
+    FIND LAST sic_exp.uwm130 USE-INDEX uwm13001 WHERE
+              sic_exp.uwm130.policy = sic_exp.uwm100.policy AND
+              sic_exp.uwm130.rencnt = sic_exp.uwm100.rencnt AND
+              sic_exp.uwm130.endcnt = sic_exp.uwm100.endcnt NO-LOCK NO-WAIT NO-ERROR. 
+    IF AVAILABLE sic_exp.uwm130 THEN 
+        ASSIGN
+            exp_si = sic_exp.uwm130.uom6_v.
+
+    /*--- เช็คทุนประกัน : SI ---*/
+    IF DECI(exp_si) <> DECI(n_si) THEN DO:
+        IF n_err <> "" THEN n_err = n_err + " ," + "!!!ทุนประกันไม่ตรง: " + STRING(n_si) + " ใบเตือน: " + STRING(exp_si).
+        ELSE n_err = "!!!ทุนประกันไม่ตรง: " + STRING(n_si) + " ใบเตือน: " + STRING(exp_si).
+    END.
+
+    FIND LAST sic_exp.uwm301 USE-INDEX uwm30101             WHERE
+              sic_exp.uwm301.policy = sic_exp.uwm100.policy AND
+              sic_exp.uwm301.rencnt = sic_exp.uwm100.rencnt AND
+              sic_exp.uwm301.endcnt = sic_exp.uwm100.endcnt NO-LOCK NO-ERROR NO-WAIT.   
+    IF AVAIL sic_exp.uwm301 THEN DO:
+        ASSIGN
+            exp_garage = sic_exp.uwm301.garage
+            n_engno    = sic_exp.uwm301.eng_no. 
+    END.
+
+    /*--- เช็คประเภทการซ่อม : Garage ---*/
+    IF exp_garage <> n_garage THEN DO:
+        IF n_err <> "" THEN n_err = n_err + " ," + "!!!การซ่อมไม่ตรง: " + n_garage + " ใบเตือน: " + exp_garage.
+        ELSE n_err = "!!!การซ่อมไม่ตรง: " + n_garage + " ใบเตือน: " + exp_garage.
+    END.
+
+    FOR EACH sic_exp.uwd132 USE-INDEX uwd13290                WHERE
+             sic_exp.uwd132.policy   = sic_exp.uwm301.policy  AND
+             sic_exp.uwd132.rencnt   = sic_exp.uwm301.rencnt  AND
+             sic_exp.uwd132.endcnt   = sic_exp.uwm301.endcnt  AND
+             sic_exp.uwd132.riskno   = sic_exp.uwm301.riskno  AND
+             sic_exp.uwd132.itemno   = sic_exp.uwm301.itemno  NO-LOCK .
+
+             IF sic_exp.uwd132.bencod = "BI1" THEN ASSIGN n_person = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+        ELSE IF sic_exp.uwd132.bencod = "BI2" THEN ASSIGN n_peracc = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+        ELSE IF sic_exp.uwd132.bencod = "PD"  THEN ASSIGN n_pd     = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+        ELSE IF sic_exp.uwd132.bencod = "411" THEN ASSIGN n_si411  = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+        ELSE IF sic_exp.uwd132.bencod = "42"  THEN ASSIGN n_si42   = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+        ELSE IF sic_exp.uwd132.bencod = "43"  THEN ASSIGN n_si43   = DECI(SUBSTRING(sic_exp.uwd132.benvar,31,30)).
+
+        IF sic_exp.uwd132.bencod <> "comp"  THEN DO:
+            exp_gapprm = exp_gapprm + sic_exp.uwd132.prem_c.
+        END.
+    END.
+
+    /*--- เช็คเบี้ย ---*/
+    IF exp_gapprm <> DECI(n_gapprm) THEN DO:
+        IF n_err <> "" THEN n_err = n_err + " ," + "!!!เบี้ยไม่ตรง: " + STRING(n_gapprm) + " ใบเตือน: " + STRING(exp_gapprm).
+        ELSE n_err = "!!!เบี้ยไม่ตรง: " + STRING(n_gapprm) + " ใบเตือน: " + STRING(exp_gapprm).
+    END.
+END.
+

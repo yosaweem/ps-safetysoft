@@ -1,0 +1,151 @@
+/*HO: GW_SAFE -LD SIC_BRAN,GW_STAT -LD BRSTAT,EXPIRY -LD SIC_EXP, SICSYAC, SICCL, STAT*/
+/************************************************************************/
+/* wgwrw100.p   Transfer Expiry to Gw_safe ,Gw_stat                     */
+/* Dup Program  : uwr70301.p                                            */
+/* Copyright	: Safety Insurance Public Company Limited 				*/
+/*			  บริษัท ประกันคุ้มภัย จำกัด (มหาชน)					    */
+/* CREATE BY	: Chaiyong W.   ASSIGN A61-0016 21/05/2018              */
+/************************************************************************/
+DEF SHARED VAR sh_policy   LIKE sic_bran.uwm100.policy.
+DEF SHARED VAR sh_rencnt   LIKE sic_bran.uwm100.rencnt.
+DEF SHARED VAR sh_endcnt   LIKE sic_bran.uwm100.endcnt.
+DEF SHARED VAR n_policy    LIKE sic_exp.UWM100.POLICY.
+DEF SHARED VAR n_renew     LIKE sic_exp.UWM100.RENCNT.
+DEF SHARED var sh_bchyr   AS INT INIT 0.    
+DEF SHARED VAR sh_bchno   AS CHAR INIT "".  
+DEF SHARED VAR sh_bchcnt  AS INT INIT 0.    
+
+hide message no-pause.
+/*message "Update uwm301". */
+
+def            var nv_expiry     as inte init 0  no-undo.
+def            var nv_sic_bran       as inte init 0  no-undo.
+FOR EACH sic_exp.uwm301 WHERE uwm301.policy = sh_policy BREAK BY sic_exp.uwm301.riskno
+                                                             BY sic_exp.uwm301.itemno.
+  FIND FIRST sic_bran.uwm301 WHERE
+       sic_bran.uwm301.policy = n_policy AND
+       sic_bran.uwm301.rencnt = n_renew  AND
+       sic_bran.uwm301.endcnt = 0        AND
+       sic_bran.uwm301.riskgp = sic_exp.uwm301.riskgp AND
+       sic_bran.uwm301.riskno = sic_exp.uwm301.riskno AND
+       sic_bran.uwm301.itemno = sic_exp.uwm301.itemno AND
+       sic_bran.uwm301.bchyr    = sh_bchyr            AND
+       sic_bran.uwm301.bchno    = sh_bchno            AND
+       sic_bran.uwm301.bchcnt   = sh_bchcnt           
+       NO-ERROR.
+    IF NOT AVAILABLE sic_bran.uwm301 THEN DO:
+       CREATE sic_bran.uwm301.
+    END.
+    ASSIGN
+    sic_bran.uwm301.covcod       = sic_exp.uwm301.covcod
+    sic_bran.uwm301.modcod       = sic_exp.uwm301.modcod
+    sic_bran.uwm301.vehreg       = sic_exp.uwm301.vehreg
+    sic_bran.uwm301.eng_no       = sic_exp.uwm301.eng_no
+    sic_bran.uwm301.cha_no       = sic_exp.uwm301.cha_no
+    sic_bran.uwm301.yrmanu       = sic_exp.uwm301.yrmanu
+    sic_bran.uwm301.vehuse       = sic_exp.uwm301.vehuse
+    sic_bran.uwm301.ncbyrs       = sic_exp.uwm301.ncbyrs
+    sic_bran.uwm301.ncbper       = sic_exp.uwm301.ncbper
+    sic_bran.uwm301.tariff       = sic_exp.uwm301.tariff
+    sic_bran.uwm301.drinam[1]    = sic_exp.uwm301.drinam[1]
+    sic_bran.uwm301.drinam[2]    = sic_exp.uwm301.drinam[2]
+    sic_bran.uwm301.drinam[3]    = sic_exp.uwm301.drinam[3]
+    sic_bran.uwm301.drinam[4]    = sic_exp.uwm301.drinam[4]
+    sic_bran.uwm301.drinam[5]    = sic_exp.uwm301.drinam[5]
+    sic_bran.uwm301.drinam[6]    = sic_exp.uwm301.drinam[6]
+    sic_bran.uwm301.drinam[7]    = sic_exp.uwm301.drinam[7]
+    sic_bran.uwm301.drinam[8]    = sic_exp.uwm301.drinam[8]
+    /*sic_bran.uwm301.drinam[9]    = sic_exp.uwm301.drinam[9] -- A50-0165--*/
+    sic_bran.uwm301.drinam[9]    = "" /*-- A50-0165--*/
+    sic_bran.uwm301.drinam[10]   = sic_exp.uwm301.drinam[10]
+    /* ----- */
+    sic_bran.uwm301.driage[1]    = sic_exp.uwm301.driage[1]
+    sic_bran.uwm301.driage[2]    = sic_exp.uwm301.driage[2]
+    sic_bran.uwm301.driage[3]    = sic_exp.uwm301.driage[3]
+    sic_bran.uwm301.driage[4]    = sic_exp.uwm301.driage[4]
+    sic_bran.uwm301.driage[5]    = sic_exp.uwm301.driage[5]
+    sic_bran.uwm301.driage[6]    = sic_exp.uwm301.driage[6]
+    sic_bran.uwm301.driage[7]    = sic_exp.uwm301.driage[7]
+    sic_bran.uwm301.driage[8]    = sic_exp.uwm301.driage[8]
+    sic_bran.uwm301.driage[9]    = sic_exp.uwm301.driage[9]
+    sic_bran.uwm301.driage[10]   = sic_exp.uwm301.driage[10]
+    /* ----- */
+    sic_bran.uwm301.driexp[1]    = sic_exp.uwm301.driexp[1]
+    sic_bran.uwm301.driexp[2]    = sic_exp.uwm301.driexp[2]
+    sic_bran.uwm301.driexp[3]    = sic_exp.uwm301.driexp[3]
+    sic_bran.uwm301.driexp[4]    = sic_exp.uwm301.driexp[4]
+    sic_bran.uwm301.driexp[5]    = sic_exp.uwm301.driexp[5]
+    sic_bran.uwm301.driexp[6]    = sic_exp.uwm301.driexp[6]
+    sic_bran.uwm301.driexp[7]    = sic_exp.uwm301.driexp[7]
+    sic_bran.uwm301.driexp[8]    = sic_exp.uwm301.driexp[8]
+    sic_bran.uwm301.driexp[9]    = sic_exp.uwm301.driexp[9]
+    sic_bran.uwm301.driexp[10]   = sic_exp.uwm301.driexp[10]
+    /* ----- */
+    sic_bran.uwm301.dridip[1]    = sic_exp.uwm301.dridip[1]
+    sic_bran.uwm301.dridip[2]    = sic_exp.uwm301.dridip[2]
+    sic_bran.uwm301.dridip[3]    = sic_exp.uwm301.dridip[3]
+    sic_bran.uwm301.dridip[4]    = sic_exp.uwm301.dridip[4]
+    sic_bran.uwm301.dridip[5]    = sic_exp.uwm301.dridip[5]
+    sic_bran.uwm301.dridip[6]    = sic_exp.uwm301.dridip[6]
+    sic_bran.uwm301.dridip[7]    = sic_exp.uwm301.dridip[7]
+    sic_bran.uwm301.dridip[8]    = sic_exp.uwm301.dridip[8]
+    sic_bran.uwm301.dridip[9]    = sic_exp.uwm301.dridip[9]
+    sic_bran.uwm301.dridip[10]   = sic_exp.uwm301.dridip[10]
+    /* ----- */
+    sic_bran.uwm301.act_ae       = sic_exp.uwm301.act_ae
+    sic_bran.uwm301.actprm       = sic_exp.uwm301.actprm
+    sic_bran.uwm301.tp_ae        = sic_exp.uwm301.tp_ae
+    sic_bran.uwm301.tpprm        = sic_exp.uwm301.tpprm
+    sic_bran.uwm301.policy       = n_policy
+    sic_bran.uwm301.rencnt       = n_renew
+    sic_bran.uwm301.endcnt       = 0
+    sic_bran.uwm301.riskgp       = sic_exp.uwm301.riskgp
+    sic_bran.uwm301.riskno       = sic_exp.uwm301.riskno
+    sic_bran.uwm301.itemno       = sic_exp.uwm301.itemno
+    sic_bran.uwm301.bchyr        = sh_bchyr      
+    sic_bran.uwm301.bchno        = sh_bchno      
+    sic_bran.uwm301.bchcnt       = sh_bchcnt     
+        
+        
+        .
+
+  ASSIGN
+    sic_bran.uwm301.cert         = ""
+    sic_bran.uwm301.moddes       = sic_exp.uwm301.moddes
+    sic_bran.uwm301.body         = sic_exp.uwm301.body
+    sic_bran.uwm301.engine       = sic_exp.uwm301.engine
+    sic_bran.uwm301.tons         = sic_exp.uwm301.tons
+    sic_bran.uwm301.seats        = sic_exp.uwm301.seats
+    sic_bran.uwm301.vehgrp       = sic_exp.uwm301.vehgrp
+    sic_bran.uwm301.trareg       = sic_exp.uwm301.trareg
+    sic_bran.uwm301.logbok       = sic_exp.uwm301.logbok
+    sic_bran.uwm301.garage       = sic_exp.uwm301.garage
+    sic_bran.uwm301.mv41a        = sic_exp.uwm301.mv41a
+    sic_bran.uwm301.mv41b        = sic_exp.uwm301.mv41b
+    sic_bran.uwm301.mv41c        = sic_exp.uwm301.mv41c
+    sic_bran.uwm301.mv42         = sic_exp.uwm301.mv42
+    sic_bran.uwm301.atttxt       = sic_exp.uwm301.atttxt
+    sic_bran.uwm301.mv41seat     = sic_exp.uwm301.mv41seat
+    sic_bran.uwm301.comp_cod     = sic_exp.uwm301.comp_cod
+    sic_bran.uwm301.sckno        = 0
+    sic_bran.uwm301.mv_ben83     = sic_exp.uwm301.mv_ben83
+    sic_bran.uwm301.prmtxt       = sic_exp.uwm301.prmtxt.
+
+  /*-- Add A67-0029 --*/
+  ASSIGN
+      sic_bran.uwm301.car_color = sic_exp.uwm301.car_color
+      sic_bran.uwm301.maksi     = sic_exp.uwm301.maksi    
+      sic_bran.uwm301.eng_no2   = sic_exp.uwm301.eng_no2  
+      sic_bran.uwm301.battper   = sic_exp.uwm301.battper  
+      sic_bran.uwm301.battyr    = sic_exp.uwm301.battyr   
+      sic_bran.uwm301.battprice = sic_exp.uwm301.battprice
+      sic_bran.uwm301.battsi    = sic_exp.uwm301.battsi   
+      sic_bran.uwm301.battno    = sic_exp.uwm301.battno   
+      sic_bran.uwm301.battflg   = sic_exp.uwm301.battflg  
+      sic_bran.uwm301.chargno   = sic_exp.uwm301.chargno  
+      sic_bran.uwm301.chargsi   = sic_exp.uwm301.chargsi  
+      sic_bran.uwm301.chargflg  = sic_exp.uwm301.chargflg 
+      sic_bran.uwm301.car_color = sic_exp.uwm301.car_color.
+  /*-- End Add A67-0029 --*/
+
+END.

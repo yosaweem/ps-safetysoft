@@ -1,0 +1,665 @@
+/*WUSORPRM.P                                            */
+/*duplicate from usorprm.p for  run on safetysoft*/
+/* WRITE BY RUTCHANEEWAN RUNGRUENG                      */
+/* Modify By : Porntiwa T.  A59-0297  30/06/2016        */
+
+
+DEFINE  INPUT PARAMETER nv_tariff LIKE sicuw.uwm301.tariff.
+DEFINE  INPUT PARAMETER nv_class  AS CHAR    FORMAT "X(4)".
+/*DEFINE  INPUT PARAMETER nv_covcod AS CHAR    FORMAT "X".*/
+DEFINE  INPUT PARAMETER nv_covcod AS CHAR    FORMAT "X(3)".
+DEFINE  INPUT PARAMETER nv_key_b  AS INTEGER FORMAT ">,>>>,>>>,>>9".
+DEFINE  INPUT PARAMETER nv_comdat AS DATE    FORMAT "99/99/9999".
+DEFINE  INPUT PARAMETER nv_si00   AS INTEGER FORMAT ">,>>>,>>>,>>9".
+DEFINE  INPUT PARAMETER nv_bip00  AS INTEGER FORMAT ">,>>>,>>>,>>9".
+DEFINE  INPUT PARAMETER nv_bia00  AS INTEGER FORMAT ">,>>>,>>>,>>9".
+DEFINE  INPUT PARAMETER nv_pd00   AS INTEGER FORMAT ">,>>>,>>>,>>9".
+
+DEFINE   SHARED VAR   s_recid1   AS RECID   NO-UNDO.   /* uwm100 */
+DEFINE   SHARED VAR   s_recid2   AS RECID   NO-UNDO.   /* uwm120 */
+DEFINE   SHARED VAR   s_recid3   AS RECID   NO-UNDO.   /* uwm130 */
+DEFINE   SHARED VAR   s_recid4   AS RECID   NO-UNDO.   /* uwm301 */
+
+DEFINE   SHARED VAR   s_riskgp   AS INTE FORMAT ">9".
+DEFINE   SHARED VAR   s_riskno   AS INTE FORMAT "999".
+DEFINE   SHARED VAR   s_itemno   AS INTE FORMAT "999".
+DEFINE   SHARED VAR   nv_polday  AS INTE FORMAT ">>9".
+
+DEFINE   SHARED VAR   nv_compcod AS CHAR   FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_compprm AS DECI   FORMAT ">>>,>>9.99-".
+DEFINE   SHARED VAR   nv_compvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_compvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_compvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_basecod AS CHAR  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_baseprm AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_basevar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_basevar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_basevar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_usecod   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_useprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_usevar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_usevar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_usevar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_grpcod  AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_grprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_grpvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_grpvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_grpvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_yrcod   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_yrprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_yrvar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_yrvar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_yrvar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_sicod   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_siprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_sivar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_sivar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_sivar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_othcod  AS CHARACTER  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_othprm  AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_othvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_othvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_othvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_engcod  AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_engprm  AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_engvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_engvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_engvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_drivcod AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_drivprm AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_drivvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_drivvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_drivvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_bipcod  AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_bipprm  AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_bipvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_bipvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_bipvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_biacod   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_biaprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_biavar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_biavar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_biavar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_pdacod   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_pdaprm   AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_pdavar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_pdavar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_pdavar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_41cod1   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_41cod2   AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_41       AS INTEGER   FORMAT ">>>,>>>,>>9".
+DEFINE   SHARED VAR   nv_seat41   AS INTEGER   FORMAT ">>9".
+DEFINE   SHARED VAR   nv_411prm   AS DECI      FORMAT ">,>>>,>>9.99".
+DEFINE   SHARED VAR   nv_412prm   AS DECI      FORMAT ">,>>>,>>9.99".
+DEFINE   SHARED VAR   nv_411var1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_411var2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_411var   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_412var1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_412var2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_412var   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_42cod    AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_42       AS INTEGER   FORMAT ">>>,>>>,>>9".
+DEFINE   SHARED VAR   nv_42prm    AS DECI      FORMAT ">,>>>,>>9.99".
+DEFINE   SHARED VAR   nv_42var1   AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_42var2   AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_42var    AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_43cod    AS CHARACTER FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_43       AS INTEGER   FORMAT ">>>,>>>,>>9".
+DEFINE   SHARED VAR   nv_43prm    AS DECI      FORMAT ">,>>>,>>9.99".
+DEFINE   SHARED VAR   nv_43var1   AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_43var2   AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_43var    AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_dedod1_cod AS CHAR  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_dedod1_prm AS DECI  FORMAT ">,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_dedod1var1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedod1var2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedod1var  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_dedod2_cod AS CHAR  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_dedod2_prm AS DECI  FORMAT ">,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_dedod2var1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedod2var2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedod2var  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_dedpd_cod  AS CHAR  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_dedpd_prm  AS DECI  FORMAT ">,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_dedpdvar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedpdvar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dedpdvar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_flet_cod AS CHAR    FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_flet_per AS DECIMAL FORMAT ">>9".
+DEFINE   SHARED VAR   nv_flet     AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_fletvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_fletvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_fletvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_ncb_cod  AS CHAR  FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_ncbper   LIKE sicuw.uwm301.ncbper.
+DEFINE   SHARED VAR   nv_ncb      AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_ncbvar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_ncbvar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_ncbvar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_dss_cod  AS CHAR      FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_dss_per  AS DECIMAL   FORMAT ">9.99".
+DEFINE   SHARED VAR   nv_dsspc    AS INTEGER   FORMAT ">>>,>>9.99-".
+DEFINE   SHARED VAR   nv_dsspcvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dsspcvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_dsspcvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_stf_cod  AS CHAR      FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_stf_per  AS DECIMAL   FORMAT ">9.99".
+DEFINE   SHARED VAR   nv_stf_amt  AS INTEGER   FORMAT ">>>,>>9.99-".
+DEFINE   SHARED VAR   nv_stfvar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_stfvar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_stfvar   AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_cl_cod   AS CHAR      FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_cl_per   AS DECIMAL   FORMAT ">9.99".
+DEFINE   SHARED VAR   nv_lodclm   AS INTEGER   FORMAT ">>>,>>9.99-".
+DEFINE          VAR   nv_lodclm1  AS INTEGER   FORMAT ">>>,>>9.99-".
+DEFINE   SHARED VAR   nv_clmvar1  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_clmvar2  AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_clmvar   AS CHAR  FORMAT "X(60)".
+
+
+DEFINE   SHARED VAR   nv_campcod AS CHAR   FORMAT "X(4)".
+DEFINE   SHARED VAR   nv_camprem AS DECI   FORMAT ">>>9".
+DEFINE   SHARED VAR   nv_campvar1 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_campvar2 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR   nv_campvar  AS CHAR  FORMAT "X(60)".
+
+DEFINE   SHARED VAR   nv_gapprm  AS DECI  FORMAT ">>,>>>,>>9.99-"  INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_pdprm   AS DECI  FORMAT ">>,>>>,>>9.99-"  INITIAL 0  NO-UNDO.
+
+DEFINE   SHARED VAR   nv_engine LIKE sicsyac.xmm102.engine.
+DEFINE   SHARED VAR   nv_tons   LIKE sicsyac.xmm102.tons.
+DEFINE   SHARED VAR   nv_seats  LIKE sicsyac.xmm102.seats.
+
+DEFINE   SHARED VAR   nv_prvprm     AS DECI  FORMAT ">>,>>>,>>9.99-".
+
+DEFINE   SHARED VAR   nv_sclass     AS CHAR FORMAT "X(3)".
+
+DEFINE   SHARED VAR   nv_newrec     AS LOGICAL.
+DEFINE   SHARED VAR   nv_yrold      LIKE sicuw.uwm301.yrmanu.
+
+/*--------nee 06/01/00----------*/
+
+DEFINE   SHARED VAR   nv_41prm      AS INTEGER   FORMAT ">,>>>,>>9"  INITIAL 0  NO-UNDO.
+
+DEFINE   SHARED VAR   nv_ded1prm    AS INTEGER   FORMAT ">>>,>>9-"        INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_aded1prm   AS INTEGER   FORMAT ">>>,>>9-"        INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_ded2prm    AS INTEGER   FORMAT ">>>,>>9-"        INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_dedod      AS INTEGER   FORMAT ">>,>>>,>>9"      INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_addod      AS INTEGER   FORMAT ">>,>>>,>>9"      INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_dedpd      AS INTEGER   FORMAT ">>,>>>,>>9"      INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_prem1      AS DECIMAL   FORMAT ">,>>>,>>9.99-"   INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR   nv_addprm     AS INTEGER   FORMAT ">>,>>>,>>9"      INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR nv_totded       AS INTEGER   FORMAT ">>,>>>,>>9-"     INITIAL 0  NO-UNDO.
+DEFINE   SHARED VAR nv_totdis       AS INTEGER   FORMAT ">>,>>>,>>9-"     INITIAL 0  NO-UNDO.
+/*--------nee 06/01/00----------*/
+/*--- Add A59-0297 --*/
+DEFINE  SHARED VAR   nv_baseprm3 AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE  SHARED VAR   nv_basecod3 AS CHAR FORMAT "X(4)".
+DEFINE  SHARED VAR   nv_basevar3 AS CHAR FORMAT "X(60)".
+DEFINE   SHARED VAR  nv_basevar4 AS CHAR  FORMAT "X(30)".
+DEFINE   SHARED VAR  nv_basevar5 AS CHAR  FORMAT "X(30)".
+DEFINE  SHARED VAR   nv_usecod3  AS CHAR FORMAT "X(4)".
+DEFINE SHARED VAR nv_usevar4  AS CHAR FORMAT "X(30)".
+DEFINE SHARED VAR nv_usevar5  AS CHAR FORMAT "X(30)".
+DEFINE  SHARED VAR   nv_usevar3  AS CHAR FORMAT "X(60)".
+DEFINE  SHARED VAR   nv_sicod3   AS CHAR FORMAT "X(4)".
+DEFINE  SHARED VAR   nv_sivar3   AS CHAR FORMAT "X(4)".
+DEFINE  SHARED VAR   nv_sivar4   AS CHAR FORMAT "X(30)".
+DEFINE  SHARED VAR   nv_sivar5   AS CHAR FORMAT "X(40)".
+DEFINE  SHARED VAR   nv_siprm3   AS DECI FORMAT ">>,>>>,>>9.99-".
+        
+DEFINE  SHARED VAR nv_supecod  AS CHAR  FORMAT "X(4)".
+DEFINE  SHARED VAR nv_supeprm  AS DECI  FORMAT ">>,>>>,>>9.99-".
+DEFINE  SHARED VAR nv_supevar1 AS CHAR  FORMAT "X(30)".
+DEFINE  SHARED VAR nv_supevar2 AS CHAR  FORMAT "X(30)".
+DEFINE  SHARED VAR nv_supevar  AS CHAR  FORMAT "X(60)".
+DEFINE  SHARED VAR nv_prem3     AS DECIMAL   FORMAT ">,>>>,>>9.99-"   INITIAL 0  NO-UNDO.
+DEFINE  SHARED VAR nv_prvprm3   AS DECI      FORMAT ">>,>>>,>>9.99-".
+DEFINE   SHARED VAR   nv_useprm3   AS DECI      FORMAT ">>,>>>,>>9.99-".
+DEFINE  VAR nv_si01   AS INTEGER FORMAT ">,>>>,>>>,>>9".
+/*-- End Add A59-0297 --*/
+
+
+/*---------------------------*/
+
+/*{s0/s0sgbvar.i}
+{s0/s0sf0.i}*/
+
+/*NEE
+DISP nv_baseprm format ">>,>>>" label "Base"
+     nv_usecod  format  "X(4)"  label "USE"
+     nv_engcod  format  "X(4)"  label "ENG"
+     nv_yrcod   format  "X(4)"  label "YR"
+     nv_grpcod  format  "X(4)"  label "GRP"
+     nv_drivcod format  "X(4)"  label "DRI"
+     nv_sicod   format  "X(4)"  label "SI"
+     nv_biacod  format  "X(4)"  label "BIA"
+     nv_bipcod  format  "X(4)"  label "BIP"
+     nv_pdacod  format  "X(4)"  label "PD".
+NEE*/
+
+IF  nv_baseprm <> 0   AND nv_usecod  <> "" AND
+    nv_engcod  <> ""  AND nv_drivcod <> "" AND
+    nv_yrcod   <> ""  AND nv_sicod   <> "" AND
+    nv_grpcod  <> ""  AND nv_bipcod  <> "" AND
+    nv_biacod  <> ""  AND nv_pdacod   <> ""
+THEN DO:
+
+
+    nv_prvprm  = nv_baseprm.
+
+    nv_prem1 = nv_baseprm.
+
+    /*-- Add A56-0394 --*/
+    nv_prvprm3  = nv_baseprm3.
+    nv_prem3    = nv_baseprm3.
+    /*-- End A56-0394 --*/
+
+    IF nv_usecod <> "" THEN DO:
+       
+
+
+       RUN  WGS\WGSOMX02 (INPUT nv_tariff,           /* VEHICLE USE */
+                            nv_usecod,
+                            nv_class,
+                            nv_covcod,
+                            nv_key_b,
+                            nv_comdat,
+               INPUT-OUTPUT nv_prem1).
+
+        nv_useprm   = nv_prem1 - nv_prvprm.
+        nv_prvprm   = nv_prem1.
+                                      
+
+    END.
+
+    /*-- Add A59-0297 --*/
+    IF nv_usecod3 <> "" THEN DO: 
+        RUN  WGS\WGSOMX02 (INPUT nv_tariff,           /* VEHICLE USE */
+                                nv_usecod3,
+                                nv_class,
+                                nv_covcod,
+                                nv_key_b,
+                                nv_comdat,
+                   INPUT-OUTPUT nv_prem3).
+    
+            nv_useprm3   = nv_prem3 - nv_prvprm3.
+            nv_prvprm3   = nv_prem3.
+    END.
+    /*-- End Add A59-0297 --*/
+
+    /*chk
+    message color white/mar "USE" nv_useprm nv_prem1.
+    pause .
+    chk*/
+
+    IF nv_engcod <> "" THEN DO:
+          
+         IF nv_engcod = "ENGC" THEN DO:                  /* ENGINE SIZE */
+            RUN WGS\WGSOMX02 (INPUT nv_tariff,
+                              nv_engcod,
+                              nv_class,
+                              nv_covcod,
+                              nv_engine,
+                              nv_comdat,
+                 INPUT-OUTPUT nv_prem1).
+
+
+            nv_engprm   = nv_prem1 - nv_prvprm.
+            nv_prvprm   = nv_prem1.
+            
+
+
+         END.
+         IF nv_engcod = "ENGS" THEN DO:
+            RUN WGS\WGSOMX02 (INPUT nv_tariff,
+                              nv_engcod,
+                              nv_class,
+                              nv_covcod,
+                              nv_seats,
+                              nv_comdat,
+                 INPUT-OUTPUT nv_prem1).
+
+
+            nv_engprm   = nv_prem1 - nv_prvprm.
+            nv_prvprm   = nv_prem1.
+
+         END.
+         IF nv_engcod = "ENGT" THEN DO:
+            RUN WGS\WGSOMX02 (INPUT nv_tariff,
+                              nv_engcod,
+                              nv_class,
+                              nv_covcod,
+                              nv_tons,
+                              nv_comdat,
+                 INPUT-OUTPUT nv_prem1).
+
+
+            nv_engprm   = nv_prem1 - nv_prvprm.
+            nv_prvprm   = nv_prem1.
+
+         END.
+
+    END.  /* engcod <> " " */
+
+    /*chk
+    message color y/green "ENG" nv_engprm nv_prem1.
+    pause .
+    chk*/
+
+
+    IF nv_drivcod <> "" THEN DO:
+
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* DRIVER'S AGE */
+                            nv_drivcod,
+                            nv_class,
+                            nv_covcod,
+                            nv_key_b,
+                            nv_comdat,
+               INPUT-OUTPUT nv_prem1).
+
+             nv_drivprm  = nv_prem1 - nv_prvprm.
+             nv_prvprm   = nv_prem1.
+             
+
+
+    END.
+    /*chk
+    message color blue/white "DRIV" nv_drivprm nv_prem1.
+    pause .
+    chk*/
+
+    IF nv_yrcod <> "" THEN DO:
+                        
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* VEHICLE'S AGE */
+                            nv_yrcod ,
+                            nv_class,
+                            nv_covcod,
+                            nv_key_b,
+                            nv_comdat,
+               INPUT-OUTPUT nv_prem1).
+
+        nv_yrprm  = nv_prem1 - nv_prvprm.
+        nv_prvprm = nv_prem1.
+        
+
+    END.
+
+    /*chk
+    message color green/mar "YR" nv_yrprm nv_prem1.
+    pause .
+    chk*/
+
+    IF nv_sicod  <> "" THEN DO:
+       IF nv_covcod = "1" THEN DO:
+          RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* SUM INSURE  */
+                               nv_sicod,
+                               nv_class,
+                               nv_covcod,
+                               nv_si00,
+                               nv_comdat,
+                  INPUT-OUTPUT nv_prem1).
+       END.
+       IF nv_covcod = "2" THEN DO:
+          RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* SUM INSURE  */
+                               nv_sicod,
+                               nv_class,
+                               nv_covcod,
+                               nv_si00,
+                               nv_comdat,
+                  INPUT-OUTPUT nv_prem1).
+        END.
+
+        /*-- Add A59-0297 --*/
+        IF nv_covcod = "2.1" OR nv_covcod = "2.2" OR
+           nv_covcod = "3.1" OR nv_covcod = "3.2" THEN DO:
+            IF nv_covcod >= "2.1" AND nv_covcod <= "2.9" THEN DO:
+                nv_si01 = nv_si00.
+    
+                RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* SUM INSURE  */
+                                   nv_sicod,
+                                   nv_class,
+                                   nv_covcod,
+                                   nv_si01,
+                                   nv_comdat,
+                      INPUT-OUTPUT nv_prem1).
+            END.
+            ELSE DO:
+                RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* SUM INSURE  */
+                                   nv_sicod,
+                                   nv_class,
+                                   nv_covcod,
+                                   nv_si00,
+                                   nv_comdat,
+                      INPUT-OUTPUT nv_prem1).
+            END.
+        END.
+        /*-- End Add A59-0297 --*/
+
+        nv_siprm   = nv_prem1 - nv_prvprm.
+        nv_prvprm  = nv_prem1.
+                              
+    END.
+
+    /*-- Add A59-0297 --*/
+    IF nv_sicod3  <> "" THEN DO:
+        RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* SUM INSURE  */
+                               nv_sicod3,
+                               nv_class,
+                               nv_covcod,
+                               nv_si00,
+                               nv_comdat,
+                  INPUT-OUTPUT nv_prem3).
+
+        nv_siprm3   = nv_prem3 - nv_prvprm3.
+        nv_prvprm3  = nv_prem3.
+    END.
+    /*-- End Add A59-0297 --*/
+
+    /*chk
+    message color black/yellow "SI" nv_siprm nv_prem1.
+    pause .
+    chk*/
+
+    IF nv_othcod <> "" THEN DO:
+        
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* ACCESSORY */
+                            nv_othcod,
+                            nv_class,
+                            nv_covcod,
+                            nv_key_b,
+                            nv_comdat,
+              INPUT-OUTPUT nv_prem1).
+
+         nv_othprm = nv_prem1 - nv_prvprm.
+         nv_prvprm = nv_prem1.
+        
+    END.
+
+    /*chk
+    message color white/green "OTH" nv_othprm nv_prem1.
+    pause .
+    chk*/
+    IF nv_grpcod <> "" THEN DO:
+        
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* VEHICLE GRP */
+                            nv_grpcod,
+                            nv_class,
+                            nv_covcod,
+                            nv_key_b,
+                            nv_comdat,
+              INPUT-OUTPUT nv_prem1).
+
+         nv_grprm  = nv_prem1 - nv_prvprm.
+         nv_prvprm = nv_prem1.
+         
+
+    END.
+    /*chk
+    message color mar/white "GP" nv_grprm nv_prem1.
+    pause .
+    chk*/
+
+    IF nv_bipcod <> "" THEN DO:
+            
+        RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* TPBI/PER    */
+                            nv_bipcod,
+                            nv_class,
+                            nv_covcod,
+                            nv_bip00,
+                            nv_comdat,
+               INPUT-OUTPUT nv_prem1).
+
+           nv_bipprm  = nv_prem1 - nv_prvprm.
+           nv_prvprm  = nv_prem1.
+             
+    END.
+
+    /*chk
+    message color black/mar "BIP" nv_bipprm nv_prem1.
+    pause .
+    chk*/
+    IF nv_biacod <> "" THEN DO:
+               
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* TPBI/ACC    */
+                            nv_biacod,
+                            nv_class,
+                            nv_covcod,
+                            nv_bia00,
+                            nv_comdat,
+               INPUT-OUTPUT nv_prem1).
+
+        nv_biaprm   = nv_prem1 - nv_prvprm.
+        nv_prvprm   = nv_prem1.
+         
+    END.
+
+    /*chk
+    message color green/black "BIA" nv_biaprm nv_prem1.
+    pause .
+    chk*/
+    IF nv_pdacod <> "" THEN DO:
+                
+       RUN WGS\WGSOMX02 (INPUT nv_tariff,           /* TPPD         */
+                           nv_pdacod,
+                           nv_class,
+                           nv_covcod,
+                           nv_pd00,
+                           nv_comdat,
+              INPUT-OUTPUT nv_prem1).
+
+         nv_pdaprm   = nv_prem1 - nv_prvprm.
+         nv_prvprm   = nv_prem1.
+                
+    END.
+    /*chk
+    message color yel/light-red "PDA" nv_pdaprm nv_prem1.
+    pause .
+    chk*/
+
+    nv_prem1   = ROUND(nv_prem1,0).
+    nv_prem3   = ROUND(nv_prem3,0). /*A59-0297*/ 
+   
+
+END.
+
+/*chk
+message color red\blue "pd 411 412" nv_pdaprm nv_411prm nv_412prm.
+chk*/
+
+nv_dedod1_prm =  nv_ded1prm.
+nv_dedod2_prm =  nv_aded1prm.
+nv_dedpd_prm  =  nv_ded2prm.
+nv_41prm   = nv_411prm + nv_412prm.
+nv_addprm  = nv_41prm + nv_42prm + nv_43prm.
+/*nv_totded  = nv_ded1prm + nv_aded1prm + nv_ded2prm.*//*Comment A59-0297*/
+
+/*-- A57-0031 --*/
+IF nv_covcod = "2.1" OR nv_covcod = "3.1" THEN nv_totded = 0.  
+ELSE nv_totded  = nv_ded1prm + nv_aded1prm + nv_ded2prm.
+/*-- A57-0031 --*/
+
+nv_flet    = - TRUNCATE(( nv_prem1 + nv_addprm + nv_totded) * nv_flet_per / 100,0).
+
+nv_ncb     = - TRUNCATE(( nv_prem1 + nv_addprm + nv_totded + nv_flet) * nv_ncbper / 100,0).
+
+nv_dsspc   = - TRUNCATE(( nv_prem1 + nv_addprm  + nv_totded + nv_flet + nv_ncb) * nv_dss_per / 100,0).
+
+/*nv_stf_amt = - TRUNCATE(( nv_prem1 + nv_addprm + nv_totded + nv_flet + nv_ncb + nv_dsspc) * nv_stf_per / 100,0).*//*Comment A59-0297*/
+nv_stf_amt = - TRUNCATE(( nv_prem1 + nv_addprm + nv_totded + nv_flet + nv_ncb + nv_dsspc + nv_prem3) * nv_stf_per / 100,0). /*Add S59-0297*/
+
+nv_lodclm  =   ( nv_prem1 + nv_addprm + nv_totded + nv_flet + nv_ncb + nv_dsspc + nv_stf_amt) * nv_cl_per / 100.
+
+nv_lodclm1 =   TRUNCATE(( nv_prem1 + nv_addprm + nv_totded  + nv_flet + nv_ncb + nv_dsspc + nv_stf_amt) * nv_cl_per / 100,0).
+
+IF nv_lodclm - nv_lodclm1 > 0 THEN nv_lodclm = nv_lodclm1 + 1.
+
+nv_totdis  =   nv_totded + nv_flet + nv_ncb + nv_dsspc + nv_stf_amt.
+
+/*---keng 30/03/2001----
+nv_gapprm  =   ROUND((nv_prem1 + nv_addprm + nv_totdis + nv_lodclm),0)
+                    + nv_compprm.
+nv_pdprm   =   ROUND((nv_gapprm * nv_polday) / 365,0).
+-----*/
+
+/*nv_gapprm  =   ROUND((nv_prem1 + nv_addprm + nv_totdis + nv_lodclm),0)
+                    + nv_compprm + nv_camprem.*//*Comment A59-0297*/
+
+/*-- Add A59-0297 --*/
+nv_gapprm  =   ROUND((nv_prem1 + nv_prem3 + nv_addprm + nv_totdis + nv_lodclm),0)  
+                    + nv_compprm + nv_camprem.
+/*-- End Add A59-0297 --*/
+
+nv_pdprm   =   ROUND((nv_gapprm * nv_polday) / 365,0).
+
+
+/*nee
+nv_flet    = - ROUND(( nv_prem1 + nv_addprm + nv_totded) * nv_flet_per / 100,0).
+
+nv_ncb     = - ROUND(( nv_prem1 + nv_addprm + nv_totded + nv_flet) * nv_ncbper / 100,0).
+
+nv_dsspc   = - ROUND(( nv_prem1 + nv_addprm  + nv_totded + nv_flet + nv_ncb) * nv_dss_per / 100,0).
+
+nv_stf_amt = - ROUND(( nv_prem1 + nv_addprm + nv_totded + nv_flet + nv_ncb + nv_dsspc) * nv_stf_per / 100,0).
+
+nv_lodclm  =   ROUND(( nv_prem1 + nv_addprm + nv_totded + nv_flet + nv_ncb + nv_dsspc + nv_stf_amt) * nv_cl_per / 100,0).
+
+nv_totdis  =   nv_totded + nv_flet + nv_ncb + nv_dsspc + nv_stf_amt.
+
+nv_gapprm  =   ROUND((nv_prem1 + nv_addprm + nv_totdis + nv_lodclm),0)
+                    + nv_compprm.
+nv_pdprm   =   ROUND((nv_gapprm * nv_polday) / 365,0).
+nee*/
+
+/*chk
+message color yellow/red "code :" nv_usecod nv_engcod nv_drivcod nv_yrcod  nv_sicod
+                                  nv_grpcod nv_bipcod nv_biacod nv_pdacod.
+pause 10.
+message color yellow/red "prem :" nv_useprm nv_engprm nv_drivprm nv_yrprm  nv_siprm
+                                  nv_grprm nv_bipprm nv_biaprm nv_pdaprm nv_prem1.
+pause 10.
+chk*/
+

@@ -1,0 +1,200 @@
+/************************************************************************/
+/* WUWPCAT1.P   Program Calculate Attach.Coverate                       */
+/* Copyright Tokio Marine Safety Insurance (Thailand) PCL.              */
+/* Create By : Porntiwa T. 20/06/2023 A65-0149                          */
+/************************************************************************/
+
+DEFINE INPUT        PARAMETER nv_tariff         AS CHAR FORMAT "X" INIT "X".
+DEFINE INPUT        PARAMETER nv_effdat         AS DATE FORMAT "99/99/9999".
+DEFINE INPUT        PARAMETER nv_polday         AS INTE.
+DEFINE INPUT        PARAMETER nv_flgsht         AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nv_ratatt         AS DECI FORMAT ">>>9.9999-".
+DEFINE INPUT-OUTPUT PARAMETER nv_siatt          AS INTE FORMAT ">>>,>>>,>>9-".      /* Attach.SI */
+DEFINE INPUT-OUTPUT PARAMETER nv_netatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_fltatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_dscatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atfltgap       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atfltprm       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atncbgap       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atncbprm       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atdscgap       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_atdscprm       AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_disatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_gapatt         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_siattcod       AS CHARACTER FORMAT "X(4)".
+DEFINE INPUT-OUTPUT PARAMETER nv_attprm         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_attgap         AS DECI FORMAT ">>,>>>,>>9.99-".
+DEFINE INPUT-OUTPUT PARAMETER nv_siattvar       AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_siattvar1      AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_siattvar2      AS CHAR      FORMAT "X(60)".   
+DEFINE INPUT-OUTPUT PARAMETER nv_fltattcod      AS CHARACTER FORMAT "X(4)".
+DEFINE INPUT-OUTPUT PARAMETER nv_fltattvar      AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_fltattvar1     AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_fltattvar2     AS CHAR      FORMAT "X(60)".  
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbattcod      AS CHARACTER FORMAT "X(4)".
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbattvar      AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbattvar1     AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_ncbattvar2     AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_dscattcod      AS CHARACTER FORMAT "X(4)".
+DEFINE INPUT-OUTPUT PARAMETER nv_dscattvar      AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_dscattvar1     AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_dscattvar2     AS CHAR      FORMAT "X(60)".     
+DEFINE INPUT-OUTPUT PARAMETER nv_packatt        AS CHARACTER FORMAT "X(4)".
+DEFINE INPUT-OUTPUT PARAMETER nv_package        AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_packprm        AS DECI FORMAT ">>,>>>,>>9-".
+DEFINE INPUT-OUTPUT PARAMETER nv_packattvar     AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_packattvar1    AS CHAR      FORMAT "X(60)".
+DEFINE INPUT-OUTPUT PARAMETER nv_packattvar2    AS CHAR      FORMAT "X(60)".
+DEFINE       OUTPUT PARAMETER nv_message        AS CHAR .
+
+DEFINE VAR nv_short AS DECI.
+
+IF nv_packatt <> "" THEN DO:
+    FIND LAST sicsyac.xmm106 USE-INDEX xmm10601 WHERE
+              sicsyac.xmm106.tariff  = nv_tariff  AND
+              sicsyac.xmm106.bencod  = nv_packatt AND
+              sicsyac.xmm106.CLASS   = "AR01"     AND
+              sicsyac.xmm106.key_a   = 0          AND
+              sicsyac.xmm106.key_b   = 0          AND
+              sicsyac.xmm106.effdat <= nv_effdat 
+    NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL sicsyac.xmm106 THEN DO:
+        nv_packatt = sicsyac.xmm106.bencod.
+        IF nv_ratatt = 0 THEN nv_ratatt = sicsyac.xmm106.appinc.
+                         ELSE nv_ratatt = nv_ratatt.
+    END.
+    ELSE DO:
+        nv_packatt = "DG00".
+    END.
+END.
+ELSE DO:
+    FIND LAST  sicsyac.xmm106 USE-INDEX xmm10601 WHERE
+               sicsyac.xmm106.tariff  = nv_tariff  AND
+               SUBSTR(sicsyac.xmm106.bencod,1,2)  = "DG" AND
+               sicsyac.xmm106.CLASS   = "AR01"     AND
+               sicsyac.xmm106.key_a   = 0          AND
+               sicsyac.xmm106.key_b   = 0          AND
+               sicsyac.xmm106.effdat <= nv_effdat  AND 
+               sicsyac.xmm106.appinc  = nv_ratatt
+    NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL sicsyac.xmm106 THEN DO:
+        nv_packatt = sicsyac.xmm106.bencod.
+        IF nv_ratatt = 0 THEN nv_ratatt = sicsyac.xmm106.appinc.
+                         ELSE nv_ratatt = nv_ratatt.
+    END.
+    ELSE nv_packatt = "".
+END.
+
+IF nv_packatt = "" THEN nv_packatt = "DG00".  /*Fix Pack Overwrite Rate% & Premium*/
+
+IF nv_packatt <> "" THEN DO:
+    IF nv_siatt <> 0 THEN DO:
+        RUN PDCaculate.
+        nv_netatt = nv_disatt.
+    END.
+    
+    IF nv_fltatt <> 0 THEN DO:
+        RUN PDCaculate.
+        nv_netatt = nv_disatt.
+    END.
+    
+    IF nv_ncbatt <> 0 THEN DO:
+        RUN PDCaculate.
+        nv_netatt = nv_disatt.
+    END.
+    
+    IF nv_dscatt <> 0 THEN DO:
+        RUN PDCaculate.
+        nv_netatt = nv_disatt.
+    END.
+END.
+
+PROCEDURE PDCaculate:
+    IF nv_flgsht = "Y" THEN DO:
+        FIND FIRST sicsyac.xmm127 WHERE
+                   sicsyac.xmm127.poltyp  = "V70"      AND
+                   sicsyac.xmm127.daymth  = YES        AND
+                   sicsyac.xmm127.nodays >= nv_polday  NO-LOCK NO-ERROR.
+        IF AVAIL sicsyac.xmm127 THEN DO:
+            nv_short = sicsyac.xmm127.short.
+        END.
+    END.
+
+    IF nv_flgsht = "Y" THEN DO:
+        IF nv_ratatt <> 0 AND nv_attgap = 0 THEN DO:
+            nv_attgap = TRUNCATE((nv_siatt * nv_ratatt) / 100,0).
+            nv_attprm = TRUNCATE(((nv_siatt * nv_ratatt) / 100) * (nv_short / 100),0).
+        END.
+        ELSE DO:
+            nv_attgap = TRUNCATE(nv_attgap,0).
+            nv_attprm = TRUNCATE(nv_attgap * (nv_short / 100),0).
+        END.
+    END.
+    ELSE DO:
+        IF nv_ratatt <> 0 AND nv_attgap = 0 THEN DO:
+            nv_attgap = TRUNCATE((nv_siatt * nv_ratatt) / 100,0).
+            nv_attprm = TRUNCATE((nv_attgap * nv_polday) / 365,0).
+        END.
+        ELSE DO:
+            nv_attgap = TRUNCATE(nv_attgap,0).
+            nv_attprm = TRUNCATE((nv_attgap * nv_polday) / 365,0).
+        END.
+    END.
+
+    nv_disatt = nv_attprm.
+    nv_gapatt = nv_attgap.
+
+    /*-- Fleet --*/
+    IF nv_fltatt <> 0 AND nv_atfltgap = 0 THEN DO:
+        nv_atfltgap = TRUNCATE((nv_gapatt * nv_fltatt) / 100,0) * (-1).
+        nv_atfltprm = TRUNCATE((nv_disatt * nv_fltatt) / 100,0) * (-1).
+    END.
+    ELSE DO:
+        nv_atfltgap = TRUNCATE(nv_atfltgap,0) * (-1). 
+
+        IF nv_flgsht = "Y" THEN 
+            nv_atfltprm = TRUNCATE(nv_atfltgap * (nv_short / 100),0).
+        ELSE nv_atfltprm = TRUNCATE((nv_atfltgap * nv_polday) / 365,0).
+    END.
+    
+    nv_gapatt = nv_gapatt + nv_atfltgap.
+    nv_disatt = nv_disatt + nv_atfltprm.
+
+    /*-- NCB --*/
+    IF nv_ncbatt <> 0 AND nv_atncbgap = 0 THEN DO:
+        nv_atncbgap = TRUNCATE((nv_gapatt * nv_ncbatt) / 100,0) * (-1).
+        nv_atncbprm = TRUNCATE((nv_disatt * nv_ncbatt) / 100,0) * (-1).
+    END.
+    ELSE DO:
+        nv_atncbgap = TRUNCATE(nv_atncbgap,0) * (-1).
+
+        IF nv_flgsht = "Y" THEN 
+            nv_atncbprm = TRUNCATE(nv_atncbgap * (nv_short / 100),0).
+        ELSE nv_atncbprm = TRUNCATE((nv_atncbgap * nv_polday) / 365,0).
+    END.
+    
+    nv_gapatt = nv_gapatt + nv_atncbgap.
+    /*nv_atncbprm = TRUNCATE((nv_disatt * nv_ncbatt) / 100,0) * (-1).*/
+    nv_disatt = nv_disatt + nv_atncbprm.
+
+    /*-- DSPC --*/
+    IF nv_dscatt <> 0 AND nv_atdscgap = 0 THEN DO:
+        nv_atdscgap = TRUNCATE((nv_gapatt * nv_dscatt) / 100,0) * (-1).
+        nv_atdscprm = TRUNCATE((nv_disatt * nv_dscatt) / 100,0) * (-1).
+    END.
+    ELSE DO:
+        nv_atdscgap = TRUNCATE(nv_atdscgap,0) * (-1).
+
+        IF nv_flgsht = "Y" THEN 
+            nv_atdscprm = TRUNCATE(nv_atdscgap * (nv_short / 100),0).
+        ELSE nv_atdscprm = TRUNCATE((nv_atdscgap * nv_polday) / 365,0).
+    END.
+    
+    nv_gapatt = nv_gapatt + nv_atdscgap.
+    /*nv_atdscprm = TRUNCATE((nv_disatt * nv_dscatt) / 100,0) * (-1).*/
+    nv_disatt = nv_disatt + nv_atdscprm.
+    
+    nv_disatt = nv_attprm + nv_atfltprm + nv_atncbprm + nv_atdscprm.
+
+END.

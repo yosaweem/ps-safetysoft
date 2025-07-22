@@ -1,0 +1,274 @@
+/* WGWTEXAY.P  -- Load Text file aycl to gw                          */
+/* Copyright   # Safety Insurance Public Company Limited                   */
+/*               บริษัท ประกันคุ้มภัย จำกัด (มหาชน)                        */
+/* Create By   : Porntiwa P.  A58-0384  27/10/2015                         
+               : ปรับการดึงค่า Expiry                                      */
+/* ------------------------------------------------------------------------*/
+
+DEFINE INPUT-OUTPUT PARAMETER nr_prepol    AS CHAR FORMAT "X(12)".
+DEFINE INPUT-OUTPUT PARAMETER nr_policy    AS CHAR FORMAT "X(16)".
+DEFINE INPUT-OUTPUT PARAMETER nr_rencnt    AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_endcnt    AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchyr     AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchno     AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchcnt    AS INTE.
+
+DEFINE VAR nv_fptr       AS RECID.
+DEFINE VAR nv_bptr       AS RECID.
+DEFINE VAR nv_fptr1      AS RECID.
+DEFINE VAR nv_bptr2      AS RECID.
+DEFINE BUFFER wf_uwd100 FOR sic_bran.uwd100.
+DEFINE BUFFER wf_uwd102 FOR sic_bran.uwd102.
+DEFINE BUFFER wf_uwd103 FOR sic_bran.uwd103.
+DEFINE BUFFER wf_uwd104 FOR sic_bran.uwd104.
+DEFINE BUFFER wf_uwd105 FOR sic_bran.uwd105.
+DEFINE BUFFER wf_uwd106 FOR sic_bran.uwd106.
+
+DEFINE VAR n_day        AS INT  FORMAT "99".
+DEFINE VAR n_month      AS INT  FORMAT "99".
+DEFINE VAR n_year       AS INT  FORMAT "9999".
+
+/*-- Update UWM100 --*/
+FIND LAST sic_exp.uwm100 USE-INDEX uwm10001 WHERE
+          sic_exp.uwm100.policy = nr_prepol NO-LOCK NO-ERROR.
+IF AVAIL sic_exp.uwm100 THEN DO:
+
+    FIND LAST  sic_bran.uwm100 USE-INDEX uwm10001 WHERE 
+         sic_bran.uwm100.policy = nr_policy AND
+         sic_bran.uwm100.rencnt = nr_rencnt AND
+         sic_bran.uwm100.endcnt = nr_endcnt AND
+         sic_bran.uwm100.bchyr  = nr_bchyr  AND
+         sic_bran.uwm100.bchno  = nr_bchno  AND
+         sic_bran.uwm100.bchcnt = nr_bchcnt NO-ERROR.
+    IF AVAIL sic_bran.uwm100 THEN DO:
+
+        ASSIGN
+            sic_bran.uwm100.poltyp = sic_exp.uwm100.poltyp
+            sic_bran.uwm100.insref = sic_exp.uwm100.insref
+            sic_bran.uwm100.ntitle = sic_exp.uwm100.ntitle
+            sic_bran.uwm100.name1  = sic_exp.uwm100.name1 
+            sic_bran.uwm100.name2  = sic_exp.uwm100.name2 
+            sic_bran.uwm100.name3  = sic_exp.uwm100.name3 
+            sic_bran.uwm100.addr1  = sic_exp.uwm100.addr1 
+            sic_bran.uwm100.addr2  = sic_exp.uwm100.addr2 
+            sic_bran.uwm100.addr3  = sic_exp.uwm100.addr3 
+            sic_bran.uwm100.addr4  = sic_exp.uwm100.addr4 
+            sic_bran.uwm100.branch = sic_exp.uwm100.branch 
+            sic_bran.uwm100.fstdat = sic_exp.uwm100.fstdat
+            sic_bran.uwm100.comdat = sic_exp.uwm100.expdat.
+
+        ASSIGN
+            n_day   = DAY(sic_bran.uwm100.comdat)
+            n_month = MONTH(sic_bran.uwm100.comdat)
+            n_year  = YEAR(sic_bran.uwm100.comdat) + 1.
+ 
+        sic_bran.uwm100.expdat = DATE(n_month,n_day,n_year).
+
+        IF sic_bran.uwm100.acno1 = "A0M0062" THEN DO:
+            IF n_month = 04 OR n_month = 06 OR
+               n_month = 09 OR n_month = 11 THEN sic_bran.uwm100.expdat = DATE(n_month,n_day,n_year) + 30.
+            ELSE sic_bran.uwm100.expdat = DATE(n_month,n_day,n_year) + 31.
+        END.
+
+        ASSIGN
+            sic_bran.uwm100.prem_t = sic_exp.uwm100.prem_t
+            sic_bran.uwm100.sigr_p = sic_exp.uwm100.sigr_p
+            sic_bran.uwm100.gap_p  = sic_exp.uwm100.gap_p.
+
+        /*-- Add,Update uwd100 --*/
+        nv_fptr = sic_exp.uwm100.fptr01.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr01 <> ?:
+            FIND sic_exp.uwd100 WHERE RECID(sic_exp.uwd100) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd100 THEN DO:
+                nv_fptr = sic_exp.uwd100.fptr.
+                CREATE sic_bran.uwd100.
+                ASSIGN
+                    sic_bran.uwd100.bptr = nv_bptr
+                    sic_bran.uwd100.endcnt = sic_exp.uwd100.endcnt
+                    sic_bran.uwd100.fptr   = 0
+                    sic_bran.uwd100.ltext  = sic_exp.uwd100.ltext
+                    sic_bran.uwd100.policy = sic_exp.uwd100.policy
+                    sic_bran.uwd100.rencnt = sic_exp.uwd100.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd100 WHERE RECID(wf_uwd100) = nv_bptr.
+                    wf_uwd100.fptr = RECID(sic_bran.uwd100).
+                END.
+                IF nv_bptr = 0 THEN sic_bran.uwm100.fptr01 = RECID(sic_bran.uwd100).
+                nv_bptr = RECID(sic_bran.uwd100).
+            END.
+        END.
+        sic_bran.uwm100.bptr01 = nv_bptr.
+
+        /*-- Add, Update uwd102 --*/
+        nv_fptr = sic_exp.uwm100.fptr02.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr02 <> ? :
+            FIND sic_exp.uwd102 WHERE RECID(sic_exp.uwd102) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd102 THEN DO:
+                nv_fptr = sic_exp.uwd102.fptr.
+                CREATE sic_bran.uwd102.
+                ASSIGN
+                    sic_bran.uwd102.bptr     = nv_bptr
+                    sic_bran.uwd102.endcnt   = sic_exp.uwd102.endcnt
+                    sic_bran.uwd102.fptr     = 0
+                    sic_bran.uwd102.ltext    = sic_exp.uwd102.ltext
+                    sic_bran.uwd102.policy   = sic_exp.uwd102.policy
+                    sic_bran.uwd102.rencnt   = sic_exp.uwd102.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd102 WHERE RECID(wf_uwd102) = nv_bptr.
+                    wf_uwd102.fptr = RECID(sic_bran.uwd102).
+                END.
+                IF nv_bptr = 0 THEN sic_bran.uwm100.fptr02 = RECID(sic_bran.uwd102).
+                nv_bptr = RECID(sic_bran.uwd102).
+            END.
+        END.
+        sic_bran.uwm100.bptr02 = nv_bptr.
+
+        /* Add, Update uwd105 */
+        nv_fptr = sic_exp.uwm100.fptr03.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr03 <> ? :
+            FIND sic_exp.uwd105 WHERE RECID(sic_exp.uwd105) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd105 THEN DO:
+                nv_fptr = sic_exp.uwd105.fptr.
+
+                CREATE sic_bran.uwd105.
+                ASSIGN
+                    sic_bran.uwd105.bptr   = nv_bptr
+                    sic_bran.uwd105.clause = sic_exp.uwd105.clause
+                    sic_bran.uwd105.endcnt = sic_exp.uwd105.endcnt
+                    sic_bran.uwd105.fptr   = 0
+                    sic_bran.uwd105.policy = sic_exp.uwd105.policy
+                    sic_bran.uwd105.rencnt = sic_exp.uwd105.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd105 WHERE RECID(wf_uwd105) = nv_bptr.
+                    wf_uwd105.fptr = RECID(sic_bran.uwd105).
+                END.
+                IF nv_bptr = 0 THEN sic_bran.uwm100.fptr03 = RECID(sic_bran.uwd105).
+                nv_bptr = RECID(sic_bran.uwd105).
+            END.
+        END.
+        sic_bran.uwm100.bptr03 = nv_bptr.
+
+        /* Add, Update uwd103 */
+        nv_fptr = sic_exp.uwm100.fptr04.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr04 <> ? :
+            FIND sic_exp.uwd103 WHERE RECID(sic_exp.uwd103) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd103 THEN DO:
+                nv_fptr = sic_exp.uwd103.fptr.
+
+                CREATE sic_bran.uwd103.
+                ASSIGN
+                    sic_bran.uwd103.bptr   = nv_bptr
+                    sic_bran.uwd103.endcnt = sic_exp.uwd103.endcnt
+                    sic_bran.uwd103.fptr   = 0
+                    sic_bran.uwd103.ltext  = sic_exp.uwd103.ltext
+                    sic_bran.uwd103.policy = sic_exp.uwd103.policy
+                    sic_bran.uwd103.rencnt = sic_exp.uwd103.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd103 WHERE RECID(wf_uwd103) = nv_bptr.
+                    wf_uwd103.fptr = RECID(sic_bran.uwd103).
+                END.
+                IF nv_bptr = 0 THEN  sic_bran.uwm100.fptr04 = RECID(sic_bran.uwd103). 
+                nv_bptr = RECID(sic_bran.uwd103).
+            END.
+        END.
+        sic_bran.uwm100.bptr04 = nv_bptr.
+
+        /* Add, Update uwd104 */
+        nv_fptr = sic_exp.uwm100.fptr05.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr05 <> ? :
+            FIND sic_exp.uwd104 WHERE RECID(sic_exp.uwd104) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAILABLE sic_exp.uwd104 THEN DO:
+                nv_fptr = sic_exp.uwd104.fptr.
+                CREATE sic_bran.uwd104.
+                ASSIGN
+                    sic_bran.uwd104.bptr   = nv_bptr
+                    sic_bran.uwd104.endcnt = sic_exp.uwd104.endcnt
+                    sic_bran.uwd104.fptr   = 0
+                    sic_bran.uwd104.ltext  = sic_exp.uwd104.ltext
+                    sic_bran.uwd104.policy = sic_exp.uwd104.policy
+                    sic_bran.uwd104.rencnt = sic_exp.uwd104.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd104 WHERE RECID(wf_uwd104) = nv_fptr.
+                    wf_uwd104.fptr = RECID(sic_bran.uwd104).
+                END.
+                IF nv_bptr = 0 THEN sic_bran.uwm100.fptr05 = RECID(sic_bran.uwd104).
+                nv_bptr = RECID(sic_bran.uwd104).
+            END.
+        END.
+        sic_bran.uwm100.bptr05 = nv_bptr.
+
+        /* Add, Update uwd106 */
+        nv_fptr = sic_exp.uwm100.fptr06.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm100.fptr06 <> ? :
+            FIND sic_exp.uwd106 WHERE RECID(sic_exp.uwd106) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd106 THEN DO:
+                nv_fptr = sic_exp.uwd106.fptr.
+                CREATE sic_bran.uwd106.
+                ASSIGN
+                     sic_bran.uwd106.bptr      =   sic_exp.uwd106.bptr
+                     sic_bran.uwd106.endcls    =   sic_exp.uwd106.endcls
+                     sic_bran.uwd106.endcnt    =   sic_exp.uwd106.endcnt
+                     sic_bran.uwd106.fptr      =   sic_exp.uwd106.fptr
+                     sic_bran.uwd106.policy    =   sic_exp.uwd106.policy
+                     sic_bran.uwd106.rencnt    =   sic_exp.uwd106.rencnt.
+
+                IF nv_bptr <> 0 THEN DO:
+                  FIND wf_uwd106 WHERE RECID(wf_uwd106) = nv_bptr.
+                       wf_uwd106.fptr = RECID(sic_bran.uwd106).
+                END.
+                IF nv_bptr = 0 THEN  sic_bran.uwm100.fptr06 = RECID(sic_bran.uwd106).
+                nv_bptr = RECID(sic_bran.uwd106).
+            END.
+        END.
+        sic_bran.uwm100.bptr06 = nv_bptr.
+
+        RUN WGW\WGWTEAY1(INPUT-OUTPUT nr_prepol,
+                         INPUT-OUTPUT nr_policy,
+                         INPUT-OUTPUT nr_rencnt,
+                         INPUT-OUTPUT nr_endcnt,
+                         INPUT-OUTPUT nr_bchyr, 
+                         INPUT-OUTPUT nr_bchno, 
+                         INPUT-OUTPUT nr_bchcnt).
+
+        RUN WGW\WGWTEAY2(INPUT-OUTPUT nr_prepol,
+                         INPUT-OUTPUT nr_policy,
+                         INPUT-OUTPUT nr_rencnt,
+                         INPUT-OUTPUT nr_endcnt,
+                         INPUT-OUTPUT nr_bchyr, 
+                         INPUT-OUTPUT nr_bchno, 
+                         INPUT-OUTPUT nr_bchcnt).
+
+        RUN WGW\WGWTEAY3(INPUT-OUTPUT nr_prepol,
+                         INPUT-OUTPUT nr_policy,
+                         INPUT-OUTPUT nr_rencnt,
+                         INPUT-OUTPUT nr_endcnt,
+                         INPUT-OUTPUT nr_bchyr, 
+                         INPUT-OUTPUT nr_bchno, 
+                         INPUT-OUTPUT nr_bchcnt).
+    END.
+END.
+ELSE DO:
+    MESSAGE "NOT AVAIL SIC_EXP" VIEW-AS ALERT-BOX.
+END.
+
+/*END OF WGWTEXAY.P*/
+
+
+                                  
+                                 
+                                   
+                                 
+                             
+                                 
+                             

@@ -1,0 +1,77 @@
+/*************************************************************************
+ WGWGwCtx.P  : Save data to IntQpolicy for Q transfer to Citrix
+               SUB PROGRAM wgwTrnGW.W and Print
+ Copyright   : Safety Insurance Public Company Limited
+               บริษัท ประกันคุ้มภัย จำกัด (มหาชน)
+ ------------------------------------------------------------------------                 
+ Database    : BUInt
+ ------------------------------------------------------------------------                
+ CREATE BY   : Sarinya C  ASSIGN: A63-0319    DATE: 24/12/2020
+
+*************************************************************************/
+/*
+          RUN WRS\WRSGwCtx (INPUT IntPol7072.PolicyNumber
+                           ,INPUT IntPol7072.Rencnt
+                           ,INPUT IntPol7072.Endcnt
+                           ,INPUT 0                       /*RECID(uwm100)*/
+                            /**/
+                           ,INPUT IntPol7072.CompanyCode  /*833*/
+                           ,INPUT IntPol7072.PolicyTypeCd /*2.2*/
+                           ,INPUT IntPol7072.RateGroup).  /*110*/
+*/
+
+DEFINE INPUT PARAMETER nv_policy       AS CHARACTER NO-UNDO.
+DEFINE INPUT PARAMETER nv_rencnt       AS INTEGER   NO-UNDO.
+DEFINE INPUT PARAMETER nv_endcnt       AS INTEGER   NO-UNDO.
+DEFINE INPUT PARAMETER nv_recuwm100    AS RECID     NO-UNDO.
+/**/
+DEFINE INPUT PARAMETER nv_CompanyCode  AS CHARACTER NO-UNDO.
+DEFINE INPUT PARAMETER nv_PolicyTypeCd AS CHARACTER NO-UNDO.
+DEFINE INPUT PARAMETER nv_RateGroup    AS CHARACTER NO-UNDO.
+/**/
+DEFINE VARIABLE nv_NewInputKey            AS CHARACTER NO-UNDO.
+/* ------------------------------------------------------------ */
+  /*
+  DEFINE INPUT PARAMETER nv_QRecIntPol7072  AS RECID NO-UNDO.  
+  FIND IntPol7072 WHERE RECID(IntPol7072) = nv_QRecIntPol7072
+  NO-LOCK NO-ERROR NO-WAIT.
+  */
+  /*
+  RUN wctx\WCtxGW100 (INPUT IntPol7072.PolicyNumber
+                     ,INPUT IntPol7072.CompanyCode).
+  */
+
+  nv_NewInputKey = STRING(YEAR(TODAY),"9999")
+                 + STRING(MONTH(TODAY),"99")
+                 + STRING(DAY(TODAY),"99")
+                 + SUBSTR(STRING(DATETIME(TODAY, MTIME)),12,12).
+  nv_NewInputKey = REPLACE(nv_NewInputKey,":","").
+  nv_NewInputKey = REPLACE(nv_NewInputKey,".","").
+  /**/
+
+ 
+  CREATE IntQPolicy.
+  ASSIGN
+  IntQPolicy.SystemRq        = "SGwCtx"
+  IntQPolicy.keyRequestIndRq = nv_NewInputKey
+  IntQPolicy.ProcessStatus   = ""
+  IntQPolicy.Policy          = nv_policy      /*IntPol7072.PolicyNumber*/
+  IntQPolicy.Rencnt          = nv_rencnt      /*IntPol7072.Rencnt*/
+  IntQPolicy.Endcnt          = nv_endcnt      /*IntPol7072.Endcnt*/
+  IntQPolicy.PolicyRec       = nv_recuwm100   /*nv_recuwm100 = 0 มาจากงาน ป1,2
+                                                nv_recuwm100 = RECID(uwm100) มาจากโปรแกรม Print*/
+  IntQPolicy.ProcessByUser   = nv_CompanyCode /*IntPol7072.CompanyCode*/
+  IntQPolicy.ProcessDate     = TODAY
+  IntQPolicy.ProcessTime     = STRING(TIME,"HH:MM:SS") + "." + SUBSTR(STRING(MTIME,">>>>99999999"),10,3) 
+  IntQPolicy.PolicyTypeCd    = nv_PolicyTypeCd /*IntPol7072.PolicyTypeCd*/
+  IntQPolicy.RateGroup       = nv_RateGroup    /*IntPol7072.RateGroup*/
+  IntQPolicy.Releas          = YES .                  /*uwm100.releas*/
+   
+  OUTPUT TO SavetoIntQPolicy.TXT APPEND.
+  PUT TODAY FORMAT "99/99/9999" 
+  " " STRING(TIME,"HH:MM:SS") "." SUBSTR(STRING(MTIME,">>>>99999999"),10,3)
+  " " nv_policy       FORMAT "x(16)"       /*IntPol7072.PolicyNumber*/
+      nv_CompanyCode  FORMAT "x(10)" SKIP. /*IntPol7072.CompanyCode*/ 
+  OUTPUT CLOSE.
+/* ------------------------------------------------------------ */
+/* END OF FILE : WRSGwCtx.P */

@@ -1,0 +1,3646 @@
+&ANALYZE-SUSPEND _VERSION-NUMBER UIB_v9r12 GUI
+&ANALYZE-RESUME
+&Scoped-define WINDOW-NAME C-WIN
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CUSTOM _DEFINITIONS C-WIN 
+/*------------------------------------------------------------------------
+
+  File: 
+
+  Description: 
+
+  Input Parameters:
+      <none>
+
+  Output Parameters:
+      <none>
+
+  Author: 
+
+  Created: 
+          
+------------------------------------------------------------------------*/
+/*          This .W file was created with the Progress UIB.             */
+/*----------------------------------------------------------------------*/
+
+/* Create an unnamed pool to store all the widgets created 
+     by this procedure. This is a good default which assures
+     that this procedure's triggers and internal procedures 
+     will execute in this procedure's storage, and that proper
+     cleanup will occur on deletion of the procedure. */
+
+CREATE WIDGET-POOL.
+
+/* ***************************  Definitions  ************************** */
+
+/* Parameters Definitions ---                                           */
+
+/* Local Variable Definitions ---                                       */
+
+
+DEF VAR nv_recid  AS RECID INIT 0.
+DEF VAR nv_recid2 AS RECID INIT 0.
+DEF VAR nv_recid3 AS RECID INIT 0.
+DEF VAR nv_dup_t  AS INTEGER INIT 0.
+DEF VAR nv_pstp   AS DECIMAL INIT 0.
+
+DEF WORKFILE w_attext 
+    FIELD num   AS INT  INIT 0
+    FIELD text1 AS CHAR INIT ""
+    FIELD text2 AS CHAR INIT "".
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-PREPROCESSOR-BLOCK 
+
+/* ********************  Preprocessor Definitions  ******************** */
+
+&Scoped-define PROCEDURE-TYPE Window
+&Scoped-define DB-AWARE no
+
+/* Name of designated FRAME-NAME and/or first browse and/or first query */
+&Scoped-define FRAME-NAME fMain
+&Scoped-define BROWSE-NAME br_attext
+
+/* Internal Tables (found by Frame, Query & Browse Queries)             */
+&Scoped-define INTERNAL-TABLES w_attext
+
+/* Definitions for BROWSE br_attext                                     */
+&Scoped-define FIELDS-IN-QUERY-br_attext w_attext.num w_attext.text1 w_attext.text2   
+&Scoped-define ENABLED-FIELDS-IN-QUERY-br_attext   
+&Scoped-define SELF-NAME br_attext
+&Scoped-define QUERY-STRING-br_attext FOR EACH w_attext NO-LOCK BY w_attext.num
+&Scoped-define OPEN-QUERY-br_attext OPEN QUERY br_attext FOR EACH w_attext NO-LOCK BY w_attext.num.
+&Scoped-define TABLES-IN-QUERY-br_attext w_attext
+&Scoped-define FIRST-TABLE-IN-QUERY-br_attext w_attext
+
+
+/* Definitions for FRAME fr_attext                                      */
+&Scoped-define OPEN-BROWSERS-IN-QUERY-fr_attext ~
+    ~{&OPEN-QUERY-br_attext}
+
+/* Custom List Definitions                                              */
+/* List-1,List-2,List-3,List-4,List-5,List-6                            */
+
+/* _UIB-PREPROCESSOR-BLOCK-END */
+&ANALYZE-RESUME
+
+
+
+/* ***********************  Control Definitions  ********************** */
+
+/* Define the widget handle for the window                              */
+DEFINE VAR C-WIN AS WIDGET-HANDLE NO-UNDO.
+
+/* Menu Definitions                                                     */
+DEFINE MENU MENU-BAR-C-Win MENUBAR
+       MENU-ITEM m_Next_Page    LABEL "Next Page"     
+       MENU-ITEM m_item         LABEL "|"             
+       MENU-ITEM m_Policy_Text  LABEL "Policy Text"   
+       MENU-ITEM m_item2        LABEL "|"             
+       MENU-ITEM m_Att_Text     LABEL "Att. Text"     
+       MENU-ITEM m_item3        LABEL "|"             
+       MENU-ITEM m_Detail_Package LABEL "Detail Package"
+       MENU-ITEM m_item4        LABEL "|"             
+       MENU-ITEM m_Black        LABEL "Black"         
+       MENU-ITEM m_item5        LABEL "|"             
+       MENU-ITEM m_Exit         LABEL "Exit"          .
+
+
+/* Definitions of the field level widgets                               */
+DEFINE VARIABLE fi_text1 AS CHARACTER FORMAT "X(256)":U 
+     VIEW-AS FILL-IN 
+     SIZE 102.5 BY 1 NO-UNDO.
+
+DEFINE VARIABLE fi_text2 AS CHARACTER FORMAT "X(256)":U 
+     VIEW-AS FILL-IN 
+     SIZE 102.5 BY 1 NO-UNDO.
+
+DEFINE BUTTON bu_first 
+     LABEL "Page1" 
+     SIZE 15 BY 1.14.
+
+DEFINE BUTTON bu_last 
+     LABEL "Page2" 
+     SIZE 15 BY 1.14.
+
+DEFINE VARIABLE fi_cardes AS CHARACTER FORMAT "X(80)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79 BY 1
+     FGCOLOR 4 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_cargo AS CHARACTER FORMAT "X(7)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11.5 BY 1
+     FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_coundes AS CHARACTER FORMAT "X(80)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79 BY 1
+     FGCOLOR 4 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_country AS CHARACTER FORMAT "X(7)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11.5 BY 1
+     FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_pacdes AS CHARACTER FORMAT "X(80)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79 BY 1
+     FGCOLOR 4 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_package AS CHARACTER FORMAT "X(7)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11.5 BY 1
+     FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE BUTTON bu_exit AUTO-END-KEY 
+     LABEL "Exit" 
+     SIZE 15 BY 1.19
+     FONT 2.
+
+DEFINE BUTTON fi_search 
+     LABEL "Search" 
+     SIZE 10.5 BY 1.19
+     FONT 2.
+
+DEFINE VARIABLE fi_endcnt AS INTEGER FORMAT "999":U INITIAL 0 
+     LABEL "" 
+     VIEW-AS FILL-IN 
+     SIZE 5.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_policy AS CHARACTER FORMAT "X(15)":U 
+     VIEW-AS FILL-IN 
+     SIZE 28 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_rencnt AS INTEGER FORMAT "999":U INITIAL 0 
+     LABEL "" 
+     VIEW-AS FILL-IN 
+     SIZE 5.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_undyr AS CHARACTER FORMAT "X(4)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE RECTANGLE RECT-6
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 131 BY 1.43
+     BGCOLOR 3 .
+
+DEFINE RECTANGLE RECT-7
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 14.5 BY 1.67
+     BGCOLOR 7 .
+
+DEFINE RECTANGLE RECT-8
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 18.5 BY 1.67
+     BGCOLOR 7 .
+
+DEFINE VARIABLE fi_accdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_acctim AS CHARACTER FORMAT "99:99":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_acdes AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 77 BY 1
+     FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_acno1 AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_addr1 AS CHARACTER FORMAT "X(30)":U 
+     VIEW-AS FILL-IN 
+     SIZE 38.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_addr2 AS CHARACTER FORMAT "X(30)":U 
+     VIEW-AS FILL-IN 
+     SIZE 43 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_addr3 AS CHARACTER FORMAT "X(30)":U 
+     VIEW-AS FILL-IN 
+     SIZE 39 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_addr4 AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 43 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_agdes AS CHARACTER FORMAT "X(100)":U 
+     VIEW-AS FILL-IN 
+     SIZE 76.5 BY 1
+     FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_agent AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_appno AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15  NO-UNDO.
+
+DEFINE VARIABLE fi_brins AS CHARACTER FORMAT "X(5)":U 
+     VIEW-AS FILL-IN 
+     SIZE 12.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cedces AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 30 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cedco AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cedpol AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cedsi AS DECIMAL FORMAT "->>>,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 20.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_comdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_dob AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_docno1 AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 14.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_expdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_fstdat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_icno AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 20.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_insref AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 14.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_langug AS CHARACTER FORMAT "x":U 
+     VIEW-AS FILL-IN 
+     SIZE 4.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_name1 AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_name2 AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_ntitle AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_occup AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 79.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_openpol AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_polday AS INTEGER FORMAT "->,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 15.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_prvpol AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15  NO-UNDO.
+
+DEFINE VARIABLE fi_recdes AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 25.5 BY 1
+     FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_recnam AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sendes AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 25.5 BY 1
+     FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sennam AS CHARACTER FORMAT "X(20)":U 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1
+     BGCOLOR 15 FGCOLOR 2  NO-UNDO.
+
+DEFINE VARIABLE fi_short AS LOGICAL FORMAT "yes/no":U INITIAL NO 
+     VIEW-AS FILL-IN 
+     SIZE 3.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_shortp AS DECIMAL FORMAT "->>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 20.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_trndat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 15.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE BUTTON bu_down 
+     IMAGE-UP FILE "Wimage\prev":U
+     LABEL "" 
+     SIZE 4 BY 1
+     BGCOLOR 34 FGCOLOR 0 .
+
+DEFINE BUTTON bu_up 
+     IMAGE-UP FILE "Wimage\next":U
+     LABEL "" 
+     SIZE 4 BY 1
+     BGCOLOR 34 FGCOLOR 0 .
+
+DEFINE VARIABLE cb_impexp AS CHARACTER FORMAT "X(256)":U 
+     VIEW-AS COMBO-BOX INNER-LINES 4
+     LIST-ITEMS "100/Imp.","200/Exp.","Imp./Exp." 
+     DROP-DOWN-LIST
+     SIZE 14.67 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_Add AS DECIMAL FORMAT ">9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 7.17 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cerno AS CHARACTER FORMAT "XX-XX-XX/XXXXXX":U 
+      VIEW-AS TEXT 
+     SIZE 19.83 BY 1
+     BGCOLOR 34 FGCOLOR 0 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_claim AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 41 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_clucod AS CHARACTER FORMAT "X(13)":U 
+     VIEW-AS FILL-IN 
+     SIZE 7.5 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes1 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes2 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes3 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes4 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes5 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes6 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_cludes7 AS CHARACTER FORMAT "X(110)":U 
+     VIEW-AS FILL-IN 
+     SIZE 129 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_com1ae AS LOGICAL FORMAT "A/E":U INITIAL NO 
+     VIEW-AS FILL-IN 
+     SIZE 3 BY 1.19
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_com1_p AS DECIMAL FORMAT ">9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 9 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_com1_t AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.5 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_curate AS DECIMAL FORMAT ">>9.99999":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 12 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_curbil AS CHARACTER FORMAT "X(5)":U 
+     VIEW-AS FILL-IN 
+     SIZE 6.83 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_curdes AS CHARACTER FORMAT "X(108)":U 
+     VIEW-AS FILL-IN 
+     SIZE 117.33 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_dup_t1 AS CHARACTER FORMAT "X(1)":U 
+     VIEW-AS FILL-IN 
+     SIZE 4.33 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_netp AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.5 BY 1.05
+     FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_premae AS LOGICAL FORMAT "A/E":U INITIAL NO 
+     VIEW-AS FILL-IN 
+     SIZE 3 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_prem_t AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.67 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_prmpol AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY .95
+     BGCOLOR 1 FGCOLOR 7 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_pstp1 AS INTEGER FORMAT ">9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 3.5 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_pstp2 AS INTEGER FORMAT ">9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 3.5 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_rate AS DECIMAL FORMAT ">9.99999":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 10.5 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_riskno AS INTEGER FORMAT "999":U INITIAL 0 
+      VIEW-AS TEXT 
+     SIZE 5.5 BY 1
+     BGCOLOR 34 FGCOLOR 0 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_rstp_t AS DECIMAL FORMAT ">,>>>,>>>,>>>,>>>,>>>,>>9":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 21.17 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_rtax_t AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.67 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_setagt AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_setdes AS CHARACTER FORMAT "X(70)":U 
+     VIEW-AS FILL-IN 
+     SIZE 41 BY 1
+     BGCOLOR 19 FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sigr_p AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.33 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_stmpae AS LOGICAL FORMAT "A/E":U INITIAL NO 
+     VIEW-AS FILL-IN 
+     SIZE 3 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_SumAdd AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 20.83 BY 1.05
+     FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sumcom AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 22.17 BY 1.05
+     BGCOLOR 1 FGCOLOR 7 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sumstm AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY 1.05
+     BGCOLOR 1 FGCOLOR 7 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_sumtax AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 22 BY 1.05
+     BGCOLOR 1 FGCOLOR 7 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_suragt AS CHARACTER FORMAT "X(10)":U 
+     VIEW-AS FILL-IN 
+     SIZE 11 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_surdes AS CHARACTER FORMAT "X(70)":U 
+     VIEW-AS FILL-IN 
+     SIZE 41 BY 1
+     BGCOLOR 19 FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_taxae AS LOGICAL FORMAT "A/E":U INITIAL NO 
+     VIEW-AS FILL-IN 
+     SIZE 3 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_total AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 22.17 BY 1.05
+     BGCOLOR 1 FGCOLOR 7 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_tsigr AS DECIMAL FORMAT "->,>>>,>>>,>>>,>>>,>>>,>>9.99":U INITIAL 0 
+     VIEW-AS FILL-IN 
+     SIZE 28.5 BY 1.05
+     FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_vdatdes AS CHARACTER FORMAT "X(25)":U 
+     VIEW-AS FILL-IN 
+     SIZE 35.17 BY 1
+     BGCOLOR 19 FGCOLOR 4 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_vdat_c AS CHARACTER FORMAT "X(13)":U 
+     VIEW-AS FILL-IN 
+     SIZE 4.5 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_vesnam1 AS CHARACTER FORMAT "X(75)":U 
+     VIEW-AS FILL-IN 
+     SIZE 52.83 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_vesnam2 AS CHARACTER FORMAT "X(40)":U 
+     VIEW-AS FILL-IN 
+     SIZE 53.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_vesno AS CHARACTER FORMAT "X(6)":U 
+     VIEW-AS FILL-IN 
+     SIZE 10 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_vesno2 AS CHARACTER FORMAT "X(6)":U 
+     VIEW-AS FILL-IN 
+     SIZE 10 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_voyage AS CHARACTER FORMAT "X(75)":U 
+     VIEW-AS FILL-IN 
+     SIZE 53.33 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_voyage2 AS CHARACTER FORMAT "X(50)":U 
+     VIEW-AS FILL-IN 
+     SIZE 52.83 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_voydat AS DATE FORMAT "99/99/9999":U 
+     VIEW-AS FILL-IN 
+     SIZE 14.17 BY 1
+     BGCOLOR 15 FGCOLOR 2 FONT 2 NO-UNDO.
+
+DEFINE VARIABLE fi_voyno AS CHARACTER FORMAT "X(4)":U 
+     VIEW-AS FILL-IN 
+     SIZE 10 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE VARIABLE fi_voyno2 AS CHARACTER FORMAT "X(4)":U 
+     VIEW-AS FILL-IN 
+     SIZE 10 BY 1.05
+     BGCOLOR 15 FGCOLOR 2 FONT 6 NO-UNDO.
+
+DEFINE RECTANGLE RECT-546
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 47.83 BY 4.52
+     BGCOLOR 34 FGCOLOR 0 .
+
+DEFINE RECTANGLE RECT-547
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 31 BY 6
+     BGCOLOR 3 .
+
+DEFINE RECTANGLE RECT-548
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 40 BY 6
+     BGCOLOR 34 FGCOLOR 7 .
+
+DEFINE RECTANGLE RECT-549
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 57.5 BY 6
+     BGCOLOR 33 FGCOLOR 7 .
+
+DEFINE RECTANGLE RECT-569
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 129 BY 1.29
+     BGCOLOR 8 .
+
+DEFINE RECTANGLE RECT-570
+     EDGE-PIXELS 2 GRAPHIC-EDGE    
+     SIZE 129 BY 1.29
+     BGCOLOR 8 .
+
+/* Query definitions                                                    */
+&ANALYZE-SUSPEND
+DEFINE QUERY br_attext FOR 
+      w_attext SCROLLING.
+&ANALYZE-RESUME
+
+/* Browse definitions                                                   */
+DEFINE BROWSE br_attext
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _DISPLAY-FIELDS br_attext C-WIN _FREEFORM
+  QUERY br_attext DISPLAY
+      w_attext.num      COLUMN-LABEL "Line"
+    w_attext.text1    FORMAT "X(50)"
+    w_attext.text2    FORMAT "X(50)"
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+    WITH NO-ROW-MARKERS SEPARATORS SIZE 125 BY 16.91 ROW-HEIGHT-CHARS .81 FIT-LAST-COLUMN.
+
+
+/* ************************  Frame Definitions  *********************** */
+
+DEFINE FRAME fMain
+    WITH 1 DOWN NO-BOX KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1 ROW 1
+         SIZE 132 BY 24.57.
+
+DEFINE FRAME fr_head
+     fi_policy AT ROW 2.91 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_search AT ROW 2.91 COL 49
+     fi_rencnt AT ROW 2.91 COL 68.17 COLON-ALIGNED
+     fi_endcnt AT ROW 2.91 COL 76.33 COLON-ALIGNED
+     fi_undyr AT ROW 2.91 COL 95.33 COLON-ALIGNED NO-LABEL
+     bu_exit AT ROW 2.91 COL 112.5
+     "Policy No." VIEW-AS TEXT
+          SIZE 13 BY .86 AT ROW 3 COL 2
+          FONT 2
+     "R/E" VIEW-AS TEXT
+          SIZE 6 BY .62 AT ROW 3.1 COL 63
+          FONT 6
+     "UW Year" VIEW-AS TEXT
+          SIZE 9 BY .48 AT ROW 3.14 COL 85.83
+          FONT 6
+     "Query Policy Marine  On GW" VIEW-AS TEXT
+          SIZE 36.5 BY .95 AT ROW 1.24 COL 45
+          BGCOLOR 3 FGCOLOR 7 FONT 23
+     "/" VIEW-AS TEXT
+          SIZE 3 BY .62 AT ROW 3.14 COL 75.83
+          FONT 6
+     RECT-7 AT ROW 2.67 COL 47
+     RECT-6 AT ROW 1 COL 1
+     RECT-8 AT ROW 2.67 COL 111
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1
+         SIZE 131.33 BY 3.57.
+
+DEFINE FRAME fr_attext
+     fi_text1 AT ROW 2.1 COL 11.33 COLON-ALIGNED NO-LABEL
+     fi_text2 AT ROW 3.38 COL 11 COLON-ALIGNED NO-LABEL
+     br_attext AT ROW 5.05 COL 4
+     "Text1" VIEW-AS TEXT
+          SIZE 8 BY .62 AT ROW 2.19 COL 4
+          FONT 2
+     "Text2" VIEW-AS TEXT
+          SIZE 7.5 BY .62 AT ROW 3.62 COL 4
+          FONT 2
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.5 ROW 1
+         SIZE 131.5 BY 24.29.
+
+DEFINE FRAME fr_detail
+     fi_cargo AT ROW 1.76 COL 17.33 COLON-ALIGNED NO-LABEL
+     fi_cardes AT ROW 1.76 COL 29.83 COLON-ALIGNED NO-LABEL
+     fi_package AT ROW 3.05 COL 17.33 COLON-ALIGNED NO-LABEL
+     fi_pacdes AT ROW 3.05 COL 29.83 COLON-ALIGNED NO-LABEL
+     fi_country AT ROW 4.38 COL 17.33 COLON-ALIGNED NO-LABEL
+     fi_coundes AT ROW 4.38 COL 29.83 COLON-ALIGNED NO-LABEL
+     bu_first AT ROW 6.48 COL 23.5
+     bu_last AT ROW 6.48 COL 41.5
+     "Country Code :" VIEW-AS TEXT
+          SIZE 14.5 BY 1.05 AT ROW 4.38 COL 2.83
+          FONT 6
+     "Type of Cargo :" VIEW-AS TEXT
+          SIZE 15 BY 1.05 AT ROW 1.76 COL 2.33
+          BGCOLOR 19 FONT 6
+     "Pakage Code :" VIEW-AS TEXT
+          SIZE 14.5 BY 1.05 AT ROW 3.05 COL 2.83
+          FONT 6
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 2 ROW 1
+         SIZE 131 BY 23.81.
+
+DEFINE FRAME fr_query2
+     fi_vesno AT ROW 1.33 COL 2.5 NO-LABEL
+     fi_vesnam1 AT ROW 1.33 COL 26.67 COLON-ALIGNED NO-LABEL
+     fi_voyno AT ROW 2.38 COL 2.5 NO-LABEL
+     fi_voyage AT ROW 2.38 COL 26.67 COLON-ALIGNED NO-LABEL
+     bu_down AT ROW 2.38 COL 103.67
+     bu_up AT ROW 2.38 COL 107.5
+     fi_vesno2 AT ROW 3.43 COL 2.5 NO-LABEL
+     fi_vesnam2 AT ROW 3.43 COL 26.67 COLON-ALIGNED NO-LABEL
+     fi_voyno2 AT ROW 4.48 COL 2.5 NO-LABEL
+     fi_voyage2 AT ROW 4.48 COL 26.67 COLON-ALIGNED NO-LABEL
+     fi_voydat AT ROW 5.62 COL 67 COLON-ALIGNED NO-LABEL
+     fi_clucod AT ROW 5.62 COL 82.17 COLON-ALIGNED NO-LABEL
+     fi_vdat_c AT ROW 5.67 COL 14.67 COLON-ALIGNED NO-LABEL
+     fi_vdatdes AT ROW 5.67 COL 22.83 COLON-ALIGNED NO-LABEL
+     fi_cludes1 AT ROW 6.71 COL 1 NO-LABEL
+     fi_cludes2 AT ROW 7.76 COL 1 NO-LABEL
+     fi_cludes3 AT ROW 8.81 COL 1 NO-LABEL
+     fi_cludes4 AT ROW 9.86 COL 1 NO-LABEL
+     fi_cludes5 AT ROW 10.91 COL 1 NO-LABEL
+     fi_cludes6 AT ROW 11.95 COL 1 NO-LABEL
+     fi_cludes7 AT ROW 12.95 COL 1 NO-LABEL
+     fi_cargo AT ROW 14 COL 80.33 COLON-ALIGNED NO-LABEL FORMAT "X(7)":U
+          VIEW-AS FILL-IN 
+          SIZE 10 BY 1
+          BGCOLOR 15 FGCOLOR 2 FONT 2
+     cb_impexp AT ROW 14.05 COL 10.67 COLON-ALIGNED NO-LABEL
+     fi_claim AT ROW 14.05 COL 25.33 COLON-ALIGNED NO-LABEL
+     fi_cardes AT ROW 14.05 COL 91.33 COLON-ALIGNED NO-LABEL FORMAT "X(150)":U
+          VIEW-AS FILL-IN 
+          SIZE 36.17 BY 1
+          BGCOLOR 19 FGCOLOR 4 FONT 2
+     fi_package AT ROW 15 COL 80.33 COLON-ALIGNED NO-LABEL FORMAT "X(2)":U
+          VIEW-AS FILL-IN 
+          SIZE 10 BY 1
+          BGCOLOR 15 FGCOLOR 2 FONT 2
+     fi_setagt AT ROW 15.1 COL 11 COLON-ALIGNED NO-LABEL
+     fi_setdes AT ROW 15.1 COL 25.67 COLON-ALIGNED NO-LABEL
+     fi_pacdes AT ROW 15.1 COL 91.33 COLON-ALIGNED NO-LABEL FORMAT "X(40)":U
+          VIEW-AS FILL-IN 
+          SIZE 36.17 BY 1
+          BGCOLOR 19 FGCOLOR 4 FONT 2
+     fi_country AT ROW 16.05 COL 80.33 COLON-ALIGNED NO-LABEL FORMAT "X(3)":U
+          VIEW-AS FILL-IN 
+          SIZE 10 BY 1
+          BGCOLOR 15 FGCOLOR 2 FONT 2
+     fi_coundes AT ROW 16.1 COL 91.33 COLON-ALIGNED NO-LABEL FORMAT "X(50)":U
+          VIEW-AS FILL-IN 
+          SIZE 36.17 BY 1
+          BGCOLOR 19 FGCOLOR 4 FONT 2
+     fi_suragt AT ROW 16.14 COL 11 COLON-ALIGNED NO-LABEL
+     fi_surdes AT ROW 16.14 COL 25.67 COLON-ALIGNED NO-LABEL
+     fi_curbil AT ROW 17.57 COL 11 COLON-ALIGNED NO-LABEL
+     fi_prem_t AT ROW 17.57 COL 67.5 COLON-ALIGNED NO-LABEL
+     fi_rate AT ROW 17.62 COL 53 COLON-ALIGNED NO-LABEL
+     fi_premae AT ROW 17.67 COL 64 COLON-ALIGNED NO-LABEL
+     fi_prmpol AT ROW 17.67 COL 104 COLON-ALIGNED NO-LABEL
+     fi_dup_t1 AT ROW 18.62 COL 53 COLON-ALIGNED NO-LABEL
+     fi_stmpae AT ROW 18.62 COL 64 COLON-ALIGNED NO-LABEL
+     fi_rstp_t AT ROW 18.67 COL 67.5 COLON-ALIGNED NO-LABEL
+     fi_pstp1 AT ROW 18.67 COL 88.83 COLON-ALIGNED NO-LABEL
+     fi_pstp2 AT ROW 18.67 COL 92.67 COLON-ALIGNED NO-LABEL
+     fi_Add AT ROW 18.71 COL 10.83 COLON-ALIGNED NO-LABEL
+     fi_SumAdd AT ROW 18.71 COL 18.17 COLON-ALIGNED NO-LABEL
+     fi_sumstm AT ROW 18.71 COL 104 COLON-ALIGNED NO-LABEL
+     fi_taxae AT ROW 19.81 COL 64 COLON-ALIGNED NO-LABEL
+     fi_rtax_t AT ROW 19.81 COL 67.5 COLON-ALIGNED NO-LABEL
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.33
+         SIZE 131.33 BY 24.24.
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_query2
+     fi_sigr_p AT ROW 19.86 COL 10.67 COLON-ALIGNED NO-LABEL
+     fi_sumtax AT ROW 19.86 COL 104 COLON-ALIGNED NO-LABEL
+     fi_netp AT ROW 20.95 COL 67.5 COLON-ALIGNED NO-LABEL
+     fi_curate AT ROW 21 COL 10.5 COLON-ALIGNED NO-LABEL
+     fi_sumcom AT ROW 21 COL 103.83 COLON-ALIGNED NO-LABEL
+     fi_com1ae AT ROW 21.95 COL 64 COLON-ALIGNED NO-LABEL
+     fi_com1_t AT ROW 22.05 COL 67.5 COLON-ALIGNED NO-LABEL
+     fi_tsigr AT ROW 22.1 COL 10.5 COLON-ALIGNED NO-LABEL
+     fi_total AT ROW 22.1 COL 103.83 COLON-ALIGNED NO-LABEL
+     fi_com1_p AT ROW 22.19 COL 53 COLON-ALIGNED NO-LABEL
+     fi_curdes AT ROW 23.33 COL 11.17 NO-LABEL
+     fi_policy AT ROW 1.29 COL 95.5 COLON-ALIGNED NO-LABEL FORMAT "XX-XX-XX/XXXXXX":U
+           VIEW-AS TEXT 
+          SIZE 19.83 BY 1
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     fi_rencnt AT ROW 1.29 COL 115.5 COLON-ALIGNED NO-LABEL FORMAT "99":U
+           VIEW-AS TEXT 
+          SIZE 4 BY 1
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     fi_endcnt AT ROW 1.29 COL 121.5 COLON-ALIGNED NO-LABEL FORMAT "999":U
+           VIEW-AS TEXT 
+          SIZE 5 BY 1
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     fi_riskno AT ROW 2.38 COL 95.5 COLON-ALIGNED NO-LABEL
+     fi_cerno AT ROW 3.48 COL 95.5 COLON-ALIGNED NO-LABEL
+     fi_recnam AT ROW 4.57 COL 94.33 COLON-ALIGNED NO-LABEL FORMAT "X(256)":U
+           VIEW-AS TEXT 
+          SIZE 6.83 BY .81
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     fi_recdes AT ROW 4.57 COL 102.5 COLON-ALIGNED NO-LABEL FORMAT "X(20)":U
+           VIEW-AS TEXT 
+          SIZE 22 BY .81
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Survey      :" VIEW-AS TEXT
+          SIZE 11.5 BY .91 AT ROW 16.19 COL 1.5
+          BGCOLOR 19 FONT 6
+     "Stamp (D/T)" VIEW-AS TEXT
+          SIZE 12.33 BY 1.05 AT ROW 18.76 COL 41.83
+          BGCOLOR 33 FGCOLOR 0 FONT 6
+     "SI Curren :" VIEW-AS TEXT
+          SIZE 10.5 BY 1.05 AT ROW 17.57 COL 2.5
+          BGCOLOR 34 FONT 6
+     "Prem Rate% :" VIEW-AS TEXT
+          SIZE 12.83 BY 1.05 AT ROW 17.62 COL 41.83
+          BGCOLOR 33 FGCOLOR 0 FONT 6
+     "Voyage Type :" VIEW-AS TEXT
+          SIZE 14 BY 1.05 AT ROW 5.62 COL 2.5
+          BGCOLOR 19 FONT 6
+     "SI %" VIEW-AS TEXT
+          SIZE 4.5 BY .76 AT ROW 18.95 COL 7.67
+          BGCOLOR 34 FONT 6
+     "SI Sum :" VIEW-AS TEXT
+          SIZE 8.83 BY 1.05 AT ROW 19.76 COL 3.67
+          BGCOLOR 34 FONT 6
+     "Date :" VIEW-AS TEXT
+          SIZE 6.5 BY 1.05 AT ROW 5.57 COL 62.5
+          BGCOLOR 19 FONT 6
+     "Product Cer :" VIEW-AS TEXT
+          SIZE 13.67 BY .91 AT ROW 4.52 COL 83
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Vat :" VIEW-AS TEXT
+          SIZE 6 BY 1.05 AT ROW 19.91 COL 48.5
+          BGCOLOR 33 FGCOLOR 0 FONT 6
+     "Imp/Exp :" VIEW-AS TEXT
+          SIZE 10 BY .91 AT ROW 14.1 COL 2.17
+          BGCOLOR 19 FONT 6
+     "Country     :" VIEW-AS TEXT
+          SIZE 12 BY 1.05 AT ROW 16.14 COL 70.17
+          BGCOLOR 19 FONT 6
+     "At/From 1  :" VIEW-AS TEXT
+          SIZE 12 BY 1.05 AT ROW 2.38 COL 16.17
+          BGCOLOR 19 FONT 6
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.33
+         SIZE 131.33 BY 24.24.
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_query2
+     "Risk No.  :" VIEW-AS TEXT
+          SIZE 11.83 BY .91 AT ROW 2.38 COL 85.33
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Type Cargo :" VIEW-AS TEXT
+          SIZE 12.5 BY 1.05 AT ROW 14 COL 69.83
+          BGCOLOR 19 FONT 6
+     "Stamp." VIEW-AS TEXT
+          SIZE 6.5 BY 1.05 AT ROW 18.86 COL 99.33
+          BGCOLOR 3 FGCOLOR 15 FONT 6
+     "Vessel 1  :" VIEW-AS TEXT
+          SIZE 10.5 BY 1.05 AT ROW 1.33 COL 17.67
+          BGCOLOR 19 FONT 6
+     "Comm." VIEW-AS TEXT
+          SIZE 6.5 BY 1.05 AT ROW 21 COL 99.5
+          BGCOLOR 3 FGCOLOR 15 FONT 6
+     "Vessel 2  :" VIEW-AS TEXT
+          SIZE 10.5 BY 1.05 AT ROW 3.43 COL 17.67
+          BGCOLOR 19 FONT 6
+     "Total." VIEW-AS TEXT
+          SIZE 5.83 BY 1.05 AT ROW 22.14 COL 99.83
+          BGCOLOR 3 FGCOLOR 15 FONT 6
+     "At/From 2  :" VIEW-AS TEXT
+          SIZE 12 BY 1.05 AT ROW 4.48 COL 16.17
+          BGCOLOR 19 FONT 6
+     "Cer No. :" VIEW-AS TEXT
+          SIZE 9.17 BY .91 AT ROW 3.48 COL 86.83
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Vat." VIEW-AS TEXT
+          SIZE 4.5 BY 1.05 AT ROW 20.05 COL 101.5
+          BGCOLOR 3 FGCOLOR 15 FONT 6
+     "EX. @." VIEW-AS TEXT
+          SIZE 7.5 BY 1.05 AT ROW 21.05 COL 4.5
+          BGCOLOR 34 FONT 6
+     "Package    :" VIEW-AS TEXT
+          SIZE 12 BY .86 AT ROW 15.14 COL 70
+          BGCOLOR 19 FONT 6
+     "Settlement :" VIEW-AS TEXT
+          SIZE 11.67 BY .91 AT ROW 15.14 COL 1.33
+          BGCOLOR 19 FONT 6
+     "Policy No.  :" VIEW-AS TEXT
+          SIZE 12.5 BY .91 AT ROW 1.33 COL 84
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Premium Total  :" VIEW-AS TEXT
+          SIZE 24 BY 1.05 AT ROW 21 COL 42
+          BGCOLOR 8 FGCOLOR 4 FONT 6
+     "Desc." VIEW-AS TEXT
+          SIZE 8 BY .91 AT ROW 23.43 COL 2.17
+          BGCOLOR 19 FGCOLOR 0 FONT 6
+     "Comm. %" VIEW-AS TEXT
+          SIZE 8.83 BY 1.05 AT ROW 22.1 COL 44.67
+          BGCOLOR 33 FGCOLOR 0 FONT 6
+     "/" VIEW-AS TEXT
+          SIZE 1.5 BY 1.05 AT ROW 1.33 COL 122
+          BGCOLOR 34 FGCOLOR 0 FONT 6
+     "Prem." VIEW-AS TEXT
+          SIZE 5.83 BY 1.05 AT ROW 17.67 COL 99.83
+          BGCOLOR 3 FGCOLOR 15 FONT 6
+     RECT-548 AT ROW 17.33 COL 1.5
+     RECT-549 AT ROW 17.33 COL 41.5
+     RECT-547 AT ROW 17.29 COL 98.5
+     RECT-569 AT ROW 23.24 COL 1
+     RECT-546 AT ROW 1.14 COL 82.17
+     RECT-570 AT ROW 5.52 COL 1
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.67 ROW 1.33
+         SIZE 131.33 BY 24.24.
+
+DEFINE FRAME fr_query1
+     fi_appno AT ROW 1.29 COL 54 COLON-ALIGNED NO-LABEL
+     fi_prvpol AT ROW 1.29 COL 90 COLON-ALIGNED NO-LABEL
+     fi_openpol AT ROW 1.48 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_recnam AT ROW 2.43 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_recdes AT ROW 2.43 COL 39.5 COLON-ALIGNED NO-LABEL
+     fi_sennam AT ROW 3.38 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_sendes AT ROW 3.62 COL 39.5 COLON-ALIGNED NO-LABEL
+     fi_acno1 AT ROW 4.57 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_acdes AT ROW 4.57 COL 39.5 COLON-ALIGNED NO-LABEL
+     fi_agent AT ROW 5.76 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_agdes AT ROW 5.76 COL 39.5 COLON-ALIGNED NO-LABEL
+     fi_insref AT ROW 6.71 COL 31 COLON-ALIGNED NO-LABEL
+     fi_icno AT ROW 6.71 COL 56.33 COLON-ALIGNED NO-LABEL
+     fi_dob AT ROW 6.76 COL 94.17 COLON-ALIGNED NO-LABEL
+     fi_langug AT ROW 6.91 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_ntitle AT ROW 7.91 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_brins AT ROW 8 COL 56.17 COLON-ALIGNED NO-LABEL
+     fi_name1 AT ROW 9.33 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_name2 AT ROW 10.43 COL 15.33 COLON-ALIGNED NO-LABEL
+     fi_addr1 AT ROW 11.71 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_addr2 AT ROW 11.71 COL 59.5 COLON-ALIGNED NO-LABEL
+     fi_addr3 AT ROW 12.91 COL 15.5 COLON-ALIGNED NO-LABEL
+     fi_addr4 AT ROW 12.91 COL 59.5 COLON-ALIGNED NO-LABEL
+     fi_occup AT ROW 14.33 COL 15 COLON-ALIGNED NO-LABEL
+     fi_accdat AT ROW 15.52 COL 15 COLON-ALIGNED NO-LABEL
+     fi_trndat AT ROW 15.52 COL 43.5 COLON-ALIGNED NO-LABEL
+     fi_comdat AT ROW 15.52 COL 72.5 COLON-ALIGNED NO-LABEL
+     fi_expdat AT ROW 15.52 COL 102.5 COLON-ALIGNED NO-LABEL
+     fi_short AT ROW 16.48 COL 50 COLON-ALIGNED NO-LABEL
+     fi_shortp AT ROW 16.48 COL 55 COLON-ALIGNED NO-LABEL
+     fi_cedco AT ROW 16.71 COL 15 COLON-ALIGNED NO-LABEL
+     fi_polday AT ROW 16.95 COL 102.67 COLON-ALIGNED NO-LABEL
+     fi_fstdat AT ROW 17.86 COL 49.33 COLON-ALIGNED NO-LABEL
+     fi_docno1 AT ROW 17.91 COL 71 COLON-ALIGNED NO-LABEL
+     fi_cedpol AT ROW 18.14 COL 15 COLON-ALIGNED NO-LABEL
+     fi_acctim AT ROW 18.14 COL 102.5 COLON-ALIGNED NO-LABEL
+     fi_cedsi AT ROW 19.1 COL 49.5 COLON-ALIGNED NO-LABEL
+     fi_cedces AT ROW 19.1 COL 88 COLON-ALIGNED NO-LABEL
+     "Branch Insured :" VIEW-AS TEXT
+          SIZE 17 BY .95 AT ROW 8.05 COL 40.5
+          FONT 6
+     "Short Rate(Y/N)" VIEW-AS TEXT
+          SIZE 18 BY .95 AT ROW 16.71 COL 33.5
+          FONT 6
+     "Contest Code" VIEW-AS TEXT
+          SIZE 13.5 BY .48 AT ROW 3.62 COL 2
+          FONT 6
+     "Title" VIEW-AS TEXT
+          SIZE 6.5 BY .95 AT ROW 8.05 COL 2.33
+          FONT 6
+     "Address 1" VIEW-AS TEXT
+          SIZE 10.5 BY .95 AT ROW 11.57 COL 3
+          FONT 6
+     "Expiry Date" VIEW-AS TEXT
+          SIZE 11.5 BY .95 AT ROW 15.52 COL 92.5
+          FONT 6
+     "Language" VIEW-AS TEXT
+          SIZE 12 BY .95 AT ROW 6.91 COL 2.17
+          FONT 6
+     "Comm. Date" VIEW-AS TEXT
+          SIZE 12 BY .95 AT ROW 15.43 COL 62.5
+          FONT 6
+     "Producer" VIEW-AS TEXT
+          SIZE 13.5 BY .62 AT ROW 4.81 COL 2.17
+          FONT 6
+     "Prev. Pol." VIEW-AS TEXT
+          SIZE 11 BY .62 AT ROW 1.52 COL 79.5
+          FONT 6
+     "Insured :" VIEW-AS TEXT
+          SIZE 10 BY .95 AT ROW 6.95 COL 22.5
+          FONT 6
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.5 ROW 4.43
+         SIZE 131.5 BY 21.1
+         BGCOLOR 19 .
+
+/* DEFINE FRAME statement is approaching 4K Bytes.  Breaking it up   */
+DEFINE FRAME fr_query1
+     "3" VIEW-AS TEXT
+          SIZE 2 BY .95 AT ROW 12.91 COL 11
+          FONT 6
+     "Open Policy" VIEW-AS TEXT
+          SIZE 12 BY .62 AT ROW 1.71 COL 3
+          FONT 6
+     "Date OF Birth :" VIEW-AS TEXT
+          SIZE 15.5 BY .95 AT ROW 6.86 COL 80.5
+          FONT 6
+     "IC NO:" VIEW-AS TEXT
+          SIZE 7.5 BY .95 AT ROW 6.71 COL 49.5
+          FONT 6
+     "Agree Date" VIEW-AS TEXT
+          SIZE 13.5 BY .95 AT ROW 15.57 COL 3
+          FONT 6
+     "Ceding Co." VIEW-AS TEXT
+          SIZE 11.5 BY .95 AT ROW 16.95 COL 2.5
+          FONT 6
+     "Invoice Date" VIEW-AS TEXT
+          SIZE 18 BY .95 AT ROW 17.91 COL 33.5
+          FONT 6
+     "Ceding Co. SI" VIEW-AS TEXT
+          SIZE 15.5 BY .95 AT ROW 19.1 COL 33.5
+          FONT 6
+     "Agent" VIEW-AS TEXT
+          SIZE 13.5 BY .95 AT ROW 5.76 COL 2
+          FONT 6
+     "Trans. Date" VIEW-AS TEXT
+          SIZE 11.5 BY .95 AT ROW 15.52 COL 33.5
+          FONT 6
+     "Name    1" VIEW-AS TEXT
+          SIZE 10.67 BY .95 AT ROW 9.19 COL 2.83
+          FONT 6
+     "Occupation" VIEW-AS TEXT
+          SIZE 11.5 BY .95 AT ROW 14.24 COL 2.5
+          FONT 6
+     "Time" VIEW-AS TEXT
+          SIZE 5.5 BY .95 AT ROW 18.14 COL 97.5
+          FONT 6
+     "Product Type" VIEW-AS TEXT
+          SIZE 13.5 BY .71 AT ROW 2.67 COL 2
+          FONT 6
+     "Ceding Cess No" VIEW-AS TEXT
+          SIZE 15.5 BY .95 AT ROW 19.19 COL 73.5
+          FONT 6
+     "Name    2" VIEW-AS TEXT
+          SIZE 10.67 BY .95 AT ROW 10.43 COL 2.83
+          FONT 6
+     "M" VIEW-AS TEXT
+          SIZE 2.5 BY .95 AT ROW 17.91 COL 68
+          FONT 6
+     "2" VIEW-AS TEXT
+          SIZE 2.5 BY .95 AT ROW 11.71 COL 58.5
+          FONT 6
+     "Day" VIEW-AS TEXT
+          SIZE 5.5 BY .95 AT ROW 17.05 COL 98
+          FONT 6
+     "Appl./Quota No." VIEW-AS TEXT
+          SIZE 15 BY .62 AT ROW 1.52 COL 40.5
+          FONT 6
+     "Ceding Pol.No" VIEW-AS TEXT
+          SIZE 13.5 BY .95 AT ROW 18.14 COL 2.5
+          FONT 6
+     "4" VIEW-AS TEXT
+          SIZE 2.5 BY .95 AT ROW 13 COL 58.5
+          FONT 6
+    WITH 1 DOWN KEEP-TAB-ORDER OVERLAY 
+         SIDE-LABELS NO-UNDERLINE THREE-D 
+         AT COL 1.5 ROW 4.43
+         SIZE 131.5 BY 21.1
+         BGCOLOR 19 .
+
+
+/* *********************** Procedure Settings ************************ */
+
+&ANALYZE-SUSPEND _PROCEDURE-SETTINGS
+/* Settings for THIS-PROCEDURE
+   Type: Window
+   Allow: Basic,Browse,DB-Fields,Window,Query
+   Other Settings: COMPILE
+ */
+&ANALYZE-RESUME _END-PROCEDURE-SETTINGS
+
+/* *************************  Create Window  ************************** */
+
+&ANALYZE-SUSPEND _CREATE-WINDOW
+IF SESSION:DISPLAY-TYPE = "GUI":U THEN
+  CREATE WINDOW C-WIN ASSIGN
+         HIDDEN             = YES
+         TITLE              = "<insert SmartWindow title>"
+         HEIGHT             = 23.91
+         WIDTH              = 132.17
+         MAX-HEIGHT         = 30.76
+         MAX-WIDTH          = 173.67
+         VIRTUAL-HEIGHT     = 30.76
+         VIRTUAL-WIDTH      = 173.67
+         RESIZE             = no
+         SCROLL-BARS        = no
+         STATUS-AREA        = no
+         BGCOLOR            = ?
+         FGCOLOR            = ?
+         THREE-D            = yes
+         MESSAGE-AREA       = no
+         SENSITIVE          = yes.
+ELSE {&WINDOW-NAME} = CURRENT-WINDOW.
+
+ASSIGN {&WINDOW-NAME}:MENUBAR    = MENU MENU-BAR-C-Win:HANDLE.
+
+&IF '{&WINDOW-SYSTEM}' NE 'TTY' &THEN
+IF NOT C-WIN:LOAD-ICON("Wimage\safety":U) THEN
+    MESSAGE "Unable to load icon: Wimage\safety"
+            VIEW-AS ALERT-BOX WARNING BUTTONS OK.
+&ENDIF
+/* END WINDOW DEFINITION                                                */
+&ANALYZE-RESUME
+
+
+
+/* ***********  Runtime Attributes and AppBuilder Settings  *********** */
+
+&ANALYZE-SUSPEND _RUN-TIME-ATTRIBUTES
+/* SETTINGS FOR WINDOW C-WIN
+  VISIBLE,,RUN-PERSISTENT                                               */
+/* REPARENT FRAME */
+ASSIGN FRAME fr_attext:FRAME = FRAME fMain:HANDLE
+       FRAME fr_detail:FRAME = FRAME fMain:HANDLE
+       FRAME fr_head:FRAME = FRAME fMain:HANDLE
+       FRAME fr_query1:FRAME = FRAME fMain:HANDLE
+       FRAME fr_query2:FRAME = FRAME fMain:HANDLE.
+
+/* SETTINGS FOR FRAME fMain
+   FRAME-NAME                                                           */
+
+DEFINE VARIABLE XXTABVALXX AS LOGICAL NO-UNDO.
+
+ASSIGN XXTABVALXX = FRAME fr_query2:MOVE-BEFORE-TAB-ITEM (FRAME fr_query1:HANDLE)
+       XXTABVALXX = FRAME fr_detail:MOVE-BEFORE-TAB-ITEM (FRAME fr_query2:HANDLE)
+       XXTABVALXX = FRAME fr_head:MOVE-BEFORE-TAB-ITEM (FRAME fr_detail:HANDLE)
+       XXTABVALXX = FRAME fr_attext:MOVE-BEFORE-TAB-ITEM (FRAME fr_head:HANDLE)
+/* END-ASSIGN-TABS */.
+
+/* SETTINGS FOR FRAME fr_attext
+                                                                        */
+/* BROWSE-TAB br_attext fi_text2 fr_attext */
+/* SETTINGS FOR FRAME fr_detail
+                                                                        */
+/* SETTINGS FOR FILL-IN fi_cardes IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cargo IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_coundes IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_country IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_pacdes IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_package IN FRAME fr_detail
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FRAME fr_head
+                                                                        */
+/* SETTINGS FOR FILL-IN fi_endcnt IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_rencnt IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_undyr IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR RECTANGLE RECT-6 IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR RECTANGLE RECT-7 IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR RECTANGLE RECT-8 IN FRAME fr_head
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FRAME fr_query1
+                                                                        */
+/* SETTINGS FOR FILL-IN fi_accdat IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_acctim IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_acdes IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_acno1 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_addr1 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_addr2 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_addr3 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_addr4 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_agdes IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_agent IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_appno IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_brins IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cedces IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cedco IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cedpol IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cedsi IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_comdat IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_dob IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_docno1 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_expdat IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_fstdat IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_icno IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_insref IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_langug IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_name1 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_name2 IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_ntitle IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_occup IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_openpol IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_polday IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_prvpol IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_recdes IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_recnam IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sendes IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sennam IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_short IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_shortp IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_trndat IN FRAME fr_query1
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FRAME fr_query2
+                                                                        */
+/* SETTINGS FOR COMBO-BOX cb_impexp IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_Add IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cardes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cargo IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_claim IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_clucod IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_cludes1 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes2 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes3 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes4 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes5 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes6 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_cludes7 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_com1ae IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_com1_p IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_com1_t IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_coundes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_country IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_curate IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_curbil IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_curdes IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_dup_t1 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_endcnt IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_netp IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_pacdes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_package IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_policy IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_premae IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_prem_t IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_prmpol IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_pstp1 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_pstp2 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_rate IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_recdes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_rencnt IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_riskno IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_rstp_t IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_rtax_t IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_setagt IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_setdes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sigr_p IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_stmpae IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_SumAdd IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sumcom IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sumstm IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_sumtax IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_suragt IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_surdes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_taxae IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_total IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_tsigr IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_vdatdes IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_vdat_c IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_vesnam1 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_vesnam2 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_vesno IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_vesno2 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_voyage IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_voyage2 IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_voydat IN FRAME fr_query2
+   NO-ENABLE                                                            */
+/* SETTINGS FOR FILL-IN fi_voyno IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+/* SETTINGS FOR FILL-IN fi_voyno2 IN FRAME fr_query2
+   NO-ENABLE ALIGN-L                                                    */
+IF SESSION:DISPLAY-TYPE = "GUI":U AND VALID-HANDLE(C-WIN)
+THEN C-WIN:HIDDEN = yes.
+
+/* _RUN-TIME-ATTRIBUTES-END */
+&ANALYZE-RESUME
+
+
+/* Setting information for Queries and Browse Widgets fields            */
+
+&ANALYZE-SUSPEND _QUERY-BLOCK BROWSE br_attext
+/* Query rebuild information for BROWSE br_attext
+     _START_FREEFORM
+OPEN QUERY br_attext FOR EACH w_attext NO-LOCK BY w_attext.num.
+     _END_FREEFORM
+     _Query            is OPENED
+*/  /* BROWSE br_attext */
+&ANALYZE-RESUME
+
+ 
+
+
+
+/* ************************  Control Triggers  ************************ */
+
+&Scoped-define SELF-NAME C-WIN
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL C-WIN C-WIN
+ON END-ERROR OF C-WIN /* <insert SmartWindow title> */
+OR ENDKEY OF {&WINDOW-NAME} ANYWHERE DO:
+  /* This case occurs when the user presses the "Esc" key.
+     In a persistently run window, just ignore this.  If we did not, the
+     application would exit. */
+  IF THIS-PROCEDURE:PERSISTENT THEN RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL C-WIN C-WIN
+ON WINDOW-CLOSE OF C-WIN /* <insert SmartWindow title> */
+DO:
+  /* This ADM code must be left here in order for the SmartWindow
+     and its descendents to terminate properly on exit. */
+  APPLY "CLOSE":U TO THIS-PROCEDURE.
+  RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define BROWSE-NAME br_attext
+&Scoped-define FRAME-NAME fr_attext
+&Scoped-define SELF-NAME br_attext
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL br_attext C-WIN
+ON MOUSE-SELECT-CLICK OF br_attext IN FRAME fr_attext
+DO:
+    IF w_attext.num <> 0 THEN DO:
+       
+        ASSIGN
+            fi_text1 = w_attext.text1
+            fi_text2 = w_attext.text2.
+        DISP fi_text1 fi_text2 WITH FRAME fr_attext.
+    END.
+    ELSE DO:
+         MESSAGE "Not Found Data Policy Text or Att Text" VIEW-AS ALERT-BOX INFORMATION.
+
+    END.
+    
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL br_attext C-WIN
+ON VALUE-CHANGED OF br_attext IN FRAME fr_attext
+DO:
+ IF w_attext.num <> 0 THEN DO:
+       
+        ASSIGN
+            fi_text1 = w_attext.text1
+            fi_text2 = w_attext.text2.
+        DISP fi_text1 fi_text2 WITH FRAME fr_attext.
+    END.
+    ELSE DO:
+         MESSAGE "Not Found Data Policy Text or Att Text" VIEW-AS ALERT-BOX INFORMATION.
+
+    END.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_query2
+&Scoped-define SELF-NAME bu_down
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_down C-WIN
+ON CHOOSE OF bu_down IN FRAME fr_query2
+DO:
+   
+  Def  var nv_riskno  as  int  init  0.
+  
+  If  fi_riskno  <=  1  Then Message "Top  of  File"  View-as alert-box.
+  Else do:
+     nv_riskno  =  fi_riskno  -  1.
+     Find brstat.prmmst_fil Use-Index prmmst01        Where
+              prmmst_fil.policy = brstat.polmst_fil.policy     and
+              prmmst_fil.rencnt = brstat.polmst_fil.rencnt     and
+              prmmst_fil.endcnt = brstat.polmst_fil.endcnt   and
+              prmmst_fil.riskno  = nv_riskno                 
+     NO-LOCK No-error  No-wait.
+     If  not  avail  prmmst_fil  Then 
+          Message "Top  of  File"  View-as ALERT-BOX INFORMATION.
+     Else  do:
+          fi_riskno  =  nv_riskno.
+          Run  show_detail.
+     End.  
+  End.
+  
+  Disp  fi_riskno  with frame fr_query2.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_head
+&Scoped-define SELF-NAME bu_exit
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_exit C-WIN
+ON CHOOSE OF bu_exit IN FRAME fr_head /* Exit */
+DO:
+    APPLY "CLOSE" TO THIS-PROCEDURE.
+    RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_detail
+&Scoped-define SELF-NAME bu_first
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_first C-WIN
+ON CHOOSE OF bu_first IN FRAME fr_detail /* Page1 */
+DO:
+    RUN pd_hide.
+    VIEW FRAME fr_head.
+    VIEW FRAME fr_query1.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME bu_last
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_last C-WIN
+ON CHOOSE OF bu_last IN FRAME fr_detail /* Page2 */
+DO:
+
+
+    IF nv_recid = 0 THEN DO:
+          Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+          Return no-apply.
+    END.
+
+
+
+
+   FIND brstat.polmst_fil   Where RECID(polmst_fil)  =  nv_recid No-lock No-error No-wait.
+   IF Not Avail polmst_fil Then do:
+       Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+       Apply  "Close"  to This-procedure .
+       Return no-apply.
+   End.
+
+    RUN pd_hide.
+
+   fi_riskno = 1.
+   RUN show_detail.
+   VIEW FRAME fr_query2.
+
+
+
+             
+    Assign  
+                fi_sumtax    =  polmst_fil.rtax_t
+                fi_sumcom  =  polmst_fil.com1_t
+                fi_prmpol    =  polmst_fil.prem_t
+                fi_sumstm   =  polmst_fil.rstp_t  + polmst_fil.pstp
+                fi_total        =  fi_prmpol + fi_sumtax  +  fi_sumstm.
+
+   DISPLAY   fi_policy  fi_rencnt  fi_endcnt   fi_riskno   
+               fi_vesno   fi_vesnam1 fi_vesno2   fi_vesnam2
+               fi_voyno   fi_voyage  fi_voyno2   fi_voyage2
+               fi_vdat_c  fi_voydat  fi_vdatdes  fi_clucod
+               fi_cludes1 fi_cludes2 fi_cludes3  fi_cludes4
+               fi_cludes5 fi_cludes6 fi_cludes7
+               fi_claim   Cb_impexp fi_cerno   fi_recnam  fi_recdes
+               fi_setagt  fi_setdes  fi_suragt   fi_surdes
+               fi_curbil  fi_sigr_p  fi_curate   fi_tsigr  
+               fi_rate    fi_premae  fi_prem_t   fi_dup_t1   fi_stmpae  fi_rstp_t  fi_pstp1  fi_pstp2
+               fi_taxae   fi_rtax_t  fi_netp     fi_com1_p   fi_com1ae  fi_com1_t  fi_curdes
+               fi_cargo   fi_cardes  fi_package  fi_pacdes   fi_country fi_coundes
+               fi_prmpol  fi_sumtax  fi_sumstm   fi_sumcom   fi_total  
+     With  frame  fr_query2.        
+     
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_query2
+&Scoped-define SELF-NAME bu_up
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL bu_up C-WIN
+ON CHOOSE OF bu_up IN FRAME fr_query2
+DO:
+
+  Def  var  nv_riskno  as  int  init  0.
+
+  nv_riskno  =  fi_riskno  +  1.
+  Find brstat.prmmst_fil Use-Index prmmst01        Where
+               prmmst_fil.policy = brstat.polmst_fil.policy     and
+               prmmst_fil.rencnt = brstat.polmst_fil.rencnt     and
+               prmmst_fil.endcnt = brstat.polmst_fil.endcnt   and
+               prmmst_fil.riskno  =  nv_riskno
+   NO-LOCK No-error  No-wait.
+   IF avail  prmmst_fil  Then do:
+   
+      fi_riskno  =  nv_riskno.
+      Run  show_detail.
+   End.
+     
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME cb_impexp
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL cb_impexp C-WIN
+ON VALUE-CHANGED OF cb_impexp IN FRAME fr_query2
+DO:
+  cb_impexp = INPUT cb_impexp.
+  DISP cb_impexp WITH FRAME FRAME_a.
+    
+  IF SUBSTRING(fi_policy,1,1) <> "Q" Then Do:
+     IF cb_impexp = "Imp./Exp." Then Do:
+         MESSAGE "ไม่สามารถเลือกประเภท Imp/Exp ได้" VIEW-AS ALERT-BOX WARNING.
+
+         ASSIGN cb_impexp = "100/Imp.".
+         DISP cb_impexp WITH FRAME FRAME_a.
+
+         APPLY "Entry" TO cb_impexp.
+         RETURN NO-APPLY.
+     End.
+  End.    
+  RUN  show_impexp.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_Add
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_Add C-WIN
+ON LEAVE OF fi_Add IN FRAME fr_query2
+DO:
+   fi_Add = Input  fi_Add.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_cargo
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_cargo C-WIN
+ON LEAVE OF fi_cargo IN FRAME fr_query2
+DO:
+  fi_cargo = caps(INPUT fi_cargo).
+  
+  IF fi_cargo <> "" THEN DO:
+      FIND FIRST stat.smm100 USE-INDEX smm10001 WHERE
+                 smm100.tabcod = "CARGO"   and
+                 smm100.itmcod = fi_cargo  NO-LOCK NO-ERROR.
+      IF AVAIL smm100 THEN DO: 
+         fi_cardes = smm100.itmdes.
+         DISP fi_cardes WITH FRAME FRAME_a.
+      END.
+      ELSE DO:
+         MESSAGE "Not Found Code Cargo In Database!!"
+         VIEW-AS ALERT-BOX ERROR.
+         APPLY "entry" TO fi_cargo.
+         RETURN NO-APPLY.
+      END.
+   END.
+/*    ELSE DO:                                                                  */
+/*       MESSAGE "Please Insert Data to Type of Cargo" VIEW-AS ALERT-BOX ERROR. */
+/*       APPLY "entry" TO fi_cargo.                                             */
+/*       RETURN NO-APPLY.                                                       */
+/*    END.                                                                      */
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_claim
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_claim C-WIN
+ON LEAVE OF fi_claim IN FRAME fr_query2
+DO:
+  fi_claim  =  Input  fi_claim.
+  If fi_curbil = "" Then fi_curbil = "BHT".
+  Disp  fi_curbil  fi_claim  with frame frame_a.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_clucod
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_clucod C-WIN
+ON LEAVE OF fi_clucod IN FRAME fr_query2
+DO:
+   If  Input  fi_clucod  <>   ""  Then do: 
+        IF fi_clucod  <> INPUT fi_clucod Then  Run  chk_cludes.
+   End.
+   
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_country
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_country C-WIN
+ON LEAVE OF fi_country IN FRAME fr_query2
+DO:
+  fi_country = caps(INPUT fi_country).
+  
+  IF fi_country <> "" THEN DO:
+      FIND FIRST stat.smm100 USE-INDEX smm10001 WHERE
+                 smm100.tabcod = "COUNTRY"   and
+                 smm100.itmcod = fi_country  NO-LOCK NO-ERROR.
+      IF AVAIL smm100 THEN DO: 
+         fi_coundes = smm100.itmdes.
+         DISP fi_coundes WITH FRAME FRAME_a.
+      END.
+      ELSE DO:
+         MESSAGE "Not Found Code Country In Database!!"
+         VIEW-AS ALERT-BOX ERROR.
+         APPLY "entry" TO fi_country.
+         RETURN NO-APPLY.
+      END.
+   END. 
+/*    ELSE DO:                                                                 */
+/*       MESSAGE "Please Insert Data to Country Code" VIEW-AS ALERT-BOX ERROR. */
+/*       APPLY "entry" TO fi_country.                                          */
+/*       RETURN NO-APPLY.                                                      */
+/*    END.                                                                     */
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_curate
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_curate C-WIN
+ON LEAVE OF fi_curate IN FRAME fr_query2
+DO:
+  /*   fi_curate  =  Input  fi_curate.
+     /*fi_tsigr   = TRUNCATE(fi_sigr_p * fi_curate,0).*/
+     /* ### <A51-0029>
+     fi_tsigr   = TRUNCATE(fi_SumAdd * fi_curate,0).
+        ### */
+     fi_tsigr   = ROUND(fi_SumAdd * fi_curate,2).
+
+     Disp  fi_tsigr  fi_curate With frame frame_a.
+
+     /*---Amparat c. A52-0156--*/
+     IF  fi_curate <> nv_curate THEN DO:
+         FIND First curren_fil Use-index Curren01 Where
+                   curren_fil.curcod = fi_curbil  no-error no-wait.
+          IF AVAIL curren_fil THEN DO:
+             ASSIGN
+             curren_fil.rate = fi_curate.
+          END.
+     END.
+     RELEASE CURREN_fil.
+      /*---Amparat c. A52-0156--*/*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_curbil
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_curbil C-WIN
+ON LEAVE OF fi_curbil IN FRAME fr_query2
+DO:
+/* fi_curbil = Input fi_curbil.                                              */
+/*                                                                           */
+/* If  Input fi_curbil  <>   ""  Then do:                                    */
+/*   IF fi_curate = 0 OR fi_curbil <> Input  fi_curbil  Then do:             */
+/*            fi_curbil = CAPS(Input  fi_curbil).                            */
+/*            Disp  fi_curbil  With  frame frame_a.                          */
+/*            Find First curren_fil Use-index Curren01  Where                */
+/*                             curren_fil.curcod = fi_curbil                 */
+/*            No-lock no-error no-wait.                                      */
+/*            If not avail curren_fil  Then do:                              */
+/*                 Message  "Not Currency on CURREN_fil"  View-as alert-box. */
+/*                 Apply "Entry" to fi_curbil.                               */
+/*                 Return no-apply.                                          */
+/*            End.                                                           */
+/*            fi_curate = curren_fil.rate.                                   */
+/*            nv_curate = curren_fil.rate. /*amparat A52-0156*/              */
+/*    End.                                                                   */
+/*    fi_curbil = CAPS(INPUT fi_curbil).                                     */
+/*    nv_curbil = fi_curbil.                                                 */
+/*                                                                           */
+/* End.                                                                      */
+/* Disp fi_curate  fi_curbil With frame frame_a.                             */
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_dup_t1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_dup_t1 C-WIN
+ON LEAVE OF fi_dup_t1 IN FRAME fr_query2
+DO:
+    /*
+ASSIGN 
+  FRAME FRAME_a fi_rstp_t
+  FRAME FRAME_a fi_pstp1
+  FRAME FRAME_a fi_pstp2.
+
+  fi_dup_t1 = CAPS(Input fi_dup_t1).
+  Disp   fi_dup_t1 With frame frame_a.
+
+  /*--Dup/Trip--*/
+   IF fi_dup_t1 = "D"  THEN do:
+      nv_dup_t = 1 .
+      IF fi_rstp_t > 5  THEN DO:
+          ASSIGN fi_pstp1 = 5
+                 fi_pstp2 = 0.
+      END.
+      ELSE DO:
+          ASSIGN fi_pstp1 = 1
+                 fi_pstp2 = 0.
+      END.
+   END.
+   IF fi_dup_t1 = "T" Then do:
+      nv_dup_t = 1.
+      IF fi_rstp_t > 5 THEN DO:
+          ASSIGN fi_pstp1 = 5
+                 fi_pstp2 = 5.
+      END.
+      ELSE DO:
+          ASSIGN fi_pstp1 = 1
+                 fi_pstp2 = 1.
+      END.
+   END.
+   IF fi_dup_t1 = " " THEN DO:
+      ASSIGN
+          nv_dup_t = 3
+          fi_pstp1 = 0
+          fi_pstp2 = 0.
+   END.
+   nv_pstp = fi_pstp1 + fi_pstp2.
+   
+   DISP fi_dup_t1 fi_pstp1 fi_pstp2 WITH FRAME FRAME_a.
+  /*--VAT--*//*-A52-0211 Amparat---วิธีการคิด Vat = Prem + stam + dup + trip *7 % 
+                ที่เพิ่มเพราะว่าเมื่อมีการเปลื่ยนค่า Dup / Trip ก็ต้องคำณวนใหม่ด้วย--*/
+   FIND taxstm_fil Use-index  taxstm01  Where
+        taxstm_fil.branch = nv_branch   and
+        taxstm_fil.dir_ri =  nv_dir_ri  No-lock No-error.
+     IF NOT AVAIL  taxstm_fil Then DO:  
+          Find xmm020 Use-index  xmm02001      Where
+               xmm020.branch = nv_branch      and
+               xmm020.dir_ri = nv_dir_ri        No-lock No-error.
+             IF Not  avail  xmm020 Then DO: 
+                  nv_stmp_p = .4.
+                  If  nv_trndat   <  01/01/1999   Then   nv_tax_p = 3.3.
+                  Else If  ra_impexp = 2   then    nv_tax_p = 0.
+                  Else   nv_tax_p = 10.
+             END.
+             ELSE DO:
+               nv_stmp_p =   xmm020.rvstam.
+               IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+               ELSE If ra_impexp = 2 Then    nv_tax_p = 0.
+               ELSE nv_tax_p = xmm020.rvtax.
+             END.
+     END. 
+     ELSE DO:
+                 nv_stmp_p =   taxstm_fil.pvstam.
+                 IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+                 ELSE If ra_impexp = 2 Then    nv_tax_p = 0.
+                 ELSE nv_tax_p = taxstm_fil.pvtax.
+     END.
+
+     IF ra_impexp = 1 AND fi_taxae = YES THEN DO:
+        fi_rtax_t  = (fi_Prem_t + fi_rstp_t + fi_pstp1 + fi_pstp2) * (nv_tax_p / 100).            
+     END.
+     IF ra_impexp = 2 THEN DO: 
+         fi_rtax_t  = 0.
+     END.
+     DISP fi_rtax_t WITH FRAME FRAME_a.
+     
+     fi_netp = fi_prem_t + fi_rtax_t + fi_rstp_t +  nv_pstp.
+     DISP fi_netp WITH FRAME FRAME_a.
+
+/*---A52-0211 Amparat.  
+    fi_dup_t1 = CAPS(Input fi_dup_t1).
+    
+    Disp   fi_dup_t1 With frame frame_a.
+
+     IF fi_dup_t1 = "D"  then do:
+           nv_dup_t = 1.
+           If   fi_rstp_t > 5  Then do:
+                fi_pstp1 = 5.
+                fi_pstp2 = 0.
+           End.
+           Else do:
+                fi_pstp1 = 1.
+                fi_pstp2 = 0.
+           End.
+     End.
+      Else do:
+          IF fi_dup_t1 = "T" Then do:
+              nv_dup_t = 2.
+              If fi_rstp_t > 5    Then do:
+                 fi_pstp1 = 5.
+                 fi_pstp2 = 5.
+             End.
+             Else do:
+                fi_pstp1 = 1.
+                fi_pstp2 = 1.
+             End.
+          End.
+          Else do:
+            nv_dup_t = 0.
+            fi_pstp1 = 0.
+            fi_pstp2 = 0.
+          End.
+     End.
+     nv_pstp = fi_pstp1 + fi_pstp2.
+     If nv_trndat < 01/01/1999 Then do:
+           If fi_taxae  Then  fi_rtax_t  = TRUNCATE(fi_prem_t *  nv_tax_p / 100,0).
+     End.
+     Else If   fi_taxae  Then
+           fi_rtax_t  = (fi_prem_t + fi_rstp_t + nv_pstp) * nv_tax_p / 100.
+
+     fi_netp = fi_prem_t + fi_rtax_t + fi_rstp_t +  nv_pstp.
+     Disp fi_netp  fi_pstp1  fi_pstp2  fi_rtax_t With frame frame_a.
+*/*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_package
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_package C-WIN
+ON LEAVE OF fi_package IN FRAME fr_query2
+DO:
+  fi_package = caps(INPUT fi_package).
+  
+  IF fi_package <> "" THEN DO:
+      FIND FIRST stat.smm100 USE-INDEX smm10001 WHERE
+                 smm100.tabcod = "PACKAGE"   and
+                 smm100.itmcod = fi_package  NO-LOCK NO-ERROR.
+      IF AVAIL smm100 THEN DO: 
+         fi_pacdes = smm100.itmdes.
+         DISP fi_pacdes WITH FRAME FRAME_a.
+      END.
+      ELSE DO:
+         MESSAGE "Not Found Package Code In Database!!"
+         VIEW-AS ALERT-BOX ERROR.
+         APPLY "entry" TO fi_package.
+         RETURN NO-APPLY.
+      END.
+   END. 
+/*    ELSE DO:                                                                 */
+/*       MESSAGE "Please Insert Data to Package Code" VIEW-AS ALERT-BOX ERROR. */
+/*       APPLY "entry" TO fi_package.                                          */
+/*       RETURN NO-APPLY.                                                      */
+/*    END.                                                                     */
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_head
+&Scoped-define SELF-NAME fi_policy
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_policy C-WIN
+ON LEAVE OF fi_policy IN FRAME fr_head
+DO:
+            
+    ASSIGN
+        fi_policy = CAPS(input fi_policy).
+    DISPLAY  fi_policy    WITH frame  fr_head.
+   
+
+    ASSIGN
+        fi_rencnt = 0
+        fi_endcnt = 0 
+        fi_undyr  = "".
+    DISP fi_rencnt fi_endcnt fi_undyr  WITH frame  fr_head.
+    CLEAR FRAME fr_query1.
+    CLEAR FRAME fr_query2.
+    CLEAR FRAME fr_detail.
+    CLEAR FRAME fr_attext.
+    FOR EACH w_attext:
+        DELETE w_attext.
+    END.
+    nv_recid = 0.
+      
+        
+    IF fi_policy <> ""  THEN DO:
+        FIND LAST brstat.polmst_fil USE-INDEX POLMST01 WHERE
+                  polmst_fil.policy =  fi_policy NO-LOCK NO-ERROR.
+        IF NOT AVAILABLE polmst_fil THEN DO:
+           
+           
+           MESSAGE  "Not Found Policy No. on ...polmst_fil..."  View-as  ALERT-BOX INFORMATION.
+           Apply  "Entry"  to  fi_policy .
+           Return no-apply.
+        END.
+
+        nv_recid = RECID(polmst_fil).
+       ASSIGN                         
+            fi_rencnt  =  polmst_fil.rencnt
+            fi_endcnt  =  polmst_fil.endcnt
+            fi_undyr   =  polmst_fil.undyr
+            fi_appno   =  polmst_fil.appno
+            fi_prvpol  =  polmst_fil.prvpol
+            fi_recnam  =  polmst_fil.recnam   
+            fi_sennam  =  polmst_fil.sennam    
+            fi_acno1   =  polmst_fil.acno1
+            fi_agent   =  polmst_fil.agent
+            fi_langug  =  polmst_fil.langug
+            fi_insref  =  polmst_fil.insref
+            fi_ntitle  =  polmst_fil.ntitle
+            fi_name1   =  polmst_fil.name1
+            fi_name2   =  polmst_fil.name2
+           
+            fi_addr1   =  polmst_fil.addr1
+            fi_addr2   =  polmst_fil.addr2
+            fi_addr3   =  polmst_fil.addr3
+            fi_addr4   =  polmst_fil.addr4
+            fi_occup   =  polmst_fil.occupn
+            fi_comdat  =  polmst_fil.comdat
+            fi_expdat  =  polmst_fil.expdat
+            fi_polday  =  polmst_fil.polday
+            fi_short   =  polmst_fil.short 
+            fi_shortp  =  polmst_fil.short_per  
+            fi_accdat  =  polmst_fil.accdat
+            fi_acctim  =  polmst_fil.acctim
+            fi_trndat  =  polmst_fil.trndat
+            fi_fstdat  =  polmst_fil.fstdat
+            fi_cedco   =  polmst_fil.cedco
+            fi_cedsi   =  polmst_fil.cedsi  
+            fi_cedpol  =  polmst_fil.cedpol
+            fi_cedces  =  polmst_fil.cedces
+            fi_Dob     =  STRING(Polmst_fil.birdat,"99/99/9999")
+            fi_icno    = TRIM(SUBSTRING(polmst_fil.age,1,14))        
+            fi_brins   = TRIM(SUBSTRING(polmst_fil.age,20,5)) .
+            
+
+          FIND stat.poltyp_fil USE-INDEX poltyp01 WHERE
+               poltyp_fil.poltyp = polmst_fil.poltyp NO-LOCK NO-ERROR.
+          IF NOT AVAILABLE poltyp_fil THEN DO:
+             MESSAGE  "Not on Policy Type Parameter file poltyp_fil"  View-as ALERT-BOX INFORMATION.
+             Apply  "Entry"  to  fi_policy .
+             Return no-apply.
+          END.
+
+          FIND FIRST sicsyac.xcpara49 USE-INDEX xcpara4901 WHERE
+                     sicsyac.xcpara49.class   = "GRPPROD"  AND /*GRP.PRODUCT*/
+                     sicsyac.xcpara49.type[1] = fi_recnam
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xcpara49 THEN
+             fi_recdes = TRIM(sicsyac.xcpara49.type[7]).
+
+          FIND FIRST sicsyac.xcpara49 USE-INDEX xcpara4901 WHERE
+                     sicsyac.xcpara49.class   = "GRPPROM"  AND /*GRP.PROMOTION*/
+                     sicsyac.xcpara49.type[1] = fi_sennam
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xcpara49 THEN
+             fi_sendes = TRIM(sicsyac.xcpara49.type[7]).
+
+  
+          ASSIGN
+            fi_acdes = ""
+            fi_agdes = "".
+
+          FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+               sicsyac.xmm600.acno = fi_acno1
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF  AVAILABLE sicsyac.xmm600 THEN
+             fi_acdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name)).
+
+          FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+               sicsyac.xmm600.acno = fi_agent NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xmm600 THEN
+             fi_agdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name)).
+
+         
+        DISPLAY
+            fi_rencnt    fi_endcnt   fi_undyr  WITH FRAME fr_head.
+
+        DISPLAY
+            fi_appno    fi_prvpol
+            fi_recnam   fi_recdes   fi_sennam   fi_sendes    
+            fi_acno1    fi_acdes    fi_agent    fi_agdes
+            fi_langug   fi_insref   fi_ntitle   fi_name1
+            fi_name2    fi_addr1
+            fi_addr2    fi_addr3    fi_addr4
+            fi_occup    fi_comdat
+            fi_expdat   fi_polday   fi_short
+            fi_shortp   fi_accdat   fi_acctim
+            fi_trndat   fi_fstdat   fi_cedco
+            fi_cedsi    fi_cedpol
+            fi_cedces 
+          WITH FRAME  fr_query1.
+     
+         
+          RUN pd_hide.
+          VIEW FRAME fr_head.
+          VIEW FRAME fr_query1.
+          Apply  "ENTRY"  to bu_exit IN FRAME fr_head.
+          RETURN NO-APPLY.
+    END.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_policy C-WIN
+ON RETURN OF fi_policy IN FRAME fr_head
+DO:
+    APPLY "Entry" TO bu_exit IN FRAME fr_head.
+    RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_query2
+&Scoped-define SELF-NAME fi_premae
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_premae C-WIN
+ON LEAVE OF fi_premae IN FRAME fr_query2
+DO:
+    /*
+DEF VAR ra_impexp AS INT.
+ASSIGN FRAME frame_a cb_impexp.
+     If  cb_impexp = "100/Imp."  Then ra_impexp = 1.
+Else If  cb_impexp = "200/Exp."  THEN ra_impexp = 2.
+Else If  cb_impexp = "Imp./Exp." Then ra_impexp = 3.
+
+     fi_premae = Input  fi_premae.
+     DISP fi_premae WITH FRAME FRAME_a.
+
+     IF  fi_premae = YES THEN DO:         
+         fi_prem_t  = TRUNCATE(fi_tsigr * fi_rate / 100,0).        
+         If fi_prem_t < n_prm_min Then  fi_prem_t = n_prm_min.
+         DISP fi_prem_t  WITH FRAME FRAME_a.
+     END.
+     ELSE DO:
+         ENABLE fi_prem_t WITH FRAME FRAME_a.
+     END.
+    IF fi_premae = YES THEN DISABLE fi_prem_t  WITH FRAME FRAME_a.
+                      ELSE ENABLE  fi_prem_t  WITH FRAME FRAME_a.
+   
+
+
+/*--A52-0211 Amparat c.
+    fi_premae = Input  fi_premae.
+    If  fi_premae Then  do:
+        fi_prem_t  = TRUNCATE(fi_tsigr *  fi_rate / 100,0).
+        IF fi_prem_t   <   n_prm_min Then  fi_prem_t =  n_prm_min.
+    End.
+    
+    IF nv_short  Then  fi_prem_t = TRUNCATE(fi_prem_t *  nv_shortp / 100,0).
+    IF fi_stmpae Then do:
+          nv_rstp_t1 = TRUNCATE(fi_prem_t * nv_stmp_p / 100,0).
+          nv_rstp_t2 = fi_prem_t * nv_stmp_p / 100.
+          IF nv_rstp_t1 < nv_rstp_t2 Then  fi_rstp_t  = nv_rstp_t1 + 1.
+          Else   fi_rstp_t = nv_rstp_t1.
+    End.
+    Find taxstm_fil Use-index taxstm01   Where
+            taxstm_fil.branch = nv_branch    and
+            taxstm_fil.dir_ri    = nv_dir_ri       No-lock  no-error.
+    IF Not avail taxstm_fil Then do:
+        Message  "Not Branch on ...taxstm_fil..."  View-as alert-box.
+        nv_stmp_p = .4.
+        If nv_trndat < 01/01/1999 Then   nv_tax_p  = 3.3.
+        Else If ra_impexp = 2   Then   nv_tax_p  = 0.
+        Else nv_tax_p  = 10.
+    End.
+    Else do:
+       nv_stmp_p = taxstm_fil.pvstam.
+       IF nv_trndat < 01/01/1999   Then   nv_tax_p  = 3.3.
+       Else  If   ra_impexp = 2        Then  nv_tax_p  = 0.
+       Else  nv_tax_p  = taxstm_fil.pvtax.
+    End.
+    IF nv_trndat < 01/01/1999  then do:
+       IF fi_taxae  Then  fi_rtax_t  = TRUNCATE(fi_prem_t * nv_tax_p / 100,0).
+    End.
+    Else If  fi_taxae  Then
+       fi_rtax_t  = (fi_prem_t + fi_rstp_t + nv_pstp) * nv_tax_p / 100.
+
+    /*IF fi_com1ae Then  fi_com1_t = TRUNCATE(fi_prem_t *  fi_com1_p / 100,0) * -1.*/
+    IF fi_com1ae Then  fi_com1_t = (fi_prem_t *  fi_com1_p / 100) * -1.    /*note modi*/
+    fi_netp = fi_prem_t + fi_rtax_t + fi_rstp_t + nv_pstp.
+
+    DISPLAY fi_prem_t fi_rtax_t fi_rstp_t fi_netp fi_com1_t
+    With frame frame_a.
+
+    IF fi_premae Then do:
+        Disable   fi_prem_t  with frame  frame_a.
+        Apply "Entry"  to  fi_dup_t1.
+        Return no-apply.
+    End.
+    Else Enable  fi_prem_t  with frame  frame_a.
+----*/*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_rate
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_rate C-WIN
+ON LEAVE OF fi_rate IN FRAME fr_query2
+DO:
+/*
+    ASSIGN FRAME frame_a cb_impexp.
+         If  cb_impexp = "100/Imp."  Then ra_impexp = 1.
+    Else If  cb_impexp = "200/Exp."  THEN ra_impexp = 2.
+    Else If  cb_impexp = "Imp./Exp." Then ra_impexp = 3.
+
+     fi_rate = Input   fi_rate.
+   
+     IF fi_rate =  0 Then do:
+        Message " Error Rate. "  View-as alert-box.
+        Apply "Entry"  to  fi_rate .
+        Return no-apply.
+     END.
+     Find taxstm_fil Use-index  taxstm01  Where
+          taxstm_fil.branch = nv_branch   and
+          taxstm_fil.dir_ri =  nv_dir_ri  No-lock No-error.
+       IF NOT AVAIL  taxstm_fil Then DO:  
+          Find xmm020 Use-index  xmm02001 Where
+               xmm020.branch = nv_branch  and
+               xmm020.dir_ri = nv_dir_ri  No-lock No-error.
+             IF Not  avail  xmm020 Then DO: 
+                  nv_stmp_p = .4.
+                  If  nv_trndat   <  01/01/1999   Then   nv_tax_p = 3.3.
+                  Else If  ra_impexp = 2   then    nv_tax_p = 0.
+                  Else   nv_tax_p = 10.
+             END.
+             ELSE DO:
+               nv_stmp_p =   xmm020.rvstam.
+               IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+               ELSE If ra_impexp = 2 Then    nv_tax_p = 0.
+               ELSE nv_tax_p = xmm020.rvtax.
+             END.
+       END. 
+       ELSE DO:
+           nv_stmp_p =   taxstm_fil.pvstam.
+           IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+           ELSE If ra_impexp = 2 Then    nv_tax_p = 0.
+           ELSE nv_tax_p = taxstm_fil.pvtax.
+       END.
+       /*--Premium--*/
+       If  fi_premae = YES THEN fi_prem_t  = TRUNCATE(fi_tsigr * fi_rate / 100,0).
+        If fi_premae = YES Then do:
+           If fi_prem_t < n_prm_min Then  fi_prem_t = n_prm_min.
+        End.
+       /*--Stamp--*/
+       IF fi_stmpae = YES THEN DO:
+          IF (fi_prem_t * (nv_stmp_p / 100)) - TRUNCATE (fi_prem_t * (nv_stmp_p / 100), 0) > 0 THEN 
+             fi_rstp_t = TRUNCATE (fi_prem_t * (nv_stmp_p / 100), 0) + 1 .
+          ELSE 
+              fi_rstp_t = TRUNCATE (fi_prem_t * (nv_stmp_p / 100), 0).
+       END.
+       /*--Dup/Trip--*/
+       IF fi_dup_t1 = "D"  THEN do:
+          nv_dup_t = 1 .
+          IF fi_rstp_t > 5  THEN DO:
+              ASSIGN fi_pstp1 = 5
+                     fi_pstp2 = 0.
+          END.
+          ELSE DO:
+              ASSIGN fi_pstp1 = 1
+                     fi_pstp2 = 0.
+          END.
+       END.
+       IF fi_dup_t1 = "T" Then do:
+          nv_dup_t = 2.
+          IF fi_rstp_t > 5 THEN DO:
+              ASSIGN fi_pstp1 = 5
+                     fi_pstp2 = 5.
+          END.
+          ELSE DO:
+              ASSIGN fi_pstp1 = 1
+                     fi_pstp2 = 1.
+          END.
+       END.
+       IF fi_dup_t1 = " " THEN DO:
+          ASSIGN
+              nv_dup_t = 3
+              fi_pstp1 = 0
+              fi_pstp2 = 0.
+       END.
+       /*--VAT--*/
+       IF fi_taxae = YES THEN DO:           
+          fi_rtax_t  = (fi_Prem_t + fi_rstp_t + fi_pstp1 + fi_pstp2) * (nv_tax_p / 100).            
+       END.
+       /*--Total--*/       
+       fi_netp    =  fi_prem_t  +  fi_rtax_t  +  fi_rstp_t  + fi_pstp1 + fi_pstp2 .
+       /*--Comm--*/                                           
+       IF fi_com1ae = YES THEN DO:
+          IF fi_com1ae THEN fi_com1_t = (fi_prem_t * fi_com1_p / 100) * -1.
+       END.       
+       DISP  fi_prem_t fi_rstp_t fi_rtax_t  fi_pstp1 fi_pstp2 fi_netp fi_com1_t WITH FRAME FRAME_a.
+
+/*--A52-0211 Amparat c.
+    fi_rate = Input   fi_rate.
+   
+    IF fi_rate =  0 Then do:
+       Message " Error Rate. "  View-as alert-box.
+       Apply "Entry"  to  fi_rate .
+       Return no-apply.
+    End.
+    
+    If  fi_premae THEN fi_prem_t  = TRUNCATE(fi_tsigr * fi_rate / 100,0).
+
+    If fi_premae = YES Then do:
+       If fi_prem_t < n_prm_min Then  fi_prem_t = n_prm_min.
+    End.
+
+    IF nv_short Then  fi_prem_t = TRUNCATE(fi_prem_t *  nv_shortp / 100,0).
+        IF fi_stmpae Then do:           
+           nv_rstp_t1   =   TRUNCATE(fi_prem_t * nv_stmp_p / 100,0).
+           nv_rstp_t2   =    fi_prem_t * nv_stmp_p / 100.           
+           IF nv_rstp_t1 < nv_rstp_t2   Then     fi_rstp_t  =  nv_rstp_t1 + 1.
+           Else  fi_rstp_t =  nv_rstp_t1.
+        End.
+        Find taxstm_fil Use-index  taxstm01     Where
+             taxstm_fil.branch = nv_branch      and
+             taxstm_fil.dir_ri = nv_dir_ri        No-lock No-error.
+        IF Not  avail  taxstm_fil Then do:
+             Find xmm020 Use-index  xmm02001      Where
+                  xmm020.branch = nv_branch      and
+                  xmm020.dir_ri = nv_dir_ri        No-lock No-error.
+               IF Not  avail  xmm020 Then DO:                  
+                  nv_stmp_p = .4.
+                  If  nv_trndat   <  01/01/1999   Then   nv_tax_p = 3.3.
+                  Else If  ra_impexp = 2   then    nv_tax_p = 0.
+                  Else   nv_tax_p = 7.
+               END.
+               ELSE DO:
+                    nv_stmp_p =   xmm020.pvstam.
+                    IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+                    Else If   ra_impexp = 2 Then    nv_tax_p = 0.
+                    Else nv_tax_p = xmm020.pvtax.
+               END.
+             /*----Comment by Ampart  A52-0156---
+             Message  "Not Branch on ...taxstm_fil..."  View-as alert-box.
+             nv_stmp_p = .4.
+             If  nv_trndat   <  01/01/1999   Then   nv_tax_p = 3.3.
+             Else If  ra_impexp = 2   then    nv_tax_p = 0.
+             Else   nv_tax_p = 10.
+             ------*/
+             /*--Amparat A52-0156--
+             FIND xmm020 USE-INDEX  xmm02001  WHERE
+                  xmm020.branch = nv_branch   AND
+                  xmm020.dir_ri =  nv_dir_ri  No-lock NO-ERROR.
+               IF AVAIL xmm020 THEN DO:                  
+                  CREATE taxstm_fil.
+                  ASSIGN
+                  taxstm_fil.branch  =  xmm020.branch 
+                  taxstm_fil.dir_ri  =  xmm020.dir_ri 
+                  taxstm_fil.ppstam  =  xmm020.ppstam 
+                  taxstm_fil.ppfee   =  xmm020.ppfee  
+                  taxstm_fil.pptax   =  xmm020.pptax  
+                  taxstm_fil.rpstam  =  xmm020.rpstam 
+                  taxstm_fil.rpfee   =  xmm020.rpfee  
+                  taxstm_fil.rptax   =  xmm020.rptax  
+                  taxstm_fil.apptax  =  xmm020.apptax 
+                  taxstm_fil.pvstam  =  xmm020.pvstam 
+                  taxstm_fil.pvfee   =  xmm020.pvfee   
+                  taxstm_fil.pvtax   =  xmm020.pvtax  
+                  taxstm_fil.rvstam  =  xmm020.rvstam 
+                  taxstm_fil.rvfee   =  xmm020.rvfee  
+                  taxstm_fil.rvtax   =  xmm020.rvtax  
+                  taxstm_fil.gnstam  =  xmm020.gnstam 
+                  taxstm_fil.gnfee   =  xmm020.gnfee  
+                  taxstm_fil.gntax   =  xmm020.gntax.
+               END.
+               ELSE DO:
+                MESSAGE  "Not Branch on ...taxstm_fil..."  VIEW-AS ALERT-BOX.
+                   nv_stmp_p = .4.
+                If  nv_trndat   <  01/01/1999   Then   nv_tax_p = 3.3.
+                Else If  ra_impexp = 2   then    nv_tax_p = 0.
+                Else   nv_tax_p = 10.
+               END.
+               --Amparat A52-0156--*/
+        End.
+        Else do:           
+           nv_stmp_p =   taxstm_fil.pvstam.
+           IF nv_trndat <  01/01/1999 Then  nv_tax_p = 3.3.
+           Else If   ra_impexp = 2 Then    nv_tax_p = 0.
+           Else nv_tax_p = taxstm_fil.pvtax.
+        End.
+        IF nv_trndat  <   01/01/1999 Then do:
+           IF fi_taxae  Then  fi_rtax_t  = TRUNCATE(fi_prem_t *  nv_tax_p / 100,0).
+        End.
+        Else  If  fi_taxae  Then
+                  fi_rtax_t  = (fi_prem_t + fi_rstp_t +  nv_pstp) * nv_tax_p / 100.
+      
+        /*IF fi_com1ae THEN fi_com1_t = TRUNCATE(fi_prem_t * fi_com1_p / 100,0) * -1.*/
+        IF fi_com1ae THEN fi_com1_t = (fi_prem_t * fi_com1_p / 100) * -1.    /*note modi*/
+        fi_netp =  fi_prem_t + fi_rtax_t + fi_rstp_t + nv_pstp.
+
+        DISPLAY  fi_prem_t fi_rtax_t fi_rstp_t fi_netp fi_com1_t 
+        With Frame frame_a.
+---*/
+*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_head
+&Scoped-define SELF-NAME fi_search
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_search C-WIN
+ON CHOOSE OF fi_search IN FRAME fr_head /* Search */
+DO:
+  RUN WGW\WGWQMHPOL (INPUT "C90",
+                                                     INPUT-OUTPUT fi_policy) .
+
+
+
+    ASSIGN
+        fi_policy = CAPS(fi_policy).
+    DISPLAY  fi_policy    WITH frame  fr_head.
+   
+
+    CLEAR FRAME fr_query1.
+    CLEAR FRAME fr_query2.
+    CLEAR FRAME fr_detail.
+    CLEAR FRAME fr_attext.
+    FOR EACH w_attext:
+        DELETE w_attext.
+    END.
+    nv_recid = 0.
+      
+        
+        FIND LAST brstat.polmst_fil USE-INDEX POLMST01 WHERE
+                  polmst_fil.policy =  fi_policy NO-LOCK NO-ERROR.
+        IF NOT AVAILABLE polmst_fil THEN DO:
+           
+           
+           MESSAGE  "Not Found Policy No. on ...polmst_fil..."  View-as  ALERT-BOX INFORMATION.
+           Apply  "Entry"  to  fi_policy .
+           Return no-apply.
+        END.
+
+        nv_recid = RECID(polmst_fil).
+       ASSIGN                         
+            fi_rencnt  =  polmst_fil.rencnt
+            fi_endcnt  =  polmst_fil.endcnt
+            fi_undyr   =  polmst_fil.undyr
+            fi_appno   =  polmst_fil.appno
+            fi_prvpol  =  polmst_fil.prvpol
+            fi_recnam  =  polmst_fil.recnam   
+            fi_sennam  =  polmst_fil.sennam    
+            fi_acno1   =  polmst_fil.acno1
+            fi_agent   =  polmst_fil.agent
+            fi_langug  =  polmst_fil.langug
+            fi_insref  =  polmst_fil.insref
+            fi_ntitle  =  polmst_fil.ntitle
+            fi_name1   =  polmst_fil.name1
+            fi_name2   =  polmst_fil.name2
+           
+            fi_addr1   =  polmst_fil.addr1
+            fi_addr2   =  polmst_fil.addr2
+            fi_addr3   =  polmst_fil.addr3
+            fi_addr4   =  polmst_fil.addr4
+            fi_occup   =  polmst_fil.occupn
+            fi_comdat  =  polmst_fil.comdat
+            fi_expdat  =  polmst_fil.expdat
+            fi_polday  =  polmst_fil.polday
+            fi_short   =  polmst_fil.short 
+            fi_shortp  =  polmst_fil.short_per  
+            fi_accdat  =  polmst_fil.accdat
+            fi_acctim  =  polmst_fil.acctim
+            fi_trndat  =  polmst_fil.trndat
+            fi_fstdat  =  polmst_fil.fstdat
+            fi_cedco   =  polmst_fil.cedco
+            fi_cedsi   =  polmst_fil.cedsi  
+            fi_cedpol  =  polmst_fil.cedpol
+            fi_cedces  =  polmst_fil.cedces
+            fi_Dob     =  STRING(Polmst_fil.birdat,"99/99/9999")
+            fi_icno    = TRIM(SUBSTRING(polmst_fil.age,1,14))        
+            fi_brins   = TRIM(SUBSTRING(polmst_fil.age,20,5)) .
+            
+
+          FIND stat.poltyp_fil USE-INDEX poltyp01 WHERE
+               poltyp_fil.poltyp = polmst_fil.poltyp NO-LOCK NO-ERROR.
+          IF NOT AVAILABLE poltyp_fil THEN DO:
+             MESSAGE  "Not on Policy Type Parameter file poltyp_fil"  View-as ALERT-BOX INFORMATION.
+             Apply  "Entry"  to  fi_policy .
+             Return no-apply.
+          END.
+
+          FIND FIRST sicsyac.xcpara49 USE-INDEX xcpara4901 WHERE
+                     sicsyac.xcpara49.class   = "GRPPROD"  AND /*GRP.PRODUCT*/
+                     sicsyac.xcpara49.type[1] = fi_recnam
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xcpara49 THEN
+             fi_recdes = TRIM(sicsyac.xcpara49.type[7]).
+
+          FIND FIRST sicsyac.xcpara49 USE-INDEX xcpara4901 WHERE
+                     sicsyac.xcpara49.class   = "GRPPROM"  AND /*GRP.PROMOTION*/
+                     sicsyac.xcpara49.type[1] = fi_sennam
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xcpara49 THEN
+             fi_sendes = TRIM(sicsyac.xcpara49.type[7]).
+
+  
+          ASSIGN
+            fi_acdes = ""
+            fi_agdes = "".
+
+          FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+               sicsyac.xmm600.acno = fi_acno1
+          NO-LOCK NO-ERROR NO-WAIT.
+          IF  AVAILABLE sicsyac.xmm600 THEN
+             fi_acdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name)).
+
+          FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+               sicsyac.xmm600.acno = fi_agent NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAILABLE sicsyac.xmm600 THEN
+             fi_agdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name)).
+
+         
+        DISPLAY
+            fi_rencnt    fi_endcnt   fi_undyr  WITH FRAME fr_head.
+
+        DISPLAY
+            fi_appno    fi_prvpol
+            fi_recnam   fi_recdes   fi_sennam   fi_sendes    
+            fi_acno1    fi_acdes    fi_agent    fi_agdes
+            fi_langug   fi_insref   fi_ntitle   fi_name1
+            fi_name2    fi_addr1
+            fi_addr2    fi_addr3    fi_addr4
+            fi_occup    fi_comdat
+            fi_expdat   fi_polday   fi_short
+            fi_shortp   fi_accdat   fi_acctim
+            fi_trndat   fi_fstdat   fi_cedco
+            fi_cedsi    fi_cedpol
+            fi_cedces 
+          WITH FRAME  fr_query1.
+     
+         
+          RUN pd_hide.
+          VIEW FRAME fr_head.
+          VIEW FRAME fr_query1.
+       
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fr_query2
+&Scoped-define SELF-NAME fi_setagt
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_setagt C-WIN
+ON LEAVE OF fi_setagt IN FRAME fr_query2
+DO:
+/*    /* ##  <A51-0029>                                                                                        */
+/*    If  Input  fi_setagt  <>   ""   Then do:                                                                 */
+/*         fi_setagt = Caps(Input  fi_setagt).                                                                 */
+/*         Disp  fi_setagt    With frame frame_a.                                                              */
+/*                                                                                                             */
+/*         Find agtmst_fil Use-index  agtmst01 Where                                                           */
+/*                 agtmst_fil.acno = fi_setagt                                                                 */
+/*         No-lock no-error no-wait.                                                                           */
+/*         IF  Not  avail agtmst_fil  Then do:                                                                 */
+/*              Message  "Not Producer on agtmst_fil.."  View-as alert-box.                                    */
+/*              Apply "Entry"  to  fi_setagt .                                                                 */
+/*              Return no-apply.                                                                               */
+/*         End.                                                                                                */
+/*                                                                                                             */
+/*         fi_setdes = trim(agtmst_fil.ntitle) + " " + trim(agtmst_fil.name).                                  */
+/*         Disp  fi_setdes With  frame frame_a.                                                                */
+/*         IF agtmst_fil.clicod   <> "SE" Then do:                                                             */
+/*             Message   "Client Type # SE"  View-as alert-box.                                                */
+/*             Apply  "Entry" to fi_setagt.                                                                    */
+/*             Return no-apply.                                                                                */
+/*         End.                                                                                                */
+/*                                                                                                             */
+/*    End.                                                                                                     */
+/*    <A51-0029> ## */                                                                                         */
+/*    /***-- Assign A50-0281 --***/                                                                            */
+/*    If  Input  fi_setagt  <>   ""   Then do:                                                                 */
+/*         fi_setagt = Caps(Input  fi_setagt).                                                                 */
+/*         Disp  fi_setagt    With frame frame_a.                                                              */
+/*                                                                                                             */
+/*        Find sicsyac.xmm600 Use-index  xmm60001 Where                                                                */
+/*                 sicsyac.xmm600.acno = fi_setagt                                                                     */
+/*        No-lock no-error no-wait.                                                                            */
+/*        IF  Not  avail sicsyac.xmm600 Then do:                                                                       */
+/*            Message  "Not Producer on sicsyac.xmm600."  View-as alert-box.                                           */
+/*            Apply "Entry"  to  fi_setagt .                                                                   */
+/*            Return no-apply.                                                                                 */
+/*        End.                                                                                                 */
+/*                                                                                                             */
+/*        IF sicsyac.xmm600.clicod   <> "SE" Then do:                                                                  */
+/*           /*---Comment by Amparat c. A52-0156---                                                            */
+/*           Message   "Client Type # SE"  View-as alert-box.                                                  */
+/*           Apply  "Entry" to fi_setagt.                                                                      */
+/*           Return no-apply.                                                                                  */
+/*           ----*/                                                                                            */
+/*           /*--Amparat C. A52-0156--*/                                                                       */
+/*           IF nv_save = "" THEN DO:                                                                          */
+/*           Message "Settlement Code : ที่ระบุ " fi_setagt  "ไม่ตรงประเภท Client Type # SE" SKIP(1)           */
+/*                   "คุณยื่นยันที่จะใช้ Settlement Code นี้หรือไม่" View-as ALERT-BOX QUESTION BUTTONS YES-NO */
+/*           TITLE  "Settlement Code # SE" UPDATE choice as LOGICAL.                                           */
+/*           CASE choice:                                                                                      */
+/*              WHEN TRUE THEN DO:   /*yes*/                                                                   */
+/*                   fi_setdes = TRIM(sicsyac.xmm600.ntitle) + " " + TRIM(sicsyac.xmm600.NAME).                                */
+/*                   DISP  fi_setdes WITH FRAME frame_a.                                                       */
+/*              END.                                                                                           */
+/*              WHEN FALSE THEN DO:  /*no*/                                                                    */
+/*                   ASSIGN fi_setagt = ""                                                                     */
+/*                          fi_setdes = "".                                                                    */
+/*                   DISP fi_setagt fi_setdes WITH FRAME FRAME_a.                                              */
+/*                   Apply  "Entry" to fi_setagt.                                                              */
+/*                   RETURN NO-APPLY.                                                                          */
+/*              END.                                                                                           */
+/*           END CASE.                                                                                         */
+/*           END.                                                                                              */
+/*           /*--Amparat C. A52-0156--*/                                                                       */
+/*        End.                                                                                                 */
+/*       /*---Comment by Amparat c. A52-0156---                                                                */
+/*            fi_setdes = trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name).                                       */
+/*            Disp  fi_setdes With  frame frame_a.                                                             */
+/*       ----*/                                                                                                */
+/*    END.                                                                                                     */
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_SumAdd
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_SumAdd C-WIN
+ON LEAVE OF fi_SumAdd IN FRAME fr_query2
+DO:
+    fi_sigr_p = INPUT fi_sigr_p.
+    IF fi_sigr_p = 0 Then do:
+          Message  " Error suminsured. " View-as alert-box.
+          Apply "Entry"  to  fi_sigr_p.
+          Return no-apply.
+    End.
+     fi_tsigr  = TRUNCATE(fi_sigr_p * fi_curate,0).
+     Disp  fi_tsigr With frame frame_a.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_suragt
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_suragt C-WIN
+ON LEAVE OF fi_suragt IN FRAME fr_query2
+DO:
+/*       /* ##                                                                                                 */
+/* If  Input fi_suragt  <>   ""  Then do:                                                                      */
+/*    fi_suragt = caps(Input  fi_suragt).                                                                      */
+/*    Disp fi_suragt  With frame  frame_a.                                                                     */
+/*                                                                                                             */
+/*    Find agtmst_fil Use-index agtmst01 Where                                                                 */
+/*              agtmst_fil.acno = fi_suragt                                                                    */
+/*    No-lock  no-error no-wait.                                                                               */
+/*    If Not avail agtmst_fil Then do:                                                                         */
+/*        Message  "Not Producer on agtmst_fil.."  View-as alert-box.                                          */
+/*        Apply  "Entry"  to  fi_suragt.                                                                       */
+/*        Return no-apply.                                                                                     */
+/*    End.                                                                                                     */
+/*                                                                                                             */
+/*    IF agtmst_fil.clicod <> "SV" Then do:                                                                    */
+/*         Message  "Client Type # SV"  View-as alert-box.                                                     */
+/*         Apply "Entry"  to  fi_suragt.                                                                       */
+/*         Return no-apply.                                                                                    */
+/*    End.                                                                                                     */
+/*                                                                                                             */
+/*    fi_surdes = trim(agtmst_fil.ntitle) + " " + trim(agtmst_fil.name).                                       */
+/*    Disp fi_surdes With frame frame_a.                                                                       */
+/* End.                                                                                                        */
+/*    ### */                                                                                                   */
+/*  If  Input fi_suragt  <>   ""  Then do:                                                                     */
+/*    fi_suragt = caps(Input  fi_suragt).                                                                      */
+/*    Disp fi_suragt  With frame  frame_a.                                                                     */
+/*                                                                                                             */
+/*        /***-- Assign A50-0281 --***/                                                                        */
+/*        Find sicsyac.xmm600 Use-index xmm60001 Where                                                                 */
+/*                  sicsyac.xmm600.acno = fi_suragt                                                                    */
+/*        No-lock  no-error no-wait.                                                                           */
+/*        If Not avail sicsyac.xmm600 Then do:                                                                         */
+/*            Message  "Not Producer on sicsyac.xmm600."  View-as alert-box.                                           */
+/*            Apply  "Entry"  to  fi_suragt.                                                                   */
+/*            Return no-apply.                                                                                 */
+/*        End.                                                                                                 */
+/*                                                                                                             */
+/*                                                                                                             */
+/*        IF sicsyac.xmm600.clicod <> "SV" Then do:                                                                    */
+/*           /*---amparat A52-0156--                                                                           */
+/*             Message  "Client Type # SV"  View-as alert-box.                                                 */
+/*             Apply "Entry"  to  fi_suragt.                                                                   */
+/*             Return no-apply.                                                                                */
+/*            --------------------*/                                                                           */
+/*           /*--Amparat C. A52-0156--*/                                                                       */
+/*           IF nv_save = "" THEN DO:                                                                          */
+/*           Message "Servar Code : ที่ระบุ " fi_suragt  "ไม่ตรงประเภท Client Type # SV" SKIP(1)               */
+/*                   "คุณยื่นยันที่จะใช้ Settlement Code นี้หรือไม่" View-as ALERT-BOX QUESTION BUTTONS YES-NO */
+/*           TITLE  "Servar Code # SV" UPDATE choice as LOGICAL.                                               */
+/*           CASE choice:                                                                                      */
+/*              WHEN TRUE THEN DO:   /*yes*/                                                                   */
+/*                   fi_surdes = TRIM( agtmst_fil.ntitle) + " " + TRIM( agtmst_fil.NAME).                      */
+/*                   DISP  fi_surdes WITH FRAME frame_a.                                                       */
+/*              END.                                                                                           */
+/*              WHEN FALSE THEN DO:  /*no*/                                                                    */
+/*                   Assign                                                                                    */
+/*                     fi_suragt  =  agtmst_fil.acno                                                           */
+/*                     fi_surdes =  agtmst_fil.name.                                                           */
+/*                   DISP fi_suragt fi_surdes  WITH FRAME FRAME_a.                                             */
+/*                   Apply  "Entry" to fi_suragt.                                                              */
+/*                   RETURN NO-APPLY.                                                                          */
+/*              END.                                                                                           */
+/*           END CASE.                                                                                         */
+/*           END.                                                                                              */
+/*           /*---Amparat C. A52-0156--*/                                                                      */
+/*        End.                                                                                                 */
+/*                                                                                                             */
+/*        fi_surdes = trim(sicsyac.xmm600.ntitle) + " " + trim(sicsyac.xmm600.name).                                           */
+/*        Disp fi_surdes With frame frame_a.                                                                   */
+/*   END.                                                                                                      */
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_vdat_c
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_vdat_c C-WIN
+ON LEAVE OF fi_vdat_c IN FRAME fr_query2
+DO:
+/*   If  Input  fi_vdat_c  <>   ""  Then do:                                    */
+/*         fi_vdat_c = caps(INPUT fi_vdat_c).                                   */
+/*         Find   smm100_fil Use-index smm10001 Where                           */
+/*                   smm100_fil.tabcod = "U007"         And                     */
+/*                   smm100_fil.itmcod =  fi_vdat_c     No-lock No-error.       */
+/*         IF Not  Avail smm100_fil Then do:                                    */
+/*             Message  "Not Voyage Type on file smm100_fil" View-as alert-box. */
+/*             Apply "Entry"  to fi_vdat_c.                                     */
+/*             Return no-apply.                                                 */
+/*         End.                                                                 */
+/*         fi_vdatdes = smm100_fil.itmdes.                                      */
+/*         Disp   fi_vdat_c  fi_vdatdes With frame frame_a.                     */
+/*   End.                                                                       */
+/*   nv_type = INPUT fi_vdat_c.                                                 */
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_vesnam1
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_vesnam1 C-WIN
+ON LEAVE OF fi_vesnam1 IN FRAME fr_query2
+DO:
+   fi_vesnam1 = INPUT fi_vesnam1.
+    Disp  fi_vesnam1 With frame frame_a.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_vesnam2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_vesnam2 C-WIN
+ON LEAVE OF fi_vesnam2 IN FRAME fr_query2
+DO:
+     fi_vesnam2 = INPUT fi_vesnam2.
+     DISP  fi_vesnam2  With frame frame_a.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_vesno
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_vesno C-WIN
+ON LEAVE OF fi_vesno IN FRAME fr_query2
+DO:
+   
+     /*---
+     FIND uwm510 Use-index uwm51001  where
+               uwm510.vesno = Input fi_vesno No-lock no-error.
+     If Avail  uwm510  then do:
+           fi_vesno    =  uwm510.vesno.
+           if fi_vesno <> "000000" Then Do:
+                If fi_vesnam1 = "" Then fi_vesnam1 = uwm510.vesnam.
+                Else fi_vesnam1 = Input fi_vesnam1.
+            End.    
+     End.
+     DISPLAY fi_vesno  fi_vesnam1 With frame  frame_a.
+     ---*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_vesno2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_vesno2 C-WIN
+ON LEAVE OF fi_vesno2 IN FRAME fr_query2
+DO:
+    /**---
+   fi_vesno2 = caps(INPUT fi_vesno2).
+   FIND uwm510 USE-INDEX uwm51001  Where
+             uwm510.vesno = fi_vesno2         No-lock no-error.
+   If Avail  uwm510  then do:
+         fi_vesno2  =  uwm510.vesno.
+         If  fi_vesno2 <> "000000" Then Do:
+             If  fi_vesnam2 = "" Then fi_vesnam2 = uwm510.vesnam.
+             Else fi_vesnam2 = Input fi_vesnam2.
+         End.    
+   End.
+   DISP fi_vesno2  fi_vesnam2 With  frame frame_a.
+---*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_voyage
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_voyage C-WIN
+ON LEAVE OF fi_voyage IN FRAME fr_query2
+DO:
+    fi_voyage = INPUT fi_voyage.
+    DISP fi_voyage  With  frame  frame_a.
+
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_voyage2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_voyage2 C-WIN
+ON LEAVE OF fi_voyage2 IN FRAME fr_query2
+DO:
+  fi_voyage2  = Input  fi_voyage2.
+  Disp  fi_voyage2  with frame frame_a.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_voydat
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_voydat C-WIN
+ON LEAVE OF fi_voydat IN FRAME fr_query2
+DO:
+  fi_voydat  =  Input  fi_voydat.
+  Disp  fi_voydat  with frame frame_a.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_voyno
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_voyno C-WIN
+ON LEAVE OF fi_voyno IN FRAME fr_query2
+DO:
+
+    /*---
+    fi_voyno = CAPS(INPUT fi_voyno).
+      
+    IF   fi_voyno  <>  ""  Then do:
+           
+             Disp fi_voyno With  frame frame_a.
+             Find uwm511 Use-index uwm51101 Where
+                  uwm511.vesno = fi_vesno   And
+                  uwm511.voyno = fi_voyno
+             No-lock  no-error.
+             IF  not avail  uwm511 Then do:
+                  Message "Not Parameter on file (uwm511)"  View-as alert-box.
+                  Apply "Entry"  to fi_voyno.
+                  Return no-apply.
+             End.
+             Else do:
+                 ASSIGN
+                  fi_voyno     =  uwm511.voyno
+                  fi_voyage    =  uwm511.voyde1
+                 /* fi_voyage2  =  uwm511.voyde1.*/
+                  fi_voydat    =  uwm511.depdat.
+             End.
+    End.
+    Disp fi_voyno  fi_voyage  fi_voydat With  frame frame_a.
+    ----*/
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME fi_voyno2
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL fi_voyno2 C-WIN
+ON LEAVE OF fi_voyno2 IN FRAME fr_query2
+DO:
+
+    /*---
+   fi_voyno2 = INPUT fi_voyno2.
+
+
+   If    fi_voyno2  <>  ""  Then do:
+     FIND uwm511 Use-index uwm51101  Where
+               uwm511.vesno = fi_vesno2       And
+               uwm511.voyno = Input  fi_voyno2       No-lock no-error.
+        IF Not  avail uwm511 Then do:
+             If  fi_vesno2  =  ""  Then do:
+                 Message "       กรุณาระบุ code vessel 2 "   Skip
+                                  "หากต้องการระบุรายละเอียด voyage 2 "   View-as alert-box.
+                 Apply "entry" to  fi_vesno2.                                  
+                 Return no-apply.                 
+             End.
+             Message  "Not Parameter on file (uwm511)"  View-as alert-box.
+             Apply "Entry" to  fi_voyno2 .
+             Return no-apply.
+        End.
+        fi_voyno2    =  uwm511.voyno.
+        fi_voyage2 =   uwm511.voyde1.
+        Disp  fi_voyno2  fi_voyage2  with frame frame_a.
+   End.
+        ----*/
+        
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Att_Text
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Att_Text C-WIN
+ON CHOOSE OF MENU-ITEM m_Att_Text /* Att. Text */
+DO:
+
+
+
+  IF nv_recid = 0 THEN DO:
+      Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+      Return no-apply.
+  END.
+
+
+
+
+   FIND brstat.polmst_fil   Where RECID(polmst_fil)  =  nv_recid  No-lock No-error No-wait.
+   IF Not Avail polmst_fil Then do:
+       Message  "Not Found Policy No. on ...polmst_fil..."  View-as  ALERT-BOX INFORMATION.
+       
+   End.
+   ELSE DO:
+
+
+
+        RUN pd_hide.
+        CLEAR FRAME fr_attext.
+        VIEW FRAME fr_attext.
+
+        FOR EACH brstat.patttxt_Fil USE-INDEX patttxt01 WHERE patttxt_Fil.policy = polmst_fil.policy NO-LOCK BREAK BY patttxt_Fil.lnumber:
+            CREATE w_attext.
+            ASSIGN
+                w_attext.num   = patttxt_Fil.lnumber
+                w_attext.text1 = patttxt_Fil.ltext
+                w_attext.text2 = patttxt_Fil.ltext2.
+    
+    
+    
+    
+        END.
+        Open Query  br_attext  For each  w_attext NO-LOCK BY w_attext.num.
+        FIND FIRST w_attext NO-LOCK NO-ERROR.
+        IF NOT AVAIL w_attext THEN DO:
+            MESSAGE "Not Found ATT. TEXT" VIEW-AS ALERT-BOX INFORMATION.
+            DISABLE fi_text1 fi_text2 br_attext WITH FRAME fr_attext.
+        END.
+        ELSE ENABLE fi_text1 fi_text2 br_attext WITH FRAME fr_attext.
+   END.
+   
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Black
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Black C-WIN
+ON CHOOSE OF MENU-ITEM m_Black /* Black */
+DO:
+    IF nv_recid = 0 THEN DO:
+        Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+        Return no-apply.
+    END.
+
+    RUN pd_hide.
+    VIEW FRAME fr_head.
+    VIEW FRAME fr_query1.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Detail_Package
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Detail_Package C-WIN
+ON CHOOSE OF MENU-ITEM m_Detail_Package /* Detail Package */
+DO:
+    IF nv_recid = 0 THEN DO:
+      Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+      Return no-apply.
+    END.
+
+
+
+   FIND brstat.polmst_fil   Where RECID(polmst_fil)  =  nv_recid  No-lock No-error No-wait.
+   IF Not Avail polmst_fil Then do:
+       Message  "Not Found Policy No. on ...polmst_fil..."  View-as  ALERT-BOX INFORMATION.
+       
+   End.
+   ELSE DO:
+
+  
+       RUN pd_hide.
+       VIEW FRAME fr_detail.
+       Assign
+          fi_cargo   = SUBSTR(polmst_fil.appcode,1,4)
+          fi_package = SUBSTR(polmst_fil.appcode,5,2)
+          fi_country = SUBSTR(polmst_fil.appcode,7,3).
+    
+       FIND FIRST stat.smm100 USE-INDEX smm10001 WHERE
+                  smm100.tabcod = "CARGO" AND
+                  smm100.itmcod = fi_cargo 
+       NO-ERROR NO-WAIT.
+       IF AVAIL smm100 THEN
+          fi_cardes = smm100.itmdes.
+       
+       
+       FIND FIRST smm100 USE-INDEX smm10001 WHERE
+                  smm100.tabcod = "PACKAGE" AND
+                  smm100.itmcod = fi_package 
+       NO-ERROR NO-WAIT.
+       IF AVAIL smm100 THEN
+          fi_pacdes = smm100.itmdes.
+    
+       FIND FIRST smm100 USE-INDEX smm10001 WHERE
+                  smm100.tabcod = "COUNTRY" AND
+                  smm100.itmcod = fi_country 
+       NO-ERROR NO-WAIT.
+       IF AVAIL smm100 THEN
+          fi_coundes = smm100.itmdes.
+    
+    
+       DISPLAY
+          fi_cargo   fi_cardes
+          fi_package fi_pacdes
+          fi_country fi_coundes
+       WITH FRAME FR_detail.
+   END.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Exit
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Exit C-WIN
+ON CHOOSE OF MENU-ITEM m_Exit /* Exit */
+DO:
+    APPLY "CLOSE" TO THIS-PROCEDURE.
+    RETURN NO-APPLY.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Next_Page
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Next_Page C-WIN
+ON CHOOSE OF MENU-ITEM m_Next_Page /* Next Page */
+DO:
+
+
+    IF nv_recid = 0 THEN DO:
+          Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+          Return no-apply.
+    END.
+
+
+
+
+   FIND brstat.polmst_fil   Where RECID(polmst_fil)  =  nv_recid No-lock No-error No-wait.
+   IF Not Avail polmst_fil Then do:
+       Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+   End.
+   ELSE DO:
+       VIEW FRAME fr_head.
+       RUN pd_hide.
+       
+       fi_riskno = 1.
+       RUN show_detail.
+       VIEW FRAME fr_query2.
+    
+    
+    
+                 
+        Assign  
+                    fi_sumtax    =  polmst_fil.rtax_t
+                    fi_sumcom    =  polmst_fil.com1_t
+                    fi_prmpol    =  polmst_fil.prem_t
+                    fi_sumstm    =  polmst_fil.rstp_t  + polmst_fil.pstp
+                    fi_total     =  fi_prmpol + fi_sumtax  +  fi_sumstm.
+    
+       DISPLAY     fi_policy  fi_rencnt  fi_endcnt   fi_riskno   
+                   fi_vesno   fi_vesnam1 fi_vesno2   fi_vesnam2
+                   fi_voyno   fi_voyage  fi_voyno2   fi_voyage2
+                   fi_vdat_c  fi_voydat  fi_vdatdes  fi_clucod
+                   fi_cludes1 fi_cludes2 fi_cludes3  fi_cludes4
+                   fi_cludes5 fi_cludes6 fi_cludes7
+                   fi_claim   Cb_impexp fi_cerno   fi_recnam  fi_recdes
+                   fi_setagt  fi_setdes  fi_suragt   fi_surdes
+                   fi_curbil  fi_sigr_p  fi_curate   fi_tsigr  
+                   fi_rate    fi_premae  fi_prem_t   fi_dup_t1   fi_stmpae  fi_rstp_t  fi_pstp1  fi_pstp2
+                   fi_taxae   fi_rtax_t  fi_netp     fi_com1_p   fi_com1ae  fi_com1_t  fi_curdes
+                   fi_cargo   fi_cardes  fi_package  fi_pacdes   fi_country fi_coundes
+                   fi_prmpol  fi_sumtax  fi_sumstm   fi_sumcom   fi_total  
+         With  frame  fr_query2.      
+   END.
+         
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define SELF-NAME m_Policy_Text
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CONTROL m_Policy_Text C-WIN
+ON CHOOSE OF MENU-ITEM m_Policy_Text /* Policy Text */
+DO:
+
+
+
+  IF nv_recid = 0 THEN DO:
+      Message  "Not Found Policy No. on ...polmst_fil..."  View-as  alert-box.
+      Return no-apply.
+  END.
+
+
+
+
+   FIND brstat.polmst_fil   Where RECID(polmst_fil)  =  nv_recid  No-lock No-error No-wait.
+   IF Not Avail polmst_fil Then do:
+       Message  "Not Found Policy No. on ...polmst_fil..."  View-as  ALERT-BOX INFORMATION.
+       
+   End.
+   ELSE DO:
+        RUN pd_hide.
+        CLEAR FRAME fr_attext.
+        VIEW FRAME  fr_attext.
+        
+
+        FOR EACH brstat.poltxt_fil USE-INDEX poltxt01 WHERE poltxt_fil.policy = polmst_fil.policy NO-LOCK BREAK BY poltxt_fil.lnumber:
+            CREATE w_attext.
+            ASSIGN
+                w_attext.num   = poltxt_fil.lnumber
+                w_attext.text1 = poltxt_fil.ltext
+                w_attext.text2 = poltxt_fil.ltext2.
+    
+    
+    
+    
+        END.
+        Open Query  br_attext  For each  w_attext NO-LOCK BY w_attext.num.
+        FIND FIRST w_attext NO-LOCK NO-ERROR.
+        IF NOT AVAIL w_attext THEN DO:
+            MESSAGE "Not Found Policy TEXT" VIEW-AS ALERT-BOX INFORMATION.
+            DISABLE fi_text1 fi_text2 br_attext WITH FRAME fr_attext.
+        END.
+        ELSE ENABLE fi_text1 fi_text2 br_attext WITH FRAME fr_attext.
+   END.
+   
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+&Scoped-define FRAME-NAME fMain
+&UNDEFINE SELF-NAME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _CUSTOM _MAIN-BLOCK C-WIN 
+
+
+/* ***************************  Main Block  *************************** */
+
+
+/* Set CURRENT-WINDOW: this will parent dialog-boxes and frames.        */
+ASSIGN CURRENT-WINDOW                = {&WINDOW-NAME} 
+       THIS-PROCEDURE:CURRENT-WINDOW = {&WINDOW-NAME}.
+
+/* The CLOSE event can be used from inside or outside the procedure to  */
+/* terminate it.                                                        */
+ON CLOSE OF THIS-PROCEDURE 
+   RUN disable_UI.
+
+/* Best default for GUI applications is...                              */
+PAUSE 0 BEFORE-HIDE.
+
+/* Now enable the interface and wait for the exit condition.            */
+/* (NOTE: handle ERROR and END-KEY so cleanup code will always fire.    */
+MAIN-BLOCK:
+DO ON ERROR   UNDO MAIN-BLOCK, LEAVE MAIN-BLOCK
+   ON END-KEY UNDO MAIN-BLOCK, LEAVE MAIN-BLOCK:
+   RUN wut\wutwicen(C-WIN:Handle). 
+   RUN enable_UI.
+
+/********************  T I T L E   F O R  C - W I N  ****************/
+  DEF  VAR  gv_prgid   AS   CHAR.
+  DEF  VAR  gv_prog    AS   CHAR.
+  
+  gv_prgid = "WGWQMPOL".
+  gv_prog  = "Query Policy Marine".
+  RUN  WUT\WUTHEAD (C-WIN:handle,gv_prgid,gv_prog). 
+                                                                         
+   /*HIDE FRAME fr_query2.  
+   CLEAR FRAME fr_query2. 
+   CLEAR FRAME fr_head.
+   CLEAR FRAME fr_query1. */
+  RUN pd_hide.
+  VIEW FRAME fr_head.
+  VIEW FRAME fr_query1.
+/*********************************************************************/  
+   
+  
+  IF NOT THIS-PROCEDURE:PERSISTENT THEN
+    WAIT-FOR CLOSE OF THIS-PROCEDURE.
+END.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+
+/* **********************  Internal Procedures  *********************** */
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE disable_UI C-WIN  _DEFAULT-DISABLE
+PROCEDURE disable_UI :
+/*------------------------------------------------------------------------------
+  Purpose:     DISABLE the User Interface
+  Parameters:  <none>
+  Notes:       Here we clean-up the user-interface by deleting
+               dynamic widgets we have created and/or hide 
+               frames.  This procedure is usually called when
+               we are ready to "clean-up" after running.
+------------------------------------------------------------------------------*/
+  /* Delete the WINDOW we created */
+  IF SESSION:DISPLAY-TYPE = "GUI":U AND VALID-HANDLE(C-WIN)
+  THEN DELETE WIDGET C-WIN.
+  IF THIS-PROCEDURE:PERSISTENT THEN DELETE PROCEDURE THIS-PROCEDURE.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE enable_UI C-WIN  _DEFAULT-ENABLE
+PROCEDURE enable_UI :
+/*------------------------------------------------------------------------------
+  Purpose:     ENABLE the User Interface
+  Parameters:  <none>
+  Notes:       Here we display/view/enable the widgets in the
+               user-interface.  In addition, OPEN all queries
+               associated with each FRAME and BROWSE.
+               These statements here are based on the "Other 
+               Settings" section of the widget Property Sheets.
+------------------------------------------------------------------------------*/
+  VIEW FRAME fMain IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fMain}
+  DISPLAY fi_text1 fi_text2 
+      WITH FRAME fr_attext IN WINDOW C-WIN.
+  ENABLE fi_text1 fi_text2 br_attext 
+      WITH FRAME fr_attext IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fr_attext}
+  DISPLAY fi_policy fi_rencnt fi_endcnt fi_undyr 
+      WITH FRAME fr_head IN WINDOW C-WIN.
+  ENABLE fi_policy fi_search bu_exit 
+      WITH FRAME fr_head IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fr_head}
+  DISPLAY fi_cargo fi_cardes fi_package fi_pacdes fi_country fi_coundes 
+      WITH FRAME fr_detail IN WINDOW C-WIN.
+  ENABLE bu_first bu_last 
+      WITH FRAME fr_detail IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fr_detail}
+  DISPLAY fi_vesno fi_vesnam1 fi_voyno fi_voyage fi_vesno2 fi_vesnam2 fi_voyno2 
+          fi_voyage2 fi_voydat fi_clucod fi_vdat_c fi_vdatdes fi_cludes1 
+          fi_cludes2 fi_cludes3 fi_cludes4 fi_cludes5 fi_cludes6 fi_cludes7 
+          fi_cargo cb_impexp fi_claim fi_cardes fi_package fi_setagt fi_setdes 
+          fi_pacdes fi_country fi_coundes fi_suragt fi_surdes fi_curbil 
+          fi_prem_t fi_rate fi_premae fi_prmpol fi_dup_t1 fi_stmpae fi_rstp_t 
+          fi_pstp1 fi_pstp2 fi_Add fi_SumAdd fi_sumstm fi_taxae fi_rtax_t 
+          fi_sigr_p fi_sumtax fi_netp fi_curate fi_sumcom fi_com1ae fi_com1_t 
+          fi_tsigr fi_total fi_com1_p fi_curdes fi_policy fi_rencnt fi_endcnt 
+          fi_riskno fi_cerno fi_recnam fi_recdes 
+      WITH FRAME fr_query2 IN WINDOW C-WIN.
+  ENABLE RECT-548 RECT-549 RECT-547 RECT-569 RECT-546 RECT-570 bu_down bu_up 
+         fi_cerno fi_recnam 
+      WITH FRAME fr_query2 IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fr_query2}
+  DISPLAY fi_appno fi_prvpol fi_openpol fi_recnam fi_recdes fi_sennam fi_sendes 
+          fi_acno1 fi_acdes fi_agent fi_agdes fi_insref fi_icno fi_dob fi_langug 
+          fi_ntitle fi_brins fi_name1 fi_name2 fi_addr1 fi_addr2 fi_addr3 
+          fi_addr4 fi_occup fi_accdat fi_trndat fi_comdat fi_expdat fi_short 
+          fi_shortp fi_cedco fi_polday fi_fstdat fi_docno1 fi_cedpol fi_acctim 
+          fi_cedsi fi_cedces 
+      WITH FRAME fr_query1 IN WINDOW C-WIN.
+  VIEW FRAME fr_query1 IN WINDOW C-WIN.
+  {&OPEN-BROWSERS-IN-QUERY-fr_query1}
+  VIEW C-WIN.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE pd_hide C-WIN 
+PROCEDURE pd_hide :
+/*------------------------------------------------------------------------------
+  Purpose:     
+  Parameters:  <none>
+  Notes:       
+------------------------------------------------------------------------------*/
+HIDE FRAME fr_detail.
+HIDE FRAME fr_head.  
+HIDE FRAME fr_query1.
+HIDE FRAME fr_query2.
+HIDE FRAME fr_attext.
+
+FOR EACH w_attext:
+    DELETE w_attext.
+END.
+Open Query  br_attext  For each  w_attext NO-LOCK BY w_attext.num.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+&ANALYZE-SUSPEND _UIB-CODE-BLOCK _PROCEDURE show_detail C-WIN 
+PROCEDURE show_detail :
+/*------------------------------------------------------------------------------
+  Purpose:     
+  Parameters:  <none>
+  Notes:       
+------------------------------------------------------------------------------*/
+Do  with  frame  fr_query2:
+    nv_recid2 = 0.
+    Find brstat.prmmst_fil Use-Index prmmst01         Where
+         prmmst_fil.policy = brstat.polmst_fil.policy and
+         prmmst_fil.rencnt = brstat.polmst_fil.rencnt and
+         prmmst_fil.endcnt = brstat.polmst_fil.endcnt and
+         prmmst_fil.riskno =  fi_riskno        NO-LOCK No-error  No-wait.
+      IF AVAIL prmmst_fil THEN  DO:
+         ASSIGN
+           nv_recid2 =  RECID(prmmst_fil)
+           fi_riskno =  prmmst_fil.riskno
+           fi_rate   =  prmmst_fil.rate
+           fi_prem_t =  prmmst_fil.prem_c
+           fi_premae =  prmmst_fil.premae
+           fi_recnam =  Prmmst_fil.Bencod.  /*--Amparat C. A54-0168--*/
+      END.
+      nv_recid3 = 0.
+    FIND brstat.marine_fil USE-INDEX marine01  WHERE
+         marine_fil.policy = polmst_fil.policy AND
+         marine_fil.rencnt = polmst_fil.rencnt AND
+         marine_fil.endcnt = polmst_fil.endcnt AND
+         marine_fil.riskno = fi_riskno NO-LOCK No-error  no-wait.
+      IF Avail marine_fil Then DO:
+         Assign  
+             nv_recid3  =  RECID(marine_fil)
+             fi_vesno   =  marine_fil.vesno
+             fi_vesno2  =  marine_fil.vesno2
+             fi_voyno   =  marine_fil.voyno
+             fi_voyno2  =  marine_fil.endno
+             fi_vesnam1 =  marine_fil.vessel
+             fi_vesnam2 =  marine_fil.vessel2
+             fi_vdat_c  =  marine_fil.vdat_c
+             fi_voydat  =  marine_fil.voydat
+             fi_voyage  =  marine_fil.voyage
+             fi_voyage2 =  marine_fil.voyage2
+             fi_clucod  =  marine_fil.cluno
+             fi_cludes1 =  marine_fil.clause[1]
+             fi_cludes2 =  marine_fil.clause[2]
+             fi_cludes3 =  marine_fil.clause[3]
+             fi_cludes4 =  marine_fil.clause[4]
+             fi_cludes5 =  marine_fil.clause[5]
+             fi_cludes6 =  marine_fil.clause[6]
+             fi_cludes7 =  marine_fil.clause[7]
+             fi_cerno   =  marine_fil.clause[9] 
+             fi_claim     =  marine_fil.claim_ie
+             fi_setagt    =  marine_fil.settle
+             fi_suragt    =  marine_fil.survey
+             fi_curbil    =  marine_fil.curbil
+             fi_sigr_p    =  marine_fil.sigr_for
+             fi_curate    =  marine_fil.curate
+             fi_tsigr     =  marine_fil.sigr
+             fi_prem_t    =  marine_fil.netprm
+             fi_curdes    =  marine_fil.clause[10]. /* add mr0001 */
+
+             
+
+             IF marine_fil.impexp  =  "100"  THEN Cb_impexp = "100/Imp.".      
+             Else If  marine_fil.impexp  =  "200" Then Cb_impexp = "200/Exp.".    
+             Else If  marine_fil.impexp  =  "300" Then Cb_impexp = "Imp./Exp.". 
+
+
+             ASSIGN
+             fi_vdatdes = ""
+             fi_setdes  = ""
+             fi_surdes  = "".
+             Find stat.smm100_fil Use-Index smm10001   Where
+                  smm100_fil.tabcod = "U007"      And
+                  smm100_fil.itmcod = fi_vdat_c   NO-LOCK No-wait  No-error.
+               IF AVAIL smm100_fil Then fi_vdatdes = smm100_fil.itmdes.
+             
+             FIND stat.smm100_fil Use-Index smm10001 Where
+                  smm100_fil.tabcod = "CARGO"   And
+                  smm100_fil.itmcod = fi_cargo  NO-LOCK No-wait  No-error.
+               IF Avail smm100_fil Then fi_cardes = smm100_fil.itmdes.
+
+             FIND stat.smm100_fil Use-Index smm10001 Where
+                  smm100_fil.tabcod = "PACKAGE"   And
+                  smm100_fil.itmcod = fi_package  NO-LOCK No-wait  No-error.
+               IF Avail smm100_fil Then fi_pacdes = smm100_fil.itmdes.
+
+             FIND stat.smm100_fil Use-Index smm10001 Where
+                  smm100_fil.tabcod = "COUNTRY"   And
+                  smm100_fil.itmcod = fi_country  NO-LOCK No-wait  No-error.
+               IF Avail smm100_fil Then fi_coundes = smm100_fil.itmdes.
+             /*--Amparat C. A52-0156- หา 2 ที่ sicsyac.xmm600 agtmst_fil*/
+             Find stat.agtmst_fil Use-index agtmst01 Where
+                  agtmst_FIL.acno = fi_setagt  No-lock no-error no-wait.
+               IF avail agtmst_fil THEN DO:                      
+                fi_setdes = TRIM(trim(agtmst_FIL.ntitle) + " " 
+                            + trim(agtmst_fil.name)).
+               END.
+               ELSE DO:                   
+                Find sicsyac.xmm600 Use-index  xmm60001 WHERE sicsyac.xmm600.acno = fi_setagt No-lock no-error no-wait.
+                  IF avail sicsyac.xmm600 Then do:
+                     fi_setdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " 
+                                   + trim(sicsyac.xmm600.name)).
+                  End.
+               END.
+             Find stat.agtmst_fil Use-index agtmst01 where
+                  agtmst_FIL.acno = fi_suragt  no-lock no-error no-wait.
+               IF Avail agtmst_fil   THEN DO:               
+                 fi_surdes = TRIM(trim(agtmst_fil.ntitle) + " " 
+                             + trim(agtmst_fil.name)).      
+               END.
+               ELSE DO:
+                Find sicsyac.xmm600 Use-index  xmm60001 WHERE sicsyac.xmm600.acno = fi_suragt  No-lock no-error no-wait.
+                  IF avail sicsyac.xmm600 Then do:
+                     fi_surdes = TRIM(trim(sicsyac.xmm600.ntitle) + " " 
+                                   + trim(sicsyac.xmm600.name)).
+
+                  End.               
+               END. 
+             /*--Amparat C. A52-0156---*/
+             Find First  sic_bran.ucrisk  Use-index  ucrisk01         Where
+                         ucrisk.point  =   marine_fil.policy   And
+                         ucrisk.locatn =   marine_fil.rencnt   And
+                         ucrisk.endcnt =   marine_fil.endcnt   And
+                         ucrisk.riskno =   marine_fil.riskno   No-lock No-error No-wait.
+               IF Avail  ucrisk  Then Do:
+                  Assign
+                    nv_pstp    =   ucrisk.fee
+                    fi_stmpae  =   If ucrisk.mode3   =  "A"  Then  Yes  Else No
+                    fi_rstp_t  =   ucrisk.stamp
+                    fi_taxae   =   If  ucrisk.mode2  =  "A"  Then  Yes  Else No
+                    fi_rtax_t  =   ucrisk.tax
+                    fi_com1_p  =   ucrisk.cmper1
+                    fi_com1ae  =   If  ucrisk.mode1  =  "A"  Then  Yes  Else No
+                    fi_com1_t  =   ucrisk.cmamt1
+                    nv_dup_t   =   Integer(ucrisk.ritba)
+                    /*fi_dup_t1    =   ucrisk.ritba*/
+                    fi_sigr_p  =   ucrisk.rissi                           
+                    fi_netp    =   fi_prem_t  +  fi_rtax_t  +  fi_rstp_t  +  nv_pstp.
+               End.   /* Avail ucrisk */   
+      END. /*avail marine*/
+      
+             nv_dup_t = polmst_fil.dup_trp.
+            IF nv_dup_t   = 1 Then 
+                 Assign
+                     fi_dup_t1 = "D"
+                     fi_pstp1  = nv_pstp
+                     fi_pstp2  = 0.
+             Else If nv_dup_t = 2 Then 
+                 Assign
+                     fi_dup_t1 = "T"
+                     fi_pstp1  = nv_pstp / 2
+                     fi_pstp2  = nv_pstp / 2.
+             Else If nv_dup_t = 3 Then  
+               Assign
+                    fi_dup_t1 = ""
+                    fi_pstp1  = 0
+                    fi_pstp2  = 0. 
+     /*--Amparat C. A54-0168--*/
+     FIND FIRST sicsyac.xcpara49 USE-INDEX xcpara4901 
+          WHERE sicsyac.xcpara49.class   = "GRPPROD"  
+            AND sicsyac.xcpara49.type[1] = fi_recnam NO-LOCK NO-ERROR NO-WAIT.
+     IF AVAILABLE sicsyac.xcpara49 THEN fi_recdes = TRIM(sicsyac.xcpara49.type[7]).
+     /*--Amparat C. A54-0168--*/
+
+
+     DISPLAY   fi_policy  fi_rencnt  fi_endcnt   fi_riskno   
+               fi_vesno   fi_vesnam1 fi_vesno2   fi_vesnam2
+               fi_voyno   fi_voyage  fi_voyno2   fi_voyage2
+               fi_vdat_c  fi_voydat  fi_vdatdes  fi_clucod
+               fi_cludes1 fi_cludes2 fi_cludes3  fi_cludes4
+               fi_cludes5 fi_cludes6 fi_cludes7
+               /*ra_impexp*/  fi_claim   Cb_impexp fi_cerno   fi_recnam  fi_recdes
+               fi_setagt  fi_setdes  fi_suragt   fi_surdes
+               fi_curbil  fi_add     fi_sumadd   fi_sigr_p    fi_curate  fi_tsigr  
+               fi_rate    fi_premae  fi_prem_t   fi_dup_t1    fi_stmpae  fi_rstp_t  fi_pstp1  fi_pstp2
+               fi_taxae   fi_rtax_t  fi_netp     fi_com1_p    fi_com1ae  fi_com1_t  fi_curdes
+               fi_cargo   fi_cardes  fi_package  fi_pacdes    fi_country fi_coundes
+               fi_prmpol  fi_sumtax  fi_sumstm   fi_sumcom    fi_total   fi_dup_t1
+     With  frame  fr_query2.        
+End.
+END PROCEDURE.
+
+/* _UIB-CODE-BLOCK-END */
+&ANALYZE-RESUME
+
+

@@ -1,0 +1,56 @@
+/*----------------------------------------------------------------------------------
+ WGWRE306.P : CREATE TABLE UWM306 FOR RENEW 
+ ASSIGN NO. : A57-0228   DATE : 15/04/2014
+ MODIFY BY  : PORNTIWA P.
+ BEFORE PROGRAM : WGWRE100.P
+
+/*CONNECT : EXPIRY -LD SIC_EXP ; GW_SAFE -LD SIC_BRAN*/
+-----------------------------------------------------------------------------------*/
+
+DEFINE INPUT PARAMETER nv_policy AS CHAR.
+DEFINE INPUT PARAMETER nv_rencnt AS INTE.
+DEFINE INPUT PARAMETER nv_endcnt AS INTE.
+DEFINE INPUT PARAMETER nv_cr_2   AS CHAR.
+DEFINE INPUT PARAMETER nv_vehreg AS CHAR.
+DEFINE INPUT PARAMETER nv_bchyr  AS INTE.
+DEFINE INPUT PARAMETER nv_bchno  AS CHAR.
+DEFINE INPUT PARAMETER nv_bchcnt AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nv_comment AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nv_status  AS CHAR.
+
+DEFINE VAR nv_renew AS INTE.
+
+nv_renew = nv_rencnt + 1. 
+
+FOR EACH sic_exp.uwm306 WHERE sic_exp.uwm306.policy = nv_policy NO-LOCK:
+    FIND FIRST sic_bran.uwm306 USE-INDEX uwm30601 WHERE
+               sic_bran.uwm306.vehreg = nv_vehreg AND
+               sic_bran.uwm306.policy = nv_cr_2   AND
+               sic_bran.uwm306.rencnt = nv_renew  AND
+               sic_bran.uwm306.endcnt = 0         NO-ERROR.
+    IF NOT AVAIL sic_bran.uwm306 THEN DO:
+        CREATE sic_bran.uwm306.
+    END.
+
+    ASSIGN
+        sic_bran.uwm306.vehreg = nv_vehreg
+        sic_bran.uwm306.policy = nv_cr_2
+        sic_bran.uwm306.riskgp = sic_exp.uwm306.riskgp
+        sic_bran.uwm306.riskno = sic_exp.uwm306.riskno
+        sic_bran.uwm306.itemno = sic_exp.uwm306.itemno
+        sic_bran.uwm306.rencnt = nv_renew
+        sic_bran.uwm306.endcnt = 0
+        sic_bran.uwm306.ncbno  = sic_exp.uwm306.ncbno
+        sic_bran.uwm306.ncbyrs = sic_exp.uwm306.ncbyrs
+        sic_bran.uwm306.ncbper = sic_exp.uwm306.ncbper
+        sic_bran.uwm306.polren = sic_exp.uwm306.polren
+        sic_bran.uwm306.rem1   = sic_exp.uwm306.rem1
+        sic_bran.uwm306.rem2   = sic_exp.uwm306.rem2
+        sic_bran.uwm306.usrid  = sic_exp.uwm306.usrid
+        sic_bran.uwm306.prtdat = sic_exp.uwm306.prtdat
+        sic_bran.uwm306.prttim = sic_exp.uwm306.prttim
+        sic_bran.uwm306.clmade = sic_exp.uwm306.clmade
+        sic_bran.uwm306.losdat = sic_exp.uwm306.losdat
+        sic_bran.uwm306.claim  = sic_exp.uwm306.claim.
+END.
+/*END OF WGWRE306.P*/

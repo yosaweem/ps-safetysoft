@@ -1,0 +1,261 @@
+/***********************************************************
+Copyright  # Tokiomarin Insurance Public Company Limited 
+Program    : WGWPVTCM0.P Program Out Data Vat Name
+Create by  : Chaiying w. A68-0034 03/03/2025
+***********************************************************/    
+
+DEF INPUT  PARAMETER nv_system  AS CHAR  INIT "". 
+DEF INPUT  PARAMETER nv_doctyp  AS CHAR  INIT "".
+DEF INPUT  PARAMETER nv_progid  AS CHAR  INIT "".
+DEF INPUT  PARAMETER nv_rec100  AS RECID INIT ?.
+DEF INPUT  PARAMETER nv_rec101  AS RECID INIT ?.
+def output parameter nv_code    as char init "".
+DEF OUTPUT PARAMETER nv_title   AS CHAR INIT "".
+def output parameter nv_name    as char init "".
+def output parameter nv_name2   as char init "".
+def output parameter nv_addr1   as char init "".
+def output parameter nv_addr2   as char init "".
+def output parameter nv_addr3   as char init "".
+def output parameter nv_addr4   as char init "".
+DEF OUTPUT PARAMETER nv_postcd  AS CHAR INIT "".
+def output parameter nv_icno    as char init "".
+def output parameter nv_anlyc5  as char init "".
+def output parameter nv_codeocc as char init "".
+def output parameter nv_occup   as char init "".
+def output parameter nv_ooth1   as char init "".
+def output parameter nv_ooth2   as char init "".
+def output parameter nv_ooth3   as char init "".
+def output parameter nv_ooth4   as char init "". 
+
+DEF VAR nv_insrefi AS CHAR INIT "".
+DEF VAR nv_typc    AS CHAR INIT "".
+DEF VAR nv_langug  AS CHAR INIT "".
+
+IF nv_system = "trn_vat"  THEN DO:
+    FIND sic_bran.uwm100 WHERE RECID(sic_bran.uwm100) = nv_rec100 NO-LOCK NO-ERROR.
+    IF AVAIL sic_bran.uwm100 THEN DO:
+        IF nv_rec101 <> ? THEN DO:
+            FIND sic_bran.uwm101 WHERE RECID(sic_bran.uwm101) = nv_rec101 NO-LOCK NO-ERROR.
+            IF AVAIL sic_bran.uwm101 THEN DO:
+                IF uwm100.ltstatus = "Y" THEN nv_insrefi = trim(sic_bran.uwm101.insref_i).
+                IF nv_insrefi = "" THEN DO:
+                    nv_insrefi  =   TRIM(SUBSTRING(sic_bran.uwm101.desc_i, 1, INDEX(sic_bran.uwm101.desc_i, " ") - 1)) NO-ERROR .
+                    IF LENGTH(nv_insrefi) = 7 OR  LENGTH(nv_insrefi) = 10  THEN DO:
+                        FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno = nv_insrefi NO-LOCK NO-ERROR.
+                        IF NOT AVAIL sic_bran.xmm600 THEN nv_insrefi = "".
+                    END.
+                END.
+            END.
+        END.
+        nv_langug  = uwm100.langug.
+
+             IF nv_insrefi     <> "" THEN RUN pd_xmm600("insrefi",nv_insrefi). /*UWM101*/
+        ELSE IF uwm100.cedco   <> "" THEN RUN pd_xmm600("cedco"  ,uwm100.cedco).
+        ELSE IF uwm100.bs_cd   <> "" THEN RUN pd_xmm600("bs_cd"  ,uwm100.bs_cd).
+        ELSE  RUN pd_xmm600("insref"  ,uwm100.insref).
+       
+        IF nv_code = "comp" OR 
+           nv_code = "wmc0001" THEN DO:
+            ASSIGN     
+                nv_title    = TRIM(uwm100.ntitle)
+                nv_name     = TRIM(uwm100.name1)
+                nv_name2    = TRIM(uwm100.name2) + " " + TRIM(uwm100.name3)    /*-- Add A64-0361 28/02/2022 ---*/
+                nv_addr1    = TRIM(uwm100.addr1)   
+                nv_addr2    = TRIM(uwm100.addr2)
+                nv_addr3    = TRIM(uwm100.addr3)   
+                nv_addr4    = TRIM(uwm100.addr4)   
+                nv_postcd   = TRIM(uwm100.postcd)  
+                nv_anlyc5   = sic_bran.uwm100.br_insured  
+                nv_icno     = sic_bran.uwm100.icno
+                nv_codeocc  = sic_bran.uwm100.codeocc
+                nv_occup    = sic_bran.uwm100.occup. 
+        END.
+        
+    END.
+END.
+
+
+PROCEDURE pd_xmm600:
+    DEF INPUT PARAMETER nv_typ  AS CHAR INIT "".
+    DEF INPUT PARAMETER nv_acno AS CHAR INIT "".
+    DEF VAR nv_fdata AS LOGICAL INIT NO.
+    // MESSAGE "ABC" SKIP nv_typ SKIP nv_name SKIP nv_name2 VIEW-AS ALERT-BOX.
+    IF nv_acno = "Comp" THEN RETURN.
+
+    FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno = nv_acno NO-LOCK NO-ERROR.
+    IF AVAIL xmm600 THEN DO:
+        ASSIGN
+            nv_typc    = nv_typ
+            nv_code    = xmm600.acno
+            nv_icno    = xmm600.icno    
+            nv_anlyc5  = xmm600.anlyc5.     
+            
+            .
+                                         
+            
+            
+
+
+        IF nv_typ = "insref" AND
+           TRIM(sic_bran.xmm600.nphone) <> "" THEN DO:
+           ASSIGN
+               nv_fdata  = YES
+               nv_name   = TRIM(xmm600.nphone    )
+               nv_name2  = ""
+               nv_addr1  = TRIM(xmm600.naddr1    )       
+               nv_addr2  = TRIM(xmm600.naddr2    )       
+               nv_addr3  = TRIM(xmm600.naddr3    )       
+               nv_addr4  = TRIM(xmm600.naddr4    ) 
+               nv_postcd = TRIM(xmm600.npostcd   )
+               nv_icno   = trim(xmm600.nicno     )      
+               nv_anlyc5 = trim(xmm600.nbr_insure).
+
+           IF xmm600.nfirstname <> "" THEN DO:
+               ASSIGN
+                   nv_title  = TRIM(xmm600.nntitle)
+                   nv_name   = TRIM(xmm600.nfirstname)
+                   nv_name2  = TRIM(xmm600.nlastname)    .                               
+           END.
+
+           if  nv_icno   = "" then nv_icno   = TRIM(SUBSTRING(xmm600.anlyc1,1,14)). 
+           if  nv_anlyc5 = "" then nv_anlyc5 = TRIM(SUBSTRING(xmm600.anlyc1,20,5)).
+        END.    
+        ELSE IF nv_typ = "insref" THEN DO:
+            IF sic_bran.uwm100.firstname <> ""  THEN DO:
+                ASSIGN 
+                     nv_title       =   TRIM(sic_bran.uwm100.ntitle)
+                     nv_name        =   TRIM(sic_bran.uwm100.firstname)
+                     nv_name2       =   TRIM(sic_bran.uwm100.lastname)    .
+            END.
+            ELSE DO:
+                 nv_title       =   TRIM(sic_bran.uwm100.ntitle).
+                 nv_name        =   TRIM(sic_bran.uwm100.name1).
+                 nv_name2       =   "".
+            END.
+            ASSIGN
+                nv_fdata     = YES
+                nv_addr1     = TRIM(uwm100.addr1)
+                nv_addr2     = TRIM(uwm100.addr2)
+                nv_addr3     = TRIM(uwm100.addr3)
+                nv_addr4     = TRIM(uwm100.addr4)
+                nv_postcd    = TRIM(uwm100.postcd)
+                /*xmm600*/
+                /*--
+                nv_anlyc5    = sic_bran.uwm100.br_insured  
+                nv_icno      = sic_bran.uwm100.icno*/
+                nv_codeocc   = sic_bran.uwm100.codeocc
+                nv_occup     = sic_bran.uwm100.occup.
+                
+               
+
+        END.
+        
+        IF nv_fdata = NO AND TRIM(xmm600.codeocc) <> "" THEN DO:
+            IF TRIM(xmm600.codeocc) = "9999" THEN nv_occup = sic_bran.xmm600.occupation.
+            ELSE DO:
+                FIND stat.occupdet WHERE stat.occupdet.codeocc = xmm600.codeocc  NO-LOCK NO-ERROR.
+                IF AVAILABLE stat.occupdet THEN DO: 
+                    IF nv_langug = "T" THEN nv_occup = stat.occupdet.desocct.
+                    ELSE nv_occup = stat.occupdet.desocce.
+                END.
+            END.
+            nv_codeocc = xmm600.codeocc.
+        END.
+
+        IF nv_langug = "T" AND nv_fdata = NO THEN DO:
+            FIND FIRST sic_bran.xtm600 USE-INDEX xtm60001 WHERE xtm600.acno = nv_acno  NO-LOCK NO-ERROR.
+            IF AVAIL xtm600 THEN DO:
+                ASSIGN
+                    nv_fdata  = YES
+                    nv_title  = TRIM(xtm600.ntitle)
+                    nv_name   = TRIM(xtm600.firstname)   
+                    nv_name2  = TRIM(xtm600.lastname) 
+                    nv_addr1  = TRIM(xtm600.addr1)                                    
+                    nv_addr2  = TRIM(xtm600.addr2)                                    
+                    nv_addr3  = TRIM(xtm600.addr3)                                    
+                    nv_addr4  = TRIM(xtm600.addr4)                                    
+                    nv_postcd = TRIM(xtm600.postcd).
+                IF TRIM(xtm600.firstname) +  TRIM(xtm600.lastname)  = "" THEN nv_name   = TRIM(xtm600.NAME)  . 
+            END.
+           
+        END.
+
+        IF nv_fdata = NO THEN DO:
+            ASSIGN
+                nv_title   = TRIM(xmm600.ntitle)
+                nv_name    = TRIM(xmm600.firstname)   
+                nv_name2   = TRIM(xmm600.lastname) 
+                nv_addr1   =  TRIM(xmm600.addr1)                                                    
+                nv_addr2   =  TRIM(xmm600.addr2)                                                    
+                nv_addr3   =  TRIM(xmm600.addr3)                                                    
+                nv_addr4   =  TRIM(xmm600.addr4)                                                    
+                nv_postcd  =  TRIM(xmm600.postcd).
+            IF TRIM(xmm600.firstname) +  TRIM(xmm600.lastname)  = "" THEN nv_name   = TRIM(xmm600.NAME) .  
+        END. 
+    END.
+    ELSE DO:
+        IF sic_bran.uwm100.firstname <> ""  THEN DO:
+            ASSIGN 
+                 nv_title       =   TRIM(sic_bran.uwm100.ntitle)
+                 nv_name        =   TRIM(sic_bran.uwm100.firstname)
+                 nv_name2       =   TRIM(sic_bran.uwm100.lastname)    .
+        END.
+        ELSE DO:
+             nv_title       =   TRIM(sic_bran.uwm100.ntitle).
+             nv_name        =   TRIM(sic_bran.uwm100.name1).
+             nv_name2       =   "".
+        END.
+        
+        ASSIGN
+            nv_addr1     =   TRIM(uwm100.addr1)
+            nv_addr2     =   TRIM(uwm100.addr2)
+            nv_addr3     =   TRIM(uwm100.addr3)
+            nv_addr4     =   TRIM(uwm100.addr4)
+            nv_postcd    =   TRIM(uwm100.postcd)
+            nv_codeocc   =   trim(sic_bran.uwm100.codeocc)
+            nv_occup     =   trim(sic_bran.uwm100.occup)
+            nv_anlyc5    =    sic_bran.uwm100.br_insured  
+            nv_icno      =    sic_bran.uwm100.icno.  
+    END.
+    
+
+    ASSIGN
+        nv_addr1   = trim(nv_addr1  )
+        nv_addr2   = trim(nv_addr2  )
+        nv_addr3   = trim(nv_addr3  )
+        nv_addr4   = trim(nv_addr4  )
+        nv_postcd  = TRIM(nv_postcd )
+        nv_codeocc = trim(nv_codeocc)
+        nv_occup   = trim(nv_occup  )
+        nv_icno    = trim(nv_icno   )
+        nv_anlyc5  = trim(nv_anlyc5 ).
+    IF nv_icno   = "" THEN nv_icno   = "-".
+    IF nv_anlyc5 = "" THEN nv_anlyc5 = "-".
+END PROCEDURE.
+
+/*--
+MESSAGE "nv_system :"  nv_system  skip
+        "nv_doctyp :"  nv_doctyp  skip
+        "nv_progid :"  nv_progid  skip
+        "nv_rec100 :"  nv_rec100  skip
+        "nv_rec101 :"  nv_rec101  skip
+        "nv_code   :"  nv_code    skip
+        "nv_title  :"  nv_title   skip
+        "nv_name   :"  nv_name    skip
+        "nv_name2  :"  nv_name2   skip
+        "nv_addr1  :"  nv_addr1   skip
+        "nv_addr2  :"  nv_addr2   skip
+        "nv_addr3  :"  nv_addr3   skip
+        "nv_addr4  :"  nv_addr4   skip
+        "nv_postcd :"  nv_postcd  skip
+        "nv_icno   :"  nv_icno    skip
+        "nv_anlyc5 :"  nv_anlyc5  skip
+        "nv_codeocc:"  nv_codeocc skip
+        "nv_occup  :"  nv_occup   skip
+        "nv_ooth1  :"  nv_ooth1   skip
+        "nv_ooth2  :"  nv_ooth2   skip
+        "nv_ooth3  :"  nv_ooth3   skip
+        "nv_ooth4  :"  nv_ooth4   skip.
+*/
+
+

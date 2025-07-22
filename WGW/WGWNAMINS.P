@@ -1,0 +1,397 @@
+/* WGWNAMINS.P : CREATE XMM600,XTM600 (GWTRANSFER To PREMIUM)            */
+/*            : NOT HAVE CODE INSURED                                    */
+/*            : Program Generage Name & Address Master (XMM600)          */
+/* Copyright # Safety Insurance Public Company Limited                   */
+/*             บริษัท ประกันคุ้มภัย จำกัด (มหาชน)                        */
+/* CREATE BY : Watsana K. [A56-0299] Date. 25/09/2013                    */
+/* COPY FORM : GWNAMINS.P                                                */
+/* CALL PROGRAM FORM wgwtrn72.w                                          */
+/* Connect DB : SICSYAC; GW_SAFE -LD SIC_BRAN;SICUW                      */
+
+DEFINE INPUT  PARAMETER nv_recid   AS RECID.
+DEFINE OUTPUT PARAMETER n_insref   AS CHARACTER FORMAT "X(10)".
+DEFINE OUTPUT PARAMETER nv_message AS CHAR FORMAT "X(200)".
+/* ---------------------------------------------------------------- */
+DEF VAR nv_usrid    AS CHARACTER FORMAT "X(08)".
+DEF VAR nv_transfer AS LOGICAL   .
+DEF VAR n_check     AS CHARACTER .
+DEF VAR nv_insref   AS CHARACTER FORMAT "X(10)". 
+DEF VAR putchr      AS CHAR FORMAT "X(200)" INIT "" NO-UNDO.
+DEF VAR putchr1     AS CHAR FORMAT "X(100)" INIT "" NO-UNDO.
+DEF VAR nv_typ      AS CHAR FORMAT "X(2)".
+
+DEF BUFFER buwm100   FOR sic_bran.uwm100. 
+DEF SHARED STREAM ns1.  
+
+DEF SHARED VAR nv_type  AS INTEGER  LABEL "Type".  
+
+nv_usrid    = SUBSTRING(USERID(LDBNAME(1)),3,4).
+nv_transfer = YES.
+
+FIND buwm100 WHERE RECID(buwm100) = nv_recid.
+
+FIND LAST sicsyac.xmm600 USE-INDEX  xmm60002 WHERE
+          sicsyac.xmm600.NAME = buwm100.name1
+NO-ERROR NO-WAIT.
+IF NOT AVAILABLE sicsyac.xmm600 THEN DO:
+  IF LOCKED sicsyac.xmm600 THEN DO:
+   
+    nv_transfer = NO.
+    n_insref = sicsyac.xmm600.acno.
+    RETURN.
+  END.
+  ELSE DO:
+    
+    HIDE MESSAGE NO-PAUSE.
+    /* MESSAGE "CREATE NEW RECORD Name & Address Master (XMM600)" nv_insref.*/
+
+    n_check   = "".
+    nv_insref = "".
+
+    IF buwm100.ntitle <> " " THEN DO: /* ---- Check ด้วย ntitle ---- */ 
+
+        IF R-INDEX(buwm100.name1,"จก.")             <> 0  OR  /* ---- กรณีที่เช็คด้วย name เพราะ ชื่อพวกนี้ จะอยู่ด้านหลังชื่อ --- */            
+           R-INDEX(buwm100.name1,"จำกัด")           <> 0  OR  
+           R-INDEX(buwm100.name1,"(มหาชน)")         <> 0  OR  
+           R-INDEX(buwm100.name1,"INC.")            <> 0  OR 
+           R-INDEX(buwm100.name1,"CO.")             <> 0  OR 
+           R-INDEX(buwm100.name1,"LTD.")            <> 0  OR 
+           R-INDEX(buwm100.name1,"LIMITED")         <> 0  OR 
+           INDEX(buwm100.ntitle,"บริษัท")            <> 0  OR 
+           INDEX(buwm100.ntitle,"บ.")                <> 0  OR 
+           INDEX(buwm100.ntitle,"บจก.")              <> 0  OR 
+           INDEX(buwm100.ntitle,"หจก.")              <> 0  OR 
+           INDEX(buwm100.ntitle,"หสน.")              <> 0  OR 
+           INDEX(buwm100.ntitle,"บรรษัท")            <> 0  OR 
+           INDEX(buwm100.ntitle,"มูลนิธิ")           <> 0  OR 
+           INDEX(buwm100.ntitle,"ห้าง")              <> 0  OR 
+           INDEX(buwm100.ntitle,"ห้างหุ้นส่วน")      <> 0  OR 
+           INDEX(buwm100.ntitle,"ห้างหุ้นส่วนจำกัด") <> 0  OR
+           INDEX(buwm100.ntitle,"ห้างหุ้นส่วนจำก")   <> 0  OR  
+           INDEX(buwm100.ntitle,"และ/หรือ")          <> 0  THEN nv_typ = "Cs".
+         ELSE nv_typ = "0s".  /*0s= บุคคลธรรมดา Cs = นิติบุคคล*/
+
+    END.
+    
+    ELSE DO: /* ---- Check ด้วย name ---- */
+
+         IF R-INDEX(buwm100.name1,"จก.")             <> 0  OR              
+            R-INDEX(buwm100.name1,"จำกัด")           <> 0  OR  
+            R-INDEX(buwm100.name1,"(มหาชน)")         <> 0  OR  
+            R-INDEX(buwm100.name1,"INC.")            <> 0  OR 
+            R-INDEX(buwm100.name1,"CO.")             <> 0  OR 
+            R-INDEX(buwm100.name1,"LTD.")            <> 0  OR 
+            R-INDEX(buwm100.name1,"LIMITED")         <> 0  OR 
+            INDEX(buwm100.name1,"บริษัท")            <> 0  OR 
+            INDEX(buwm100.name1,"บ.")                <> 0  OR 
+            INDEX(buwm100.name1,"บจก.")              <> 0  OR 
+            INDEX(buwm100.name1,"หจก.")              <> 0  OR 
+            INDEX(buwm100.name1,"หสน.")              <> 0  OR 
+            INDEX(buwm100.name1,"บรรษัท")            <> 0  OR 
+            INDEX(buwm100.name1,"มูลนิธิ")           <> 0  OR 
+            INDEX(buwm100.name1,"ห้าง")              <> 0  OR 
+            INDEX(buwm100.name1,"ห้างหุ้นส่วน")      <> 0  OR 
+            INDEX(buwm100.name1,"ห้างหุ้นส่วนจำกัด") <> 0  OR
+            INDEX(buwm100.name1,"ห้างหุ้นส่วนจำก")   <> 0  OR  
+            INDEX(buwm100.name1,"และ/หรือ")          <> 0  THEN nv_typ = "Cs".
+         ELSE nv_typ = "0s".  /*0s= บุคคลธรรมดา Cs = นิติบุคคล*/
+
+    END.
+
+    RUN WGW\WGWINSNO (INPUT         buwm100.branch,
+                      INPUT         YES,
+                      INPUT         nv_typ,
+                      INPUT-OUTPUT  n_check,
+                      OUTPUT        nv_insref).
+
+    IF n_check <> "" THEN DO:
+        ASSIGN
+            putchr  = ""
+            putchr1 = ""
+            putchr1 = "Error Running Insured Code."
+            putchr  = "Policy No. : " + TRIM(buwm100.policy)         +               
+                      " R/E "         + STRING(buwm100.rencnt,"99")  +
+                      "/"             + STRING(buwm100.endcnt,"999") +
+                      " "             + TRIM(putchr1).
+        PUT STREAM ns1 putchr FORMAT "x(200)" SKIP.        
+        nv_message  = putchr1.
+        nv_transfer = NO.
+        nv_insref   = "".
+        RETURN.
+    END.
+
+    loop_runningins: /*Check Insured*/
+    REPEAT:
+      FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+           sicsyac.xmm600.acno = CAPS(nv_insref)  NO-LOCK NO-ERROR NO-WAIT.
+      IF AVAIL sicsyac.xmm600 THEN DO:
+          RUN WGW\WGWINSNO (INPUT         buwm100.branch,
+                          INPUT         YES,
+                          INPUT         nv_typ,
+                          INPUT-OUTPUT  n_check,
+                          OUTPUT        nv_insref).
+          IF  n_check <> ""  THEN DO:   
+              ASSIGN
+                  putchr  = ""
+                  putchr1 = ""
+                  putchr1 = "Error Running Insured Code."
+                  putchr  = "Policy No. : " + TRIM(buwm100.policy)         +               
+                            " R/E "         + STRING(buwm100.rencnt,"99")  +
+                            "/"             + STRING(buwm100.endcnt,"999") +
+                            " "             + TRIM(putchr1).
+              PUT STREAM ns1 putchr FORMAT "x(200)" SKIP.
+              nv_message  = putchr1.
+              nv_transfer = NO.
+              nv_insref   = "".
+              RETURN.
+          END.
+      END.  
+      ELSE LEAVE loop_runningins.
+    END.
+    
+    CREATE sicsyac.xmm600.
+  END.
+  n_insref = nv_insref.
+END.
+ELSE DO:
+    IF sicsyac.xmm600.homebr = buwm100.branch THEN DO:
+        nv_insref = sicsyac.xmm600.acno.
+        n_insref  = nv_insref.
+        nv_transfer = NO. /*-- Add chutikarn A50-0072 --*/
+        RETURN.
+    END.
+    ELSE DO:
+        HIDE MESSAGE NO-PAUSE.
+        /* MESSAGE "CREATE NEW RECORD Name & Address Master (XMM600)" nv_insref.*/
+    
+        n_check   = "".
+        nv_insref = "".
+    
+        IF buwm100.ntitle <> " " THEN DO: /* ---- Check ด้วย ntitle ---- */ 
+    
+            IF R-INDEX(buwm100.name1,"จก.")             <> 0  OR  /* ---- กรณีที่เช็คด้วย name เพราะ ชื่อพวกนี้ จะอยู่ด้านหลังชื่อ --- */            
+               R-INDEX(buwm100.name1,"จำกัด")           <> 0  OR  
+               R-INDEX(buwm100.name1,"(มหาชน)")         <> 0  OR  
+               R-INDEX(buwm100.name1,"INC.")            <> 0  OR 
+               R-INDEX(buwm100.name1,"CO.")             <> 0  OR 
+               R-INDEX(buwm100.name1,"LTD.")            <> 0  OR 
+               R-INDEX(buwm100.name1,"LIMITED")         <> 0  OR 
+               INDEX(buwm100.ntitle,"บริษัท")            <> 0  OR 
+               INDEX(buwm100.ntitle,"บ.")                <> 0  OR 
+               INDEX(buwm100.ntitle,"บจก.")              <> 0  OR 
+               INDEX(buwm100.ntitle,"หจก.")              <> 0  OR 
+               INDEX(buwm100.ntitle,"หสน.")              <> 0  OR 
+               INDEX(buwm100.ntitle,"บรรษัท")            <> 0  OR 
+               INDEX(buwm100.ntitle,"มูลนิธิ")           <> 0  OR 
+               INDEX(buwm100.ntitle,"ห้าง")              <> 0  OR 
+               INDEX(buwm100.ntitle,"ห้างหุ้นส่วน")      <> 0  OR 
+               INDEX(buwm100.ntitle,"ห้างหุ้นส่วนจำกัด") <> 0  OR
+               INDEX(buwm100.ntitle,"ห้างหุ้นส่วนจำก")   <> 0  OR  
+               INDEX(buwm100.ntitle,"และ/หรือ")          <> 0  THEN nv_typ = "Cs".
+             ELSE nv_typ = "0s".  /*0s= บุคคลธรรมดา Cs = นิติบุคคล*/
+    
+        END.
+        
+        ELSE DO: /* ---- Check ด้วย name ---- */
+    
+             IF R-INDEX(buwm100.name1,"จก.")             <> 0  OR              
+                R-INDEX(buwm100.name1,"จำกัด")           <> 0  OR  
+                R-INDEX(buwm100.name1,"(มหาชน)")         <> 0  OR  
+                R-INDEX(buwm100.name1,"INC.")            <> 0  OR 
+                R-INDEX(buwm100.name1,"CO.")             <> 0  OR 
+                R-INDEX(buwm100.name1,"LTD.")            <> 0  OR 
+                R-INDEX(buwm100.name1,"LIMITED")         <> 0  OR 
+                INDEX(buwm100.name1,"บริษัท")            <> 0  OR 
+                INDEX(buwm100.name1,"บ.")                <> 0  OR 
+                INDEX(buwm100.name1,"บจก.")              <> 0  OR 
+                INDEX(buwm100.name1,"หจก.")              <> 0  OR 
+                INDEX(buwm100.name1,"หสน.")              <> 0  OR 
+                INDEX(buwm100.name1,"บรรษัท")            <> 0  OR 
+                INDEX(buwm100.name1,"มูลนิธิ")           <> 0  OR 
+                INDEX(buwm100.name1,"ห้าง")              <> 0  OR 
+                INDEX(buwm100.name1,"ห้างหุ้นส่วน")      <> 0  OR 
+                INDEX(buwm100.name1,"ห้างหุ้นส่วนจำกัด") <> 0  OR
+                INDEX(buwm100.name1,"ห้างหุ้นส่วนจำก")   <> 0  OR  
+                INDEX(buwm100.name1,"และ/หรือ")          <> 0  THEN nv_typ = "Cs".
+             ELSE nv_typ = "0s".  /*0s= บุคคลธรรมดา Cs = นิติบุคคล*/
+    
+        END.
+    
+        RUN WGW\WGWINSNO (INPUT         buwm100.branch,
+                          INPUT         YES,
+                          INPUT         nv_typ,
+                          INPUT-OUTPUT  n_check,
+                          OUTPUT        nv_insref).
+    
+        IF n_check <> "" THEN DO:
+            ASSIGN
+                putchr  = ""
+                putchr1 = ""
+                putchr1 = "Error Running Insured Code."
+                putchr  = "Policy No. : " + TRIM(buwm100.policy)         +               
+                          " R/E "         + STRING(buwm100.rencnt,"99")  +
+                          "/"             + STRING(buwm100.endcnt,"999") +
+                          " "             + TRIM(putchr1).
+            PUT STREAM ns1 putchr FORMAT "x(200)" SKIP.        
+            nv_message  = putchr1.
+            nv_transfer = NO.
+            nv_insref   = "".
+            RETURN.
+        END.
+    
+        loop_runningins2: /*Check Insured*/
+        REPEAT:
+          FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE
+               sicsyac.xmm600.acno = CAPS(nv_insref)  NO-LOCK NO-ERROR NO-WAIT.
+          IF AVAIL sicsyac.xmm600 THEN DO:
+              RUN WGW\WGWINSNO (INPUT         buwm100.branch,
+                              INPUT         YES,
+                              INPUT         nv_typ,
+                              INPUT-OUTPUT  n_check,
+                              OUTPUT        nv_insref).
+              IF  n_check <> ""  THEN DO:   
+                  ASSIGN
+                      putchr  = ""
+                      putchr1 = ""
+                      putchr1 = "Error Running Insured Code."
+                      putchr  = "Policy No. : " + TRIM(buwm100.policy)         +               
+                                " R/E "         + STRING(buwm100.rencnt,"99")  +
+                                "/"             + STRING(buwm100.endcnt,"999") +
+                                " "             + TRIM(putchr1).
+                  PUT STREAM ns1 putchr FORMAT "x(200)" SKIP.
+                  nv_message  = putchr1.
+                  nv_transfer = NO.
+                  nv_insref   = "".
+                  RETURN.
+              END.
+          END.  
+          ELSE LEAVE loop_runningins2.
+        END.
+        
+        CREATE sicsyac.xmm600.
+    END.
+    n_insref = nv_insref.
+END.
+    
+    IF nv_transfer = YES THEN DO:
+      ASSIGN
+        sicsyac.xmm600.acno     = nv_insref                 /*Account no*/
+        sicsyac.xmm600.gpstcs   = nv_insref                 /*Group A/C for statistics*/
+        sicsyac.xmm600.gpage    = ""                        /*Group A/C for ageing*/
+        sicsyac.xmm600.gpstmt   = ""                        /*Group A/C for Statement*/
+        sicsyac.xmm600.or1ref   = ""                        /*OR Agent 1 Ref. No.*/
+        sicsyac.xmm600.or2ref   = ""                        /*OR Agent 2 Ref. No.*/
+        sicsyac.xmm600.or1com   = 0                         /*OR Agent 1 Comm. %*/
+        sicsyac.xmm600.or2com   = 0                         /*OR Agent 2 Comm. %*/
+        sicsyac.xmm600.or1gn    = "G"                       /*OR Agent 1 Gross/Net*/
+        sicsyac.xmm600.or2gn    = "G"                       /*OR Agent 2 Gross/Net*/
+        sicsyac.xmm600.ntitle   = buwm100.ntitle            /*Title for Name Mr/Mrs/etc*/
+        sicsyac.xmm600.fname    = ""                        /*First Name*/
+        sicsyac.xmm600.name     = buwm100.name1             /*Name Line 1*/
+        sicsyac.xmm600.abname   = buwm100.name1             /*Abbreviated Name*/
+        sicsyac.xmm600.icno     = buwm100.anam2             /*IC No.*/           /*--Crate by Amparat C. A51-0071--*/
+        sicsyac.xmm600.addr1    = buwm100.addr1             /*Address line 1*/
+        sicsyac.xmm600.addr2    = buwm100.addr2             /*Address line 2*/
+        sicsyac.xmm600.addr3    = buwm100.addr3             /*Address line 3*/
+        sicsyac.xmm600.addr4    = buwm100.addr4             /*Address line 4*/
+        sicsyac.xmm600.postcd   = ""                        /*Postal Code*/
+        sicsyac.xmm600.clicod   = "IN"                      /*Client Type Code*/
+        sicsyac.xmm600.acccod   = "IN"                      /*Account type code*/
+        sicsyac.xmm600.relate   = ""                        /*Related A/C for RI Claims*/
+        sicsyac.xmm600.notes1   = ""                        /*Notes line 1*/
+        sicsyac.xmm600.notes2   = ""                        /*Notes line 2*/
+        sicsyac.xmm600.homebr   = buwm100.branch            /*Home branch*/
+        sicsyac.xmm600.opened   = buwm100.trndat            /*Date A/C opened*/
+        sicsyac.xmm600.prindr   = 1                         /*No. to print Dr/Cr N., default*/
+        sicsyac.xmm600.langug   = ""                        /*Language Code*/
+        sicsyac.xmm600.cshdat   = ?                         /*Cash terms wef date*/
+        sicsyac.xmm600.legal    = ""                        /*Legal action pending/closed*/
+        sicsyac.xmm600.stattp   = "I"                       /*Statement type I/B/N*/
+        sicsyac.xmm600.autoap   = NO                        /*Automatic cash matching*/
+        sicsyac.xmm600.ltcurr   = "BHT"                     /*Credit limit currency*/
+        sicsyac.xmm600.ltamt    = 0                         /*Credit limit amount*/
+        sicsyac.xmm600.exec     = ""                        /*Executive responsible*/
+        sicsyac.xmm600.cntry    = "TH"                      /*Country code*/
+        sicsyac.xmm600.phone    = ""                        /*Phone no.*/
+        sicsyac.xmm600.closed   = ?                         /*Date A/C closed*/
+        sicsyac.xmm600.crper    = 0                         /*Credit period*/
+        sicsyac.xmm600.pvfeq    = 0                         /*PV frequency/Type code*/
+        sicsyac.xmm600.comtab   = 1                         /*Commission table no*/
+        sicsyac.xmm600.chgpol   = YES                       /*Allow N & A change on pol.Y/N*/
+        sicsyac.xmm600.entdat   = TODAY                     /*Entry date*/
+        sicsyac.xmm600.enttim   = STRING(TIME,"HH:MM:SS")   /*Entry time*/
+        sicsyac.xmm600.usrid    = nv_usrid                 /*Userid*/
+        sicsyac.xmm600.regagt   = ""                       /*Registered agent code*/
+        sicsyac.xmm600.agtreg   = ""                       /*Agents Registration/Licence No*/
+        sicsyac.xmm600.debtyn   = YES                      /*Permit debtor trans Y/N*/
+        sicsyac.xmm600.crcon    = NO                       /*Credit Control Report*/
+        sicsyac.xmm600.muldeb   = NO                       /*Multiple Debtors Acc.*/
+        sicsyac.xmm600.styp20   = ""                       /*Statistic Type Codes (4 x 20)*/
+        sicsyac.xmm600.sval20   = ""                       /*Statistic Value Codes (4 x 20)*/
+        sicsyac.xmm600.dtyp20   = ""                       /*Type of Date Codes (2 X 20)*/
+        sicsyac.xmm600.dval20   = ""                       /*Date Values (8 X 20)*/
+        sicsyac.xmm600.iblack   = ""                       /*Insured Black List Code*/
+        sicsyac.xmm600.oldic    = ""                       /*Old IC No.*/
+        sicsyac.xmm600.cardno   = ""                       /*Credit Card Account No.*/
+        sicsyac.xmm600.cshcrd   = ""                       /*Cash(C)/Credit(R) Agent*/
+        sicsyac.xmm600.naddr1   = ""                       /*New address line 1*/
+        sicsyac.xmm600.gstreg   = ""                       /*GST Registration No.*/
+        sicsyac.xmm600.naddr2   = ""                       /*New address line 2*/
+        sicsyac.xmm600.fax      = ""                       /*Fax No.*/
+        sicsyac.xmm600.naddr3   = ""                       /*New address line 3*/
+        sicsyac.xmm600.telex    = ""                       /*Telex No.*/
+        sicsyac.xmm600.naddr4   = ""                       /*New address line 4*/
+        sicsyac.xmm600.name2    = ""                       /*Name Line 2*/
+        sicsyac.xmm600.npostcd  = ""                       /*New postal code*/
+        sicsyac.xmm600.name3    = ""                       /*Name Line 3*/
+        sicsyac.xmm600.nphone   = ""                       /*New phone no.*/    
+        sicsyac.xmm600.nachg    = YES                      /*Change N&A on Renewal/Endt*/
+        sicsyac.xmm600.regdate  = ?                        /*Agents registration Date*/
+        sicsyac.xmm600.alevel   = 0                        /*Agency Level*/
+        sicsyac.xmm600.taxno    = ""                       /*Agent tax no.*/
+        sicsyac.xmm600.anlyc1   = ""                       /*Analysis Code 1*/
+        sicsyac.xmm600.taxdate  = ?                        /*Agent tax date*/
+        sicsyac.xmm600.anlyc5   =  "" .                    /*Analysis Code 5*/
+    END.
+    
+    nv_insref = sicsyac.xmm600.acno.
+    nv_transfer = YES.
+    
+    FIND sicsyac.xtm600 WHERE
+         sicsyac.xtm600.acno  = nv_insref
+    NO-ERROR NO-WAIT.
+    IF NOT AVAILABLE sicsyac.xtm600 THEN DO:
+      IF LOCKED sicsyac.xtm600 THEN DO:
+       
+        nv_transfer = NO.
+        RETURN.
+      END.
+      ELSE DO:
+        HIDE MESSAGE NO-PAUSE.
+     /*   MESSAGE "CREATE NEW RECORD Name & Address THAI (XTM600)" nv_insref. */
+        CREATE sicsyac.xtm600.
+      END.
+END.
+
+IF nv_transfer = YES THEN DO:
+  ASSIGN
+    sicsyac.xtm600.acno    = nv_insref          /*Account no.*/
+    sicsyac.xtm600.name    = buwm100.name1      /*Name of Insured Line 1*/
+    sicsyac.xtm600.abname  = buwm100.name1      /*Abbreviated Name*/
+    sicsyac.xtm600.addr1   = buwm100.addr1      /*address line 1*/
+    sicsyac.xtm600.addr2   = buwm100.addr2      /*address line 2*/
+    sicsyac.xtm600.addr3   = buwm100.addr3      /*address line 3*/
+    sicsyac.xtm600.addr4   = buwm100.addr4      /*address line 4*/
+    sicsyac.xtm600.name2   = ""                 /*Name of Insured Line 2*/
+    sicsyac.xtm600.ntitle  = buwm100.ntitle     /*Title*/
+    sicsyac.xtm600.name3   = ""                 /*Name of Insured Line 3*/
+    sicsyac.xtm600.fname   = "" .               /*First Name*/
+END.
+RELEASE  sicsyac.xtm600.
+RELEASE  sicsyac.xmm600.
+
+RETURN.
+HIDE MESSAGE NO-PAUSE.
+
+/* END OF FILE : TMGEN600.P */
+

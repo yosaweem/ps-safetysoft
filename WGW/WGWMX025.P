@@ -1,0 +1,63 @@
+DEFINE INPUT  PARAMETER nv_ded     AS DECIMAL   FORMAT ">>>,>>>,>>9.99-"     INITIAL 0  NO-UNDO.
+DEFINE INPUT  PARAMETER nv_tariff  AS CHARACTER FORMAT "X"                   INITIAL "" NO-UNDO.
+DEFINE INPUT  PARAMETER nv_class   AS CHARACTER FORMAT "X(6)" INITIAL ""                NO-UNDO. 
+DEFINE INPUT  PARAMETER nv_key_b   AS DECIMAL   FORMAT ">>>,>>>,>>>,>>9.99-" INITIAL 0  NO-UNDO.
+DEFINE INPUT  PARAMETER nv_effdat  AS DATE      FORMAT "99/99/9999"                     NO-UNDO.
+DEFINE INPUT  PARAMETER nv_cons    AS CHAR      FORMAT "X(2)"                           NO-UNDO.
+DEFINE OUTPUT PARAMETER nv_prem    AS DECIMAL   FORMAT ">>>,>>>,>>9.99-"     INITIAL 0 NO-UNDO.
+DEFINE OUTPUT PARAMETER nv_message AS CHAR.
+DEFINE VAR nv_prem1   AS DECIMAL   FORMAT ">>>,>>>,>>9.99-" INITIAL 0  NO-UNDO.
+DEFINE VAR nv_bencod1 AS CHARACTER FORMAT "X(4)"            INITIAL "" NO-UNDO.
+DEFINE VAR nv_bencod2 AS CHARACTER FORMAT "X(4)"            INITIAL "" NO-UNDO.
+DEFINE VAR nv_rate    AS DECIMAL   FORMAT ">>>9.9999-"                 NO-UNDO.
+DEFINE VAR nv_chk     AS LOGIC.
+DEFINE VAR nv_baseap  AS DECIMAL FORMAT ">>>,>>9".
+nv_chk = YES.
+IF nv_cons = "AD" THEN DO:
+  ASSIGN nv_bencod1 = "DC02"                          
+         nv_bencod2 = "DC03".
+END.
+ELSE DO:
+  IF nv_cons = "PD" THEN DO:
+    ASSIGN nv_bencod1 = "DP01"                          
+           nv_bencod2 = "DP02".
+  END.
+END.
+ASSIGN
+  nv_prem   = nv_ded.
+RUN WGW\WGWMX024.P (INPUT nv_tariff,
+                        nv_bencod1,
+                        nv_class,
+                        nv_key_b,
+                        nv_effdat,
+           INPUT-OUTPUT nv_prem,
+                 OUTPUT nv_chk ,
+                 OUTPUT nv_baseap,
+                 OUTPUT nv_message).
+IF NOT nv_chk THEN DO:
+  nv_prem1 = nv_baseap.
+  RUN WGW\WGWMX024.P  (INPUT nv_tariff,
+                          nv_bencod1,
+                          nv_class,
+                          nv_key_b,
+                          nv_effdat,
+             INPUT-OUTPUT nv_prem1,
+                   OUTPUT nv_chk ,
+                   OUTPUT nv_baseap,
+                   OUTPUT nv_message).
+
+  nv_prem  = nv_prem1.
+  nv_prem1 = nv_ded - nv_baseap.
+
+  RUN WGW\WGWMX024.P  (INPUT nv_tariff,
+                          nv_bencod2,
+                          nv_class,
+                          nv_key_b,
+                          nv_effdat,
+             INPUT-OUTPUT nv_prem1,
+                   OUTPUT nv_chk ,
+                   OUTPUT nv_baseap,
+                   OUTPUT nv_message).
+  nv_prem = nv_prem + nv_prem1.
+END.
+nv_prem = TRUNCATE(nv_prem,0).

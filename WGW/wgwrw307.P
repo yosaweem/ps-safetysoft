@@ -1,0 +1,223 @@
+/*HO: GW_SAFE -LD SIC_BRAN,GW_STAT -LD BRSTAT,EXPIRY -LD SIC_EXP, SICSYAC, SICCL, STAT*/
+/************************************************************************/
+/* wgwrw100.p   Transfer Expiry to Gw_safe ,Gw_stat                     */
+/* Dup Program  : uwr70307.p                                            */
+/* Copyright	: Safety Insurance Public Company Limited 				*/
+/*			  บริษัท ประกันคุ้มภัย จำกัด (มหาชน)					    */
+/* CREATE BY	: Chaiyong W.   ASSIGN A61-0016 21/05/2018              */
+/************************************************************************/
+DEF SHARED VAR sh_policy   LIKE sic_bran.uwm100.policy.
+DEF SHARED VAR sh_rencnt   LIKE sic_bran.uwm100.rencnt.
+DEF SHARED VAR sh_endcnt   LIKE sic_bran.uwm100.endcnt.
+DEF SHARED VAR n_policy    LIKE sic_exp.UWM100.POLICY.
+DEF SHARED VAR n_renew     LIKE sic_exp.UWM100.RENCNT.
+DEF SHARED var sh_bchyr   AS INT INIT 0.    
+DEF SHARED VAR sh_bchno   AS CHAR INIT "".  
+DEF SHARED VAR sh_bchcnt  AS INT INIT 0. 
+
+
+hide message no-pause.
+/*message "Update uwm307". */
+
+FOR EACH sic_exp.uwm307 WHERE
+         sic_exp.uwm307.policy = sh_policy
+         /*
+         sic_exp.uwm307.rencnt = sh_rencnt AND
+         sic_exp.uwm307.endcnt = sh_endcnt*/
+:
+  FIND FIRST sic_bran.uwm307 WHERE
+       sic_bran.uwm307.policy = n_policy AND
+       sic_bran.uwm307.rencnt = n_renew  AND
+       sic_bran.uwm307.endcnt = 0 AND
+       sic_bran.uwm307.riskgp = sic_exp.uwm307.riskgp AND
+       sic_bran.uwm307.riskno = sic_exp.uwm307.riskno AND
+       sic_bran.uwm307.itemno = sic_exp.uwm307.itemno AND
+       sic_bran.uwm307.bchyr  = sh_bchyr              AND
+       sic_bran.uwm307.bchno  = sh_bchno              AND
+       sic_bran.uwm307.bchcnt = sh_bchcnt           
+  NO-ERROR.
+
+  IF NOT AVAILABLE sic_bran.uwm307 THEN DO:
+    CREATE sic_bran.uwm307.
+  END.
+
+  ASSIGN
+    sic_bran.uwm307.policy = n_policy
+    sic_bran.uwm307.rencnt = n_renew
+    sic_bran.uwm307.endcnt = 0
+    sic_bran.uwm307.riskgp = sic_exp.uwm307.riskgp
+    sic_bran.uwm307.riskno = sic_exp.uwm307.riskno
+    sic_bran.uwm307.itemno = sic_exp.uwm307.itemno
+    sic_bran.uwm307.iref   = sic_exp.uwm307.iref
+    sic_bran.uwm307.ifirst = sic_exp.uwm307.ifirst
+    sic_bran.uwm307.iname  = sic_exp.uwm307.iname
+    sic_bran.uwm307.iyob   = sic_exp.uwm307.iyob
+    sic_bran.uwm307.idob   = sic_exp.uwm307.idob
+    sic_bran.uwm307.iocc   = sic_exp.uwm307.iocc
+    sic_bran.uwm307.iocct  = sic_exp.uwm307.iocct
+    sic_bran.uwm307.ioccs  = sic_exp.uwm307.ioccs
+    sic_bran.uwm307.bname1 = sic_exp.uwm307.bname1
+    sic_bran.uwm307.bname2 = sic_exp.uwm307.bname2
+    sic_bran.uwm307.badd1  = sic_exp.uwm307.badd1
+    sic_bran.uwm307.badd2  = sic_exp.uwm307.badd2
+    sic_bran.uwm307.reship = sic_exp.uwm307.reship
+    sic_bran.uwm307.endatt = sic_exp.uwm307.endatt.
+
+  ASSIGN
+    sic_bran.uwm307.ldcd[1]   = sic_exp.uwm307.ldcd[1]
+    sic_bran.uwm307.ldcd[2]   = sic_exp.uwm307.ldcd[2]
+    sic_bran.uwm307.ldcd[3]   = sic_exp.uwm307.ldcd[3]
+    sic_bran.uwm307.ldae[1]   = sic_exp.uwm307.ldae[1]
+    sic_bran.uwm307.ldae[2]   = sic_exp.uwm307.ldae[2]
+    sic_bran.uwm307.ldae[3]   = sic_exp.uwm307.ldae[3]
+    sic_bran.uwm307.ldrate[1] = sic_exp.uwm307.ldrate[1]
+    sic_bran.uwm307.ldrate[2] = sic_exp.uwm307.ldrate[2]
+    sic_bran.uwm307.ldrate[3] = sic_exp.uwm307.ldrate[3]
+    sic_bran.uwm307.mb4wks = sic_exp.uwm307.mb4wks
+    sic_bran.uwm307.mb5wks = sic_exp.uwm307.mb5wks
+    sic_bran.uwm307.mb4ded = sic_exp.uwm307.mb4ded
+    sic_bran.uwm307.mb5ded = sic_exp.uwm307.mb5ded
+    sic_bran.uwm307.mb6ded = sic_exp.uwm307.mb6ded.
+
+  ASSIGN
+    sic_bran.uwm307.abcd[1]   = sic_exp.uwm307.abcd[1]
+    sic_bran.uwm307.abcd[2]   = sic_exp.uwm307.abcd[2]
+    sic_bran.uwm307.abcd[3]   = sic_exp.uwm307.abcd[3]
+    sic_bran.uwm307.abcd[4]   = sic_exp.uwm307.abcd[4]
+    sic_bran.uwm307.abrtae[1] = sic_exp.uwm307.abrtae[1]
+    sic_bran.uwm307.abrtae[2] = sic_exp.uwm307.abrtae[2]
+    sic_bran.uwm307.abrtae[3] = sic_exp.uwm307.abrtae[3]
+    sic_bran.uwm307.abrtae[4] = sic_exp.uwm307.abrtae[4]
+    sic_bran.uwm307.abrt[1]   = sic_exp.uwm307.abrt[1]
+    sic_bran.uwm307.abrt[2]   = sic_exp.uwm307.abrt[2]
+    sic_bran.uwm307.abrt[3]   = sic_exp.uwm307.abrt[3]
+    sic_bran.uwm307.abrt[4]   = sic_exp.uwm307.abrt[4]
+    sic_bran.uwm307.abapae[1] = sic_exp.uwm307.abapae[1]
+    sic_bran.uwm307.abapae[2] = sic_exp.uwm307.abapae[2]
+    sic_bran.uwm307.abapae[3] = sic_exp.uwm307.abapae[3]
+    sic_bran.uwm307.abapae[4] = sic_exp.uwm307.abapae[4]
+    sic_bran.uwm307.abap[1]   = sic_exp.uwm307.abap[1]
+    sic_bran.uwm307.abap[2]   = sic_exp.uwm307.abap[2]
+    sic_bran.uwm307.abap[3]   = sic_exp.uwm307.abap[3]
+    sic_bran.uwm307.abap[4]   = sic_exp.uwm307.abap[4]
+    sic_bran.uwm307.abpdae[1] = sic_exp.uwm307.abpdae[1]
+    sic_bran.uwm307.abpdae[2] = sic_exp.uwm307.abpdae[2]
+    sic_bran.uwm307.abpdae[3] = sic_exp.uwm307.abpdae[3]
+    sic_bran.uwm307.abpdae[4] = sic_exp.uwm307.abpdae[4]
+    sic_bran.uwm307.abpd[1]   = sic_exp.uwm307.abpd[1]
+    sic_bran.uwm307.abpd[2]   = sic_exp.uwm307.abpd[2]
+    sic_bran.uwm307.abpd[3]   = sic_exp.uwm307.abpd[3]
+    sic_bran.uwm307.abpd[4]   = sic_exp.uwm307.abpd[4].
+
+    sic_bran.uwm307.tariff = sic_exp.uwm307.tariff     .
+    sic_bran.uwm307.icno   = sic_exp.uwm307.icno       .
+    sic_bran.uwm307.bname3 = sic_exp.uwm307.bname3     .
+    sic_bran.uwm307.mbsi[1] = sic_exp.uwm307.mbsi[1]   .
+    sic_bran.uwm307.mbsi[2] = sic_exp.uwm307.mbsi[2]   .
+    sic_bran.uwm307.mbsi[3] = sic_exp.uwm307.mbsi[3]   .
+    sic_bran.uwm307.mbsi[4] = sic_exp.uwm307.mbsi[4]   .
+    sic_bran.uwm307.mbsi[5] = sic_exp.uwm307.mbsi[5]   .
+    sic_bran.uwm307.mbsi[6] = sic_exp.uwm307.mbsi[6]   .
+    /* ----------------
+    sic_bran.uwm307.mbsi[7] = sic_exp.uwm307.mbsi[7]   .
+    sic_bran.uwm307.mbsi[8] = sic_exp.uwm307.mbsi[8]   .
+    sic_bran.uwm307.mbsi[9] = sic_exp.uwm307.mbsi[9]   .
+    sic_bran.uwm307.mbsi[10] = sic_exp.uwm307.mbsi[10] .
+    sic_bran.uwm307.mbsi[11] = sic_exp.uwm307.mbsi[11] .
+    sic_bran.uwm307.mbsi[12] = sic_exp.uwm307.mbsi[12] .
+    ----------------- */
+    sic_bran.uwm307.mbr_ae[1] = sic_exp.uwm307.mbr_ae[1].
+    sic_bran.uwm307.mbr_ae[2] = sic_exp.uwm307.mbr_ae[2].
+    sic_bran.uwm307.mbr_ae[3] = sic_exp.uwm307.mbr_ae[3].
+    sic_bran.uwm307.mbr_ae[4] = sic_exp.uwm307.mbr_ae[4].
+    sic_bran.uwm307.mbr_ae[5] = sic_exp.uwm307.mbr_ae[5].
+    sic_bran.uwm307.mbr_ae[6] = sic_exp.uwm307.mbr_ae[6].
+    /* -----------------
+    sic_bran.uwm307.mbr_ae[7] = sic_exp.uwm307.mbr_ae[7].
+    sic_bran.uwm307.mbr_ae[8] = sic_exp.uwm307.mbr_ae[8].
+    sic_bran.uwm307.mbr_ae[9] = sic_exp.uwm307.mbr_ae[9].
+    sic_bran.uwm307.mbr_ae[10] = sic_exp.uwm307.mbr_ae[10].
+    sic_bran.uwm307.mbr_ae[11] = sic_exp.uwm307.mbr_ae[11].
+    sic_bran.uwm307.mbr_ae[12] = sic_exp.uwm307.mbr_ae[12].
+    ----------------- */
+    sic_bran.uwm307.mbrate[1] = sic_exp.uwm307.mbrate[1]   .
+    sic_bran.uwm307.mbrate[2] = sic_exp.uwm307.mbrate[2]   .
+    sic_bran.uwm307.mbrate[3] = sic_exp.uwm307.mbrate[3]   .
+    sic_bran.uwm307.mbrate[4] = sic_exp.uwm307.mbrate[4]   .
+    sic_bran.uwm307.mbrate[5] = sic_exp.uwm307.mbrate[5]   .
+    sic_bran.uwm307.mbrate[6] = sic_exp.uwm307.mbrate[6]   .
+    /* ------------------
+    sic_bran.uwm307.mbrate[7] = sic_exp.uwm307.mbrate[7]   .
+    sic_bran.uwm307.mbrate[8] = sic_exp.uwm307.mbrate[8]   .
+    sic_bran.uwm307.mbrate[9] = sic_exp.uwm307.mbrate[9]   .
+    sic_bran.uwm307.mbrate[10] = sic_exp.uwm307.mbrate[10] .
+    sic_bran.uwm307.mbrate[11] = sic_exp.uwm307.mbrate[11] .
+    sic_bran.uwm307.mbrate[12] = sic_exp.uwm307.mbrate[12] .
+    ----------------- */
+    sic_bran.uwm307.mbapae[1] = sic_exp.uwm307.mbapae[1]   .
+    sic_bran.uwm307.mbapae[2] = sic_exp.uwm307.mbapae[2]   .
+    sic_bran.uwm307.mbapae[3] = sic_exp.uwm307.mbapae[3]   .
+    sic_bran.uwm307.mbapae[4] = sic_exp.uwm307.mbapae[4]   .
+    sic_bran.uwm307.mbapae[5] = sic_exp.uwm307.mbapae[5]   .
+    sic_bran.uwm307.mbapae[6] = sic_exp.uwm307.mbapae[6]   .
+    /* -----------------
+    sic_bran.uwm307.mbapae[7] = sic_exp.uwm307.mbapae[7]   .
+    sic_bran.uwm307.mbapae[8] = sic_exp.uwm307.mbapae[8]   .
+    sic_bran.uwm307.mbapae[9] = sic_exp.uwm307.mbapae[9]   .
+    sic_bran.uwm307.mbapae[10] = sic_exp.uwm307.mbapae[10] .
+    sic_bran.uwm307.mbapae[11] = sic_exp.uwm307.mbapae[11] .
+    sic_bran.uwm307.mbapae[12] = sic_exp.uwm307.mbapae[12].
+    ------------------ */
+    sic_bran.uwm307.mbap[1]   = sic_exp.uwm307.mbap[1]  .
+    sic_bran.uwm307.mbap[2]   = sic_exp.uwm307.mbap[2]  .
+    sic_bran.uwm307.mbap[3]   = sic_exp.uwm307.mbap[3]   .
+    sic_bran.uwm307.mbap[4]   = sic_exp.uwm307.mbap[4]   .
+    sic_bran.uwm307.mbap[5]   = sic_exp.uwm307.mbap[5]    .
+    sic_bran.uwm307.mbap[6]   = sic_exp.uwm307.mbap[6]    .
+    /* -----------------
+    sic_bran.uwm307.mbap[7]   = sic_exp.uwm307.mbap[7]    .
+    sic_bran.uwm307.mbap[8]   = sic_exp.uwm307.mbap[8]    .
+    sic_bran.uwm307.mbap[9]   = sic_exp.uwm307.mbap[9]    .
+    sic_bran.uwm307.mbap[10]   = sic_exp.uwm307.mbap[10]  .
+    sic_bran.uwm307.mbap[11]   = sic_exp.uwm307.mbap[11]  .
+    sic_bran.uwm307.mbap[12]   = sic_exp.uwm307.mbap[12]  .
+    ------------------ */
+    sic_bran.uwm307.mbpdae[1] = sic_exp.uwm307.mbpdae[1]  .
+    sic_bran.uwm307.mbpdae[2] = sic_exp.uwm307.mbpdae[2]  .
+    sic_bran.uwm307.mbpdae[3] = sic_exp.uwm307.mbpdae[3]  .
+    sic_bran.uwm307.mbpdae[4] = sic_exp.uwm307.mbpdae[4]  .
+    sic_bran.uwm307.mbpdae[5] = sic_exp.uwm307.mbpdae[5]  .
+    sic_bran.uwm307.mbpdae[6] = sic_exp.uwm307.mbpdae[6]  .
+    /* -----------------
+    sic_bran.uwm307.mbpdae[7] = sic_exp.uwm307.mbpdae[7]  .
+    sic_bran.uwm307.mbpdae[8] = sic_exp.uwm307.mbpdae[8]  .
+    sic_bran.uwm307.mbpdae[9] = sic_exp.uwm307.mbpdae[9]  .
+    sic_bran.uwm307.mbpdae[10] = sic_exp.uwm307.mbpdae[10].
+    sic_bran.uwm307.mbpdae[11] = sic_exp.uwm307.mbpdae[11].
+    sic_bran.uwm307.mbpdae[12] = sic_exp.uwm307.mbpdae[12].
+    ----------------- */
+       
+  ASSIGN
+    sic_bran.uwm307.mbpd[1] = sic_exp.uwm307.mbpd[1]
+    sic_bran.uwm307.mbpd[2] = sic_exp.uwm307.mbpd[2]
+    sic_bran.uwm307.mbpd[3] = sic_exp.uwm307.mbpd[3]
+    sic_bran.uwm307.mbpd[4] = sic_exp.uwm307.mbpd[4]
+    sic_bran.uwm307.mbpd[5] = sic_exp.uwm307.mbpd[5]
+    sic_bran.uwm307.mbpd[6] = sic_exp.uwm307.mbpd[6]
+    /* ----------------
+    sic_bran.uwm307.mbpd[7] = sic_exp.uwm307.mbpd[7]
+    sic_bran.uwm307.mbpd[8] = sic_exp.uwm307.mbpd[8]
+    sic_bran.uwm307.mbpd[9] = sic_exp.uwm307.mbpd[9]
+    sic_bran.uwm307.mbpd[10] = sic_exp.uwm307.mbpd[10]
+    sic_bran.uwm307.mbpd[11] = sic_exp.uwm307.mbpd[11]
+    sic_bran.uwm307.mbpd[12] = sic_exp.uwm307.mbpd[12]
+    ----------------- */
+    sic_bran.uwm307.mb1day = sic_exp.uwm307.mb1day
+    sic_bran.uwm307.mb6day = sic_exp.uwm307.mb6day
+    sic_bran.uwm307.mb7day = sic_exp.uwm307.mb7day
+    sic_bran.uwm307.mb8day = sic_exp.uwm307.mb8day
+    sic_bran.uwm307.bchyr  = sh_bchyr        
+    sic_bran.uwm307.bchno  = sh_bchno        
+    sic_bran.uwm307.bchcnt = sh_bchcnt       .
+END.
+

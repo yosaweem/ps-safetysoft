@@ -1,0 +1,37 @@
+DEFINE INPUT PARAMETER nv_tariff AS CHARACTER FORMAT "X"    INITIAL "" NO-UNDO.
+DEFINE INPUT PARAMETER nv_bencod AS CHARACTER FORMAT "X(4)" INITIAL "" NO-UNDO.
+DEFINE INPUT PARAMETER nv_class  AS CHARACTER FORMAT "X(6)" INITIAL "" NO-UNDO. 
+DEFINE INPUT PARAMETER nv_key_b  AS DECIMAL   FORMAT ">>>,>>>,>>>,>>9.99-" INITIAL 0 NO-UNDO.
+DEFINE INPUT PARAMETER nv_effdat AS DATE      FORMAT "99/99/9999"      NO-UNDO.
+DEFINE INPUT-OUTPUT PARAMETER nv_prem  AS DECIMAL FORMAT ">>>,>>>,>>9.99-" INITIAL 0 NO-UNDO.
+DEFINE OUTPUT PARAMETER nv_chk  AS LOGIC INITIAL YES.
+DEFINE OUTPUT PARAMETER nv_baseap AS DECIMAL FORMAT ">>>,>>9".
+DEFINE OUTPUT PARAMETER nv_message AS CHAR.
+DEFINE VAR nv_rate AS DECIMAL FORMAT ">>>9.9999-" INITIAL 0 NO-UNDO.
+DEFINE BUFFER bxmm106 FOR sicsyac.xmm106. 
+
+nv_chk = YES.
+
+FIND LAST sicsyac.xmm106 USE-INDEX xmm10601 WHERE
+          sicsyac.xmm106.tariff = nv_tariff AND
+          sicsyac.xmm106.bencod = nv_bencod AND
+          sicsyac.xmm106.class  = nv_class  AND
+          sicsyac.xmm106.key_b  GE nv_key_b  AND
+          sicsyac.xmm106.effdat LE nv_effdat
+NO-LOCK NO-ERROR NO-WAIT.
+IF AVAIL sicsyac.xmm106 THEN DO:
+    IF sicsyac.xmm106.baseap <> 0 AND nv_prem > sicsyac.xmm106.baseap THEN DO:
+        nv_chk    = NO.
+        nv_baseap = sicsyac.xmm106.baseap.
+    END.
+    ELSE DO:
+        nv_baseap = sicsyac.xmm106.baseap.
+        nv_rate   = sicsyac.xmm106.appinc.
+        nv_prem   = nv_prem * ( nv_rate / 100 ).
+    END.
+END.
+ELSE DO:
+    nv_message = "NOT FOUND BENEFIT: " + CAPS(nv_bencod) + " CLASS: " + CAPS(nv_class).
+END.
+
+nv_prem = TRUNCATE(nv_prem,0).

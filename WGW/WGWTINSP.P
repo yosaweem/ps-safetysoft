@@ -1,0 +1,820 @@
+/******************************************************************************************
+PROGRAM NAME   : WGWTINSP.P
+PROGRAM BEFORE : WGWTIM70.W
+DESCRIBTION    : Create data inspectino to lotus note [Inspection Box]
+CREATE BY      : PORNTIWA P.  A57-0096   26/06/2014
+DB CONNECT     : SICUW ; SICSYAC
+******************************************************************************************
+Modify By : Porntiwa P. A56-0096-1  23/07/2014
+          : ปรับเพิ่มตัวแปร App = 0 ; Chk = 0
+******************************************************************************************
+Modify By : Porntiwa P. A57-0300  10/09/2014
+          : ปรับเพิ่มตัวแปร StList = 0 ; stHide = 0          
+******************************************************************************************
+Modify By : Porntiwa P.  A58-0049  02/02/2016    
+          : เปลี่ยนแปลง Path การนำเข้างานศรีกรุง web\inspection.nsf (Fix Code : B300308)   
+******************************************************************************************
+Modify By : Porntiwa P. A58-0393  11/10/2015
+          : นำเข้างานศรีกรุงทันใจ        
+******************************************************************************************
+Modify By : Porntiwa P. A58-0480  03/12/2015
+          : ปรับวันที่ Create เป็น วัน/เดือน/ปี              
+******************************************************************************************
+Modify By : Sarinya C. A62-0300  26/06/2019
+          : ปรับให้  Account code = B300308,B300368 อยู่ ที่กล่อง Inspection ศรีกรุง             
+******************************************************************************************
+Modify By : Saharat S. A64-0136  19/03/2021
+            : แก้ไข Description Thai เพื่อให้ SafetySoft ส่งงานไป Inspection บน LotusNote ได้ถูกต้อง  
+******************************************************************************************            
+Modify By : Lukkana M. A64-0377   13/10/2021      
+            : เพิ่มฟิลด์วันที่ส่งงานเข้ากล่องตรวจสภาพ            
+****************************************************************************************** 
+Modify By : Songkran P. A65-0141   01/06/2022      
+            : เปลี่ยนส่งข้อมูลเป็นระบบ Webservice SOAP API            
+****************************************************************************************** 
+****************************************************************************************** 
+Modify By : Songkran P. A66-0004   06/01/2023      
+            : เพิ่มการดึงรูปจาก folder          
+******************************************************************************************/ 
+DEF INPUT PARAMETER nv_bchyr  AS INT.
+DEF INPUT PARAMETER nv_bchno  AS CHAR.
+DEF INPUT PARAMETER nv_bchcnt AS INT.
+DEF INPUT PARAMETER nv_policy AS CHAR.
+DEF INPUT PARAMETER nv_rencnt AS INT.
+DEF INPUT PARAMETER nv_endcnt AS INT.
+/**/
+DEF INPUT PARAMETER nv_inspec AS INT.
+/*--  A65-0141                
+DEFINE VAR chNotesSession     AS COM-HANDLE.
+DEFINE VAR chNotesDataBase    AS COM-HANDLE.
+DEFINE VAR chNotesView        AS COM-HANDLE.
+DEFINE VAR chNavView          AS COM-HANDLE.
+DEFINE VAR chViewEntry        AS COM-HANDLE.
+DEFINE VAR chDocument         AS COM-HANDLE.
+DEFINE VAR chItem             AS COM-HANDLE.
+DEFINE VAR chViewNavigator    AS COM-HANDLE.
+----*/
+DEFINE VAR nv_server   AS CHAR.
+DEFINE VAR nv_tmp      AS CHAR.
+DEFINE VAR nv_InsName  LIKE sicuw.uwm100.name1.
+DEFINE VAR nv_Lname    AS   CHAR FORMAT "X(50)".
+DEFINE VAR nv_BrName   LIKE sicsyac.xmm600.NAME.
+DEFINE VAR nv_makdes   LIKE stat.maktab_fil.makdes.
+DEFINE VAR nv_yrmanu   LIKE sicuw.uwm301.yrmanu.
+DEFINE VAR nv_cha_no   LIKE sicuw.uwm301.cha_no.
+DEFINE VAR nv_vehreg   LIKE sicuw.uwm301.vehreg FORMAT "X(15)".
+DEFINE VAR nv_telNo    LIKE sicsyac.xmm600.phone.
+DEFINE VAR nv_agent    AS CHAR FORMAT "X(10)".
+DEFINE VAR nv_Branch   AS CHAR.
+DEFINE VAR nv_BrName1  AS CHAR.   /*ADD Saharat S. A64-0136*/
+DEFINE VAR nv_ChkHOBR  AS CHAR .  /*Lukkana M. A64-0377   13/10/2021  */
+DEFINE VAR nv_err      AS CHAR.
+DEFINE VAR nv_Comdat   AS DATE FORMAT "99/99/9999".
+DEFINE VAR nv_expdat   AS DATE FORMAT "99/99/9999".
+/*-- DEFINE VAR nv_prem     AS INTE FORMAT "->>>,>>>,>>9.99". -- Comment A65-0141 --*/
+DEFINE VAR nv_prem     AS CHAR. /*-- Add A65-0141 --*/
+
+DEFINE VAR nv_char1    AS CHAR.
+DEFINE VAR nv_char2    AS CHAR.
+DEFINE VAR nv_char3    AS CHAR.
+DEFINE VAR nv_char4    AS CHAR.
+DEFINE VAR nv_vehreg1  AS CHAR.
+DEFINE VAR nv_vehreg2  AS CHAR.
+DEFINE VAR nv_licen    AS CHAR.
+DEFINE VAR nv_skfast   AS CHAR.
+/*--- Comment A65-0141 ----
+DEFINE SHARED VAR nv_body     AS CHAR.
+DEFINE SHARED VAR nv_subject  AS CHAR.
+DEFINE SHARED VAR nv_k        AS INTE.
+----- end comment A65-0141 --*/
+DEF    SHARED VAR n_user     AS   CHAR.   /*-  Add A65-0141 --*/
+DEFINE VAR nv_ToMail   AS CHAR.
+DEFINE VAR nv_CCMail   AS CHAR.
+DEFINE VAR nv_bcc      AS CHAR INIT "". 
+DEF VAR nv_groupmail   AS CHAR.
+DEFINE VAR nv_surcl    AS CHAR INIT "".
+DEFINE VAR nv_carCC   AS CHAR INIT "".
+DEFINE VAR nv_brtst    AS CHAR INIT "".
+DEFINE VAR nv_count    AS INT  INIT 0.
+DEFINE VAR nv_St       AS CHAR INIT "".
+DEFINE VAR nv_polno       AS CHAR INIT "".
+DEFINE VAR nv_docno      AS CHAR INIT "".
+DEFINE VAR nv_Credat AS CHAR FORMAT "X(10)".
+/*------ A65-0141 ---*/
+DEFINE VAR nv_title    AS CHAR.
+DEFINE VAR nv_usernote AS CHAR.
+DEFINE VAR nv_insp     AS CHAR .
+DEFINE VAR nv_garage   AS CHAR .
+DEFINE VAR nv_errfile  AS CHAR .
+DEFINE VAR nv_ufname   AS CHAR .
+DEFINE VAR nv_ulname   AS CHAR .
+DEFINE VAR n_email     AS CHAR .
+DEFINE VAR n_mailcc    AS CHAR .
+DEFINE VAR n_merr      AS CHAR .
+DEF    VAR n_user2     AS CHAR.   /*-  Add A65-0141 --*/
+DEFINE  VAR nv_body     AS CHAR.
+DEFINE  VAR nv_subject  AS CHAR.
+DEFINE  VAR nv_k        AS INTE.
+DEF VAR ix AS INTE.
+DEFINE VARIABLE nv_NewInput       AS CHARACTER NO-UNDO.
+DEFINE VARIABLE nv_outp           AS CHARACTER NO-UNDO.
+DEFINE TEMP-TABLE REQUESTWS NO-UNDO
+	FIELD REQTYPESUB  AS CHAR 
+	FIELD CREATEDBY   AS CHAR 
+	FIELD BRANCHREQ   AS CHAR 
+	FIELD DATES       AS CHAR 
+	FIELD DATEE       AS CHAR 
+	FIELD TNAME       AS CHAR 
+	FIELD FNAME       AS CHAR 
+	FIELD LNAME       AS CHAR 
+	FIELD PHONE       AS CHAR 
+	FIELD POLICYNO    AS CHAR 
+	FIELD AGENTCODE   AS CHAR 
+	FIELD AGENTNAME   AS CHAR 
+	FIELD PREMIUM     AS CHAR 
+	FIELD LICENSETYPE AS CHAR 
+	FIELD LICENSENO_1 AS CHAR 
+	FIELD LICENSENO_2 AS CHAR 
+	FIELD YEAR        AS CHAR 
+	FIELD MODEL       AS CHAR 
+	FIELD MODELCODE   AS CHAR 
+	FIELD SENDTO      AS CHAR 
+	FIELD SENDCC      AS CHAR 
+	FIELD SENDCLOSE   AS CHAR 
+	FIELD CREATEDON   AS CHAR 
+    FIELD CARCC       AS CHAR 
+    FIELD GARAGE      AS CHAR 
+    .
+DEFINE TEMP-TABLE CREATEDOCUMENTReturn NO-UNDO
+	FIELD DOCNO      AS CHAR 
+	FIELD CODESTATUS AS CHAR 
+	FIELD CODEDETAIL AS CHAR .
+DEF TEMP-TABLE mail
+    FIELD mform     AS CHAR
+    FIELD mpwss     AS CHAR
+    FIELD mdisplay  AS CHAR 
+    FIELD mto       AS CHAR
+    FIELD mcc       AS CHAR
+    FIELD subject   AS CHAR
+    FIELD body      AS CHAR
+    .
+DEFINE VARIABLE pathFile AS CHAR INIT "". /*-- Add A65-0004 --*/
+FUNCTION extractDigits RETURNS CHARACTER(INPUT n_mailtmp AS CHARACTER) FORWARD.
+nv_Credat = STRING(DAY(TODAY),"99") + "/" + STRING(MONTH(TODAY),"99") + "/" +
+                STRING(YEAR(TODAY),"9999").
+nv_NewInput = STRING(YEAR(TODAY),"9999")
+            + STRING(MONTH(TODAY),"99")
+            + STRING(DAY(TODAY),"99")
+            + SUBSTR(STRING(DATETIME(TODAY, MTIME)),12,12).
+nv_outp = STRING(YEAR(TODAY),"9999") + STRING(MONTH(TODAY),"99") + "_wgwinsp.TXT".
+/*------ A65-0141 ---*/
+
+FIND LAST sicuw.uwm100 USE-INDEX uwm10001 WHERE 
+     sicuw.uwm100.policy  =  nv_policy AND
+     /*sicuw.uwm100.rencnt = 0         AND Comment A65-0141*/
+     sicuw.uwm100.rencnt >= 0          AND  /*- Add A65-0141  --*/
+     sicuw.uwm100.endcnt  = 0          AND 
+     sicuw.uwm100.poltyp  = "V70"      AND
+     sicuw.uwm100.releas  = NO         NO-ERROR.
+IF AVAIL sicuw.uwm100 THEN DO:
+    nv_insname = sicuw.uwm100.name1.
+    nv_agent   = sicuw.uwm100.acno1.
+    nv_comdat  = sicuw.uwm100.comdat.
+    nv_expdat  = sicuw.uwm100.expdat.
+    /*-- nv_prem    = sicuw.uwm100.prem_t. --- Comment A65-0141 --*/
+    nv_prem    = STRING(sicuw.uwm100.prem_t,"->>>,>>>,>>9.99"). /*-- add a65-0141 --*/
+    pathFile   = trim(sicuw.uwm100.cedpol). /*-- Add A65-0004 --*/
+    nv_insname = trim(SUBSTR(sicuw.uwm100.name1,1,INDEX(sicuw.uwm100.name1," "))).
+    nv_LName = trim(SUBSTR(sicuw.uwm100.name1,LENGTH(nv_insname) + 1,LENGTH(sicuw.uwm100.name1))).
+
+    IF sicuw.uwm100.firstname <> "" THEN DO:
+    ASSIGN
+        nv_insname = sicuw.uwm100.firstname 
+        nv_LName   = sicuw.uwm100.lastname .
+    END.
+    
+    nv_branch = SUBSTR(sicuw.uwm100.policy,2,1).
+
+    /*-- Add A58-0393 --*/
+    IF sicuw.uwm100.sckno = 7000001 THEN nv_skfast = "SK_FAST".
+                                    ELSE nv_skfast = "".
+    /*-- End A58-0393 --*/
+
+    /*-- Branch Name --*/
+    /*FIND FIRST sicsyac.xmm023 USE-INDEX xmm02301 WHERE
+               sicsyac.xmm023.branch = TRIM(nv_branch) NO-LOCK NO-ERROR.
+    IF AVAIL sicsyac.xmm023 THEN DO:
+        nv_branch = sicsyac.xmm023.bdes.
+
+        IF nv_branch = "M1" THEN nv_branch = "Business Unit 1".
+        ELSE IF nv_branch = "M2" THEN nv_branch = "Business Unit 2".
+        ELSE IF nv_branch = "M3" THEN nv_branch = "Businees Unit 3".
+    END.*/ /*Comment by Saharat S. A64-0136*/
+    /*ADD Saharat S. A64-0136*/
+    nv_branch = uwm100.branch.
+    /*RUN wuw\wuwqbanc (INPUT nv_branch,OUTPUT nv_brname1). Lukkana M. A64-0377   13/10/2021  */
+    /*-- RUN wuw\wuwqbanc (INPUT nv_branch,OUTPUT nv_brname1, OUTPUT nv_ChkHOBR). /*Lukkana M. A64-0377   13/10/2021  */ Comment A65-0141 --*/
+
+    /*END Saharat S. A64-0136*/
+    /*-- UWM301 --*/
+    FIND FIRST sicuw.uwm301 USE-INDEX uwm30101 WHERE
+               sicuw.uwm301.policy = sicuw.uwm100.policy AND
+               sicuw.uwm301.rencnt = sicuw.uwm100.rencnt AND
+               sicuw.uwm301.endcnt = sicuw.uwm100.endcnt NO-LOCK NO-ERROR.
+    IF AVAIL sicuw.uwm301 THEN DO:
+        ASSIGN
+            nv_vehreg = sicuw.uwm301.vehreg
+            nv_yrmanu = sicuw.uwm301.yrmanu
+            nv_cha_no = sicuw.uwm301.cha_no
+            nv_licen  = "รถเก๋ง/กระบะ/บรรทุก"
+            nv_insp   = sicuw.uwm301.inspec
+            nv_garage = sicuw.uwm301.garage.
+        
+            
+        IF R-INDEX(nv_vehreg," ") <> 0  THEN DO:
+             ASSIGN
+                 nv_char1 = TRIM(SUBSTR(nv_vehreg,1,R-INDEX(nv_vehreg," ")))
+                 nv_char2 = SUBSTR(nv_vehreg,R-INDEX(nv_vehreg," ") + 1,2).
+
+             IF INDEX(nv_char1," ") <> 0 THEN DO:
+                 nv_vehreg1 = TRIM(SUBSTR(nv_char1,1,INDEX(nv_char1," "))).
+                 nv_vehreg2 = "".
+
+                // IF LENGTH(nv_vehreg1) = 3 THEN DO:
+                //     nv_vehreg2 = SUBSTR(nv_vehreg1,1,1) + " " + SUBSTR(nv_vehreg1,2,2) +
+                //                  SUBSTR(nv_char1,INDEX(nv_char1," "),5).
+                // END.
+             END.
+
+             IF nv_vehreg2 <> "" THEN nv_char1 = TRIM(nv_vehreg2).
+        END.
+        ELSE IF INDEX(nv_vehreg,"/") <> 0 THEN DO:
+            nv_char1 = nv_vehreg.
+            nv_char2 = "".
+            nv_licen = "รถที่ยังไม่มีทะเบียน".
+        END.
+
+
+        IF INDEX(sicuw.uwm301.moddes," ") <> 0 THEN DO:
+            nv_char3  = TRIM(SUBSTR(sicuw.uwm301.moddes,INDEX(sicuw.uwm301.moddes," "),(LENGTH(sicuw.uwm301.moddes) + 1) - INDEX(sicuw.uwm301.moddes," "))).
+            nv_makdes = TRIM(SUBSTR(sicuw.uwm301.moddes,1,INDEX(sicuw.uwm301.moddes," "))).
+    
+            IF INDEX(nv_char3," ") <> 0 THEN DO:
+                nv_char4  = TRIM(SUBSTR(nv_char3,1,INDEX(nv_char3," "))).
+            END.
+            ELSE nv_char4  = nv_char3.
+        END.
+    END.
+
+    FIND FIRST sicsyac.xmm600 USE-INDEX xmm60001
+        WHERE  sicsyac.xmm600.acno = nv_agent NO-LOCK NO-ERROR.
+    IF AVAIL sicsyac.xmm600 THEN DO:
+        nv_brname = sicsyac.xmm600.NAME.
+    END.
+    
+    FIND FIRST sicsyac.xmm600 USE-INDEX xmm60001
+        WHERE sicsyac.xmm600.acno = sicuw.uwm100.insref NO-LOCK NO-ERROR.
+    IF AVAIL sicsyac.xmm600 THEN DO:
+        nv_TelNo = sicsyac.xmm600.phone.
+    END.
+
+    /*-- Add A58-0049 --*/
+    IF nv_TelNo = "" THEN DO:
+        FIND LAST sic_bran.xmm600 USE-INDEX xmm60001
+            WHERE sic_bran.xmm600.acno = sicuw.uwm100.insref NO-LOCK NO-ERROR.
+        IF AVAIL sic_bran.xmm600 THEN DO:
+            nv_TelNo = sic_bran.xmm600.phone.
+        END.
+    END.
+    /*-- End A58-0049 --*/
+
+    /*--- Add A65-0141 ---*/
+    /*--- Transfer to Lotus Note ---*/
+    FOR EACH stat.sfh020_fil USE-INDEX sfh02001 WHERE 
+         SUBSTRING(stat.sfh020_fil.cuser,1,8) = "INSPEC" AND
+         INDEX(stat.sfh020_fil.cattr[3],"CL") <> 0  NO-LOCK:
+       
+            IF nv_ToMail = "" THEN nv_ToMail = SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)).
+            ELSE nv_ToMail = nv_ToMail + "," + SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)).
+
+    END.
+
+    IF trim(nv_ToMail) = "" THEN nv_ToMail = "-".
+
+    /*check job auto trn gw pgid = wgwgeq70.w , ใช้โปรแกรมเดียวกัน */
+    IF NUM-ENTRIES(n_user) > 1 THEN DO:
+        n_user2 = ENTRY(1,n_user).
+    END.
+    ELSE n_user2 = n_user.
+    /*check job auto trn gw pgid = wgwgeq70.w */
+
+    RUN wuw\wuwqfinid(INPUT n_user2,OUTPUT nv_usernote).
+    IF nv_usernote = "not found" THEN nv_usernote = n_user2.
+
+    nv_title = sicuw.uwm100.ntitle.
+    IF nv_TelNo <> "" THEN nv_TelNo = TRIM(REPLACE(nv_TelNo,"-","")).
+    ELSE nv_TelNo = "-".
+    IF trim(nv_garage ) = "" THEN nv_garage = "*".
+    IF trim(nv_char2  ) = "" THEN nv_char2   = "-".
+    if trim(nv_title  ) = "" then nv_title   = "-".
+    if trim(nv_insname) = "" then nv_insname = "-".
+    if trim(nv_LName  ) = "" then nv_LName   = "-".
+    IF trim(nv_agent  ) = "" THEN nv_agent   = "-".           
+    if trim(nv_brname ) = "" then nv_brname  = "-".      
+    if trim(nv_licen  ) = "" then nv_licen   = "-".      
+    if trim(nv_char1  ) = "" then nv_char1   = "-".      
+    IF trim(nv_char2  ) = "" then nv_char2   = "-".  
+    IF trim(nv_makdes ) = "" THEN nv_makdes  = "-".
+    IF trim(nv_char4  ) = "" then nv_char4   = "-".
+    IF trim(nv_cha_no ) = "" THEN nv_cha_no  = "-".
+
+    IF nv_insp = "" THEN DO:
+        CREATE REQUESTWS.
+        ASSIGN
+            REQUEStWS.REQTYPESUB     = "ตรวจสภาพใหม่"
+            REQUEStWS.CREATEDBY      = trim(nv_usernote)
+            REQUEStWS.BRANCHREQ      = trim(nv_branch)
+            REQUEStWS.DATES          = trim(string(nv_comdat))
+            REQUEStWS.DATEE          = trim(string(nv_expdat))
+            REQUEStWS.TNAME          = trim(nv_title)
+            REQUEStWS.FNAME          = trim(nv_insname)
+            REQUEStWS.LNAME          = trim(nv_LName)  
+            REQUEStWS.PHONE          = trim(nv_TelNo)
+            REQUEStWS.POLICYNO       = trim(nv_policy)
+            REQUEStWS.AGENTCODE      = trim(nv_agent)
+            REQUEStWS.AGENTNAME      = trim(nv_brname)
+            REQUEStWS.PREMIUM        = trim(nv_prem)
+            REQUEStWS.LICENSETYPE    = trim(nv_licen)
+            REQUEStWS.LICENSENO_1    = trim(nv_char1)
+            REQUEStWS.LICENSENO_2    = trim(nv_char2)
+            REQUEStWS.YEAR           = trim(STRING(nv_yrmanu))
+            REQUEStWS.MODEL          = trim(nv_makdes)
+            REQUEStWS.MODELCODE      = trim(nv_char4)
+            REQUEStWS.SENDTO         = trim(nv_ToMail)
+            REQUEStWS.SENDCC         = "-"
+            REQUEStWS.SENDCLOSE      = "-"
+            REQUEStWS.CREATEDON      = nv_Credat  + " " + STRING(TIME,"HH:MM:SS")
+            REQUEStWS.CARCC          = nv_cha_no     
+            REQUEStWS.GARAGE         = nv_garage
+            .
+
+        IF nv_inspec = 1 OR nv_inspec = 2 THEN RUN wgw\wgweispws(INPUT STRING(nv_inspec), INPUT TABLE REQUESTWS, OUTPUT TABLE CREATEDOCUMENTReturn).
+        ELSE IF nv_inspec = 3 THEN DO: 
+            IF pathFile <> "" THEN REQUEStWS.REQTYPESUB   = "ลูกค้า/ตัวแทน/นายหน้าเป็นผู้ส่งรูปตรวจสภาพ".
+            RUN wgw\wgweispw2(INPUT pathFile, INPUT TABLE REQUESTWS, OUTPUT TABLE CREATEDOCUMENTReturn).
+        END.
+          
+        FIND FIRST CREATEDOCUMENTReturn NO-ERROR.
+        IF AVAILA CREATEDOCUMENTReturn THEN DO:
+            IF CREATEDOCUMENTReturn.CODESTATUS = "2000" THEN DO:
+                FIND FIRST sicuw.uwm301 USE-INDEX uwm30101 WHERE
+                       sicuw.uwm301.policy = sicuw.uwm100.policy AND
+                       sicuw.uwm301.rencnt = sicuw.uwm100.rencnt AND
+                       sicuw.uwm301.endcnt = sicuw.uwm100.endcnt NO-ERROR.
+                IF AVAIL sicuw.uwm301 THEN DO:
+                    ASSIGN
+                        sicuw.uwm301.logbok = "Y"
+                        sicuw.uwm301.inspec = CREATEDOCUMENTReturn.docno.
+                END.     
+
+                
+                
+                IF nv_inspec = 2 AND nv_skfast <> "" THEN DO: /*add By Sarinya C A62-300*/
+                    nv_subject = "SK_FAST (" + CAPS(nv_agent) + ")" + "  Transfer Inspection : " +  nv_cha_no.
+                END.
+                ELSE nv_subject = CAPS(nv_agent) + "  Transfer Inspection : " +  nv_cha_no.
+
+                IF nv_inspec = 1 THEN nv_body = "เรียน ทุกท่านที่เกี่ยวข้อง มีข้อมูลเข้าที่กล่อง inspection (Srikrung) "   + CHR(10) + CHR(10) + CHR(10).
+                ELSE nv_body = "เรียน ทุกท่านที่เกี่ยวข้อง มีข้อมูลเข้าที่กล่อง inspection " + STRING(YEAR(TODAY),"9999")   + CHR(10) + CHR(10) + CHR(10).
+                
+                nv_body = nv_body + "รายงานการส่งข้อมูลวันที่ :  " + nv_Credat + CHR(10).
+                nv_body = nv_body + "Inspection No. :  " + CREATEDOCUMENTReturn.docno + CHR(10).
+                nv_body = nv_body + "Policy No. :  " + nv_policy + CHR(10).
+                nv_body = nv_body + "ตัวถังเลขที่ :  " + nv_cha_no + CHR(10).
+                nv_body = nv_body + "ทะเบียนรถ :  " + nv_vehreg + CHR(10) + CHR(10).
+                nv_body = nv_body + "จึงเรียนมาเพื่อทราบ" + CHR(10) + CHR(10) + CHR(10).
+                nv_body = nv_body + "(นี่เป็นระบบอัตโนมัติ โปรดอย่าตอบกลับอีเมลนี้)" + CHR(10).
+
+                CREATE mail.
+                ASSIGN
+                    mail.mform    = "fileinterface@tokiomarinesafety.co.th" // mail
+                    mail.mpwss    = "Safety@2019"
+                    mdisplay      = "noreply-inspection"  //display name
+                    mail.subject  = nv_subject
+                    mail.body     = nv_body.
+               
+                
+                 
+                nv_ufname = TRIM(SUBSTRING(nv_usernote,1,INDEX(nv_usernote," "))) NO-ERROR.
+                nv_ulname = TRIM(SUBSTRING(nv_usernote,INDEX(nv_usernote," "),LENGTH(nv_usernote))) NO-ERROR.
+
+                IF nv_ufname <> "" AND nv_ulname <> "" THEN RUN wuw\wuwqmalws(INPUT nv_ufname,INPUT nv_ulname,OUTPUT n_email ,OUTPUT n_merr).
+
+                IF NUM-ENTRIES(n_user) > 1 THEN DO:
+                    DO ix = 2 TO NUM-ENTRIES(n_user):
+                        IF n_email = "" THEN n_email = ENTRY(ix,n_user).
+                        ELSE n_email = n_email + "," + ENTRY(ix,n_user).
+                    END.
+                END.
+                IF n_email <> "" THEN DO:
+                    mail.mto = n_email.
+                    n_email = "".
+                    FOR EACH stat.sfh020_fil USE-INDEX sfh02001 WHERE 
+                        TRIM(SUBSTRING(stat.sfh020_fil.cuser,1,8)) = "INSPEC"  NO-LOCK:
+                    
+                        IF INDEX(stat.sfh020_fil.cattr[3],nv_agent) <> 0 THEN RUN pd_mail.  /*ส่งการตลาด*/
+                        ELSE IF INDEX(stat.sfh020_fil.cattr[3],"CL") <> 0 THEN DO:  /*ส่ง mail หา Claim แยกส่งเป็นกรมธรรม์แต่ละสาขา*/
+                    
+                            IF INDEX(stat.sfh020_fil.cattr[4],sicuw.uwm100.branch) <> 0 THEN RUN pd_mail.  /*ส่งตามชื่อที่มีการ Set สาขาไว้*/
+                            ELSE IF stat.sfh020_fil.cattr[4] = "" THEN RUN pd_mail.   /*ส่งทุก Mail ที่มีการนำเข้ากล่อง inspection*/
+                    
+                        END.
+                        IF n_email <> "" THEN DO:
+                            IF n_mailcc = "" THEN n_mailcc = n_email.
+                            ELSE n_mailcc = n_mailcc + "," + n_email.
+                        END.
+                    
+                    END.  //for each
+                     mail.mcc  = n_mailcc. // mail cc
+                     RUN wuw\wuwtsmtp(INPUT TABLE mail).
+                END.
+                ELSE DO:
+                    RUN pd_log("Not found e-mail send to. Please check user id or webservice ").
+                END.
+            END.
+            ELSE DO:
+                IF CREATEDOCUMENTReturn.CODESTATUS = "" THEN nv_err = " Can't Create Inspection box".
+                ELSE nv_err = CREATEDOCUMENTReturn.CODEDETAIL.
+                
+                RUN pd_log(nv_err).
+
+            END.
+            RELEASE sicuw.uwm301.
+        END.
+        ELSE DO:
+            IF nv_inspec = 1 THEN RUN pd_log("No reply webserice inspection box 'Srikrung' ").
+            ELSE RUN pd_log("No reply webserice inspection box 'Other Broker' ").
+        END.
+        EMPTY TEMP-TABLE REQUESTWS.
+        EMPTY TEMP-TABLE CREATEDOCUMENTReturn.
+        RELEASE REQUESTWS.
+        RELEASE CREATEDOCUMENTReturn.
+
+
+    END.
+    
+
+    /*--- End Add A65-0141 ---*/
+    /*--- Add Comment A65-0141  
+    /*-- Server Real --*/
+    /*-- Comment A58-0049   
+    nv_server = "Safety_NotesServer/Safety".
+    nv_tmp    = "safety\uw\inspect" + SUBSTR(STRING(YEAR(TODAY)),3,2) + ".nsf".
+    --- End Add A58-0049 --*/
+        
+    /*IF nv_agent <> "B300308" THEN DO: Comment by Srinya C A62-0300 */
+    
+    IF nv_inspec = 2 THEN DO: /*add by Srinya C A62-0300 */
+        nv_server = "Safety_NotesServer/Safety".
+        nv_tmp    = "safety\uw\inspect" + SUBSTR(STRING(YEAR(TODAY)),3,2) + ".nsf".
+    END.
+    ELSE DO:
+        IF nv_inspec = 1 THEN
+            ASSIGN 
+            nv_server = "Safety_NotesServer/Safety"
+            nv_tmp    = "web\inspection.nsf".
+    END.
+    /*End add by Srinya C A62-0300 */
+    /*-- Server Real --*/
+    
+    /*
+    nv_server = "Safety_NotesServer/Safety".
+    nv_tmp    = "test\inspect21.nsf".
+    */
+
+    CREATE "Notes.NotesSession"  chNotesSession.
+    chNotesDatabase  = chNotesSession:GetDatabase (nv_server , nv_tmp).
+    
+    IF chNotesDatabase:IsOpen()  = NO THEN DO:
+        MESSAGE "Can not open database" SKIP
+                "Please Check database and server" VIEW-AS ALERT-BOX.
+    END.
+    
+    /*chNotesView = chNotesDatabase:GetView("เลขตัวถัง").
+    chNavView   = chNotesView:CreateViewNav.
+    chDocument  = chNotesView:GetDocumentByKey(nv_cha_no).*/
+    /*ADD Saharat S. A64-0136*/
+    chNotesView = chNotesDatabase:GetView("เลขตัวถัง").
+    chViewNavigator = chNotesView:CreateViewNavFromCategory(nv_cha_no). /*Get all record By key*/
+    nv_count = chViewNavigator:COUNT.
+    IF nv_count > 0  THEN DO: 
+        chViewEntry = chViewNavigator:GetFirstDocument.
+        IF VALID-HANDLE(chViewEntry) = NO THEN DO:  
+        END.
+        ELSE DO:
+            chDocument = chViewEntry:Document. 
+            loop_chkrecord:
+            REPEAT:
+                IF VALID-HANDLE(chDocument) = NO THEN DO:
+                    nv_st = "Create".
+                    LEAVE loop_chkrecord.
+                END.
+                ELSE DO:
+                    chitem       = chDocument:Getfirstitem("SurveyClose").    /* สเตตัสปิดเรื่อง */
+                    IF chitem <> 0 THEN nv_surcl   = chitem:TEXT. 
+                    ELSE nv_surcl  = "".
+                               /*
+                    IF nv_surcl = "" THEN DO:
+                        nv_st = "Update".
+                        LEAVE loop_chkrecord.
+                    END.
+                    ELSE DO: */
+                    chItem    = chDocument:Getfirstitem("carCC") NO-ERROR.
+                    IF chitem <> 0 THEN nv_carCC = chItem:TEXT NO-ERROR.
+                    ELSE nv_Carcc = "".
+                    nv_Carcc = TRIM(nv_carcc).
+
+
+                     /*chItem    = chDocument:Getfirstitem("PolicyNo") NO-ERROR.
+                    nv_polno = chItem:TEXT NO-ERROR.*/
+                     chItem    = chDocument:Getfirstitem("docno") NO-ERROR.
+                    nv_docno = chItem:TEXT NO-ERROR.
+                    IF nv_docno = ? THEN nv_docno = "".
+
+
+                    IF nv_carcc = nv_cha_no THEN DO:
+                        nv_st = "Create".
+                        LEAVE loop_chkrecord.
+                    END.
+                    ELSE IF nv_surcl = "" THEN DO:
+                        nv_st = "Update".
+                        LEAVE loop_chkrecord.
+                    END.
+                    /*END.*/
+
+                    chViewEntry = chViewNavigator:GetNextDocument(chViewEntry). 
+                    IF VALID-HANDLE(chViewEntry) = NO THEN DO:     
+                        nv_st = "Create".
+                        LEAVE loop_chkrecord.
+                    END.
+                    ELSE chDocument = chViewEntry:Document. 
+    
+                END.
+    
+            END.
+        END.
+
+
+    END.
+    ELSE DO:
+        nv_St = "Create".
+
+    END.
+   
+    /*END Saharat S. A64-0136*/
+    
+    IF VALID-HANDLE(chDocument) = NO OR nv_St = "Create" THEN DO:
+
+        chDocument  = chNotesDatabase:CreateDocument.
+        chDocument:SAVE( TRUE, TRUE ).
+    
+        /*chItem  = chDocument:AppendItemValue("Form",   "Inspection").*//*Comment A58-0049*/
+        /*-- Add A58-0049 --*/
+        /*IF nv_agent <> "B300308" THEN chItem  = chDocument:AppendItemValue("Form",   "Inspection"). Comment by Srinya C A62-0300 */
+          IF nv_inspec = 2 THEN chItem  = chDocument:AppendItemValue("Form",   "Inspection"). /*add by Srinya C A62-0300 */
+          ELSE chItem  = chDocument:AppendItemValue("Form",   "InspectionAB").
+        /*-- End A58-0049 --*/
+        /*chItem  = chDocument:AppendItemValue("Form",   "InspectionAB").*/
+        chItem  = chDocument:AppendItemValue("CarCC",  nv_cha_no).
+
+        FOR EACH stat.sfh020_fil USE-INDEX sfh02001 NO-LOCK:
+    
+            IF SUBSTRING(stat.sfh020_fil.cuser,1,8) = "INSPEC" AND INDEX(stat.sfh020_fil.cattr[3],"CL") <> 0 THEN DO:
+                nv_ToMail = nv_ToMail + SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)) + ",".
+            END.
+        
+        END.
+
+    END.
+    ELSE DO:
+        nv_k = nv_k + 1.
+    END.
+    IF nv_docno <> "" THEN MESSAGE "Chassis No.: " nv_cha_no " เลข Inspection No.: " nv_docno " " VIEW-AS ALERT-BOX INFORMATION. /*ADD Saharat S. A64-0136*/
+    /*-- Add A58-0480 --*/
+    nv_Credat = STRING(DAY(TODAY),"99") + "/" + STRING(MONTH(TODAY),"99") + "/" +
+                STRING(YEAR(TODAY),"9999").
+    /*-- End A58-0480 --*/
+
+    chItem   = chDocument:AppendItemValue("App",0).      /*Phorn A57-0096-1*/
+    chItem   = chDocument:AppendItemValue("Chk",0).      /*Phorn A57-0096-1*/
+    chItem   = chDocument:AppendItemValue("StList",0).   /*Phorn A57-0300*/
+    chItem   = chDocument:AppendItemValue("stHide",0).   /*Phorn A57-0300*/
+    chItem   = chDocument:AppendItemValue("ReqType_sub","ตรวจสภาพใหม่").
+    chItem   = chDocument:AppendItemValue("createdBy",chNotesSession:Username).
+    chItem   = chDocument:AppendItemValue("BranchReq",nv_brname1). /*ADD Saharat S. A64-0136*/
+    chItem   = chDocument:AppendItemValue("dateS",nv_comdat).
+    chItem   = chDocument:AppendItemValue("dateE",nv_expdat).
+
+    IF nv_skfast <> " " THEN
+    chItem   = chDocument:AppendItemValue("skFast",nv_skfast).  /*Phorn A58-0393*/
+
+    chItem   = chDocument:AppendItemValue("Tname","บุคคล").
+    chItem   = chDocument:AppendItemValue("Fname",nv_InsName).
+    chItem   = chDocument:AppendItemValue("Lname",nv_LName).
+    chItem   = chDocument:AppendItemValue("phone1_1",nv_TelNo).
+    chItem   = chDocument:AppendItemValue("PolicyNo",nv_policy).
+    chItem   = chDocument:AppendItemValue("agentCode",nv_agent).
+    chItem   = chDocument:AppendItemValue("agentName",nv_brname).
+    chItem   = chDocument:AppendItemValue("Premium",nv_prem).
+    chItem   = chDocument:AppendItemValue("LicenseType",nv_licen).
+    chItem   = chDocument:AppendItemValue("LicenseNo_1",nv_char1).
+    chItem   = chDocument:AppendItemValue("LicenseNo_2",nv_char2).
+    chItem   = chDocument:AppendItemValue("Year",nv_yrmanu).
+    chItem   = chDocument:AppendItemValue("model",nv_makdes).
+    chItem   = chDocument:AppendItemValue("modelCode",nv_char4).
+    chItem   = chDocument:AppendItemValue("SendTo",nv_ToMail).
+    chItem   = chDocument:AppendItemValue("SendCC","").
+    chItem   = chDocument:AppendItemValue("SendClose","").
+    chItem   = chDocument:AppendItemValue("CreatedOn",nv_Credat + " " + STRING(TIME,"HH:MM:SS")).  /*A58-0480*/
+
+    /*Lukkana M. A64-0377   13/10/2021  */
+    IF nv_inspec = 2 THEN DO:
+        chItem   = chDocument:AppendItemValue("SendOn",nv_Credat + " " + STRING(TIME,"HH:MM:SS")). 
+        chItem   = chDocument:AppendItemValue("ChkHOBR",nv_ChkHOBR). 
+    END.
+    /*Lukkana M. A64-0377   13/10/2021  */
+
+    /*chItem   = chDocument:AppendItemValue("CreatedOn",STRING(TODAY) + " " + STRING(TIME,"HH:MM:SS")).*//*A58-0480*/
+
+    chDocument:SAVE( TRUE, TRUE ).
+
+    RELEASE OBJECT  chItem. 
+    RELEASE OBJECT  chViewNavigator.
+    RELEASE OBJECT  chNavView NO-ERROR.
+    RELEASE OBJECT  chNotesView.
+    RELEASE OBJECT  chDocument.
+    RELEASE OBJECT  chNotesDataBase.
+    RELEASE OBJECT  chNotesSession.
+
+    IF nv_k = 0 THEN DO:
+
+        /*IF nv_agent = "B300308" AND nv_skfast <> "" THEN DO: Comment By Sarinya C A62-300*/
+        IF nv_inspec = 2 AND nv_skfast <> "" THEN DO: /*add By Sarinya C A62-300*/
+
+            nv_subject = "SK_FAST (" + CAPS(nv_agent) + ")" + "  Transfer Inspection : " +  nv_cha_no . /* "SK_FAST (B300308) Transfer Inspection + Chassis" */
+        END.
+        ELSE nv_subject = CAPS(nv_agent) + "  Transfer Inspection : " +  nv_cha_no.
+    
+        nv_body = "รายงานการส่งข้อมูลวันที่ :  " + STRING(TODAY) + CHR(10) + CHR(10).
+        IF nv_policy <> "" THEN nv_body = nv_body + "Policy No. : " + nv_policy + CHR(10) + CHR(10).
+        ELSE nv_body = nv_body + "Policy No. : " + "-" + CHR(10) + CHR(10).
+        nv_body = nv_body + "ตัวถังเลขที่ :  " + nv_cha_no + CHR(10) + CHR(10).
+        nv_body = nv_body + "ทะเบียนรถ :  " + nv_vehreg + CHR(10) + CHR(10).
+
+    END.
+    ELSE DO:
+
+        /*IF nv_agent = "B300308" AND nv_skfast <> "" THEN DO: Comment By Sarinya C A62-300*/
+        IF nv_inspec = 2 AND nv_skfast <> "" THEN DO: /*add By Sarinya C A62-300*/
+            nv_subject = "SK_FAST (" + CAPS(nv_agent) + ")" + "  Update Inspection : " +  nv_cha_no.  /* "SK_FAST (B300308) Update Inspection + Chassis" */
+        END.
+        ELSE nv_subject = CAPS(nv_agent) + "  Update Inspection : " +  nv_cha_no.
+    
+        nv_body = "รายงานการส่งข้อมูลวันที่ :  " + STRING(TODAY) + CHR(10) + CHR(10).
+    
+        IF nv_policy <> "" THEN nv_body = nv_body + "Policy No. : " + nv_policy + CHR(10) + CHR(10).
+        ELSE nv_body = nv_body + "Policy No. : " + "-" + CHR(10) + CHR(10).
+    
+        nv_body = nv_body + "ตัวถังเลขที่ :  " + nv_cha_no + CHR(10) + CHR(10).
+        nv_body = nv_body + "ทะเบียนรถ :  " + nv_vehreg + CHR(10) + CHR(10).
+
+    END.
+
+    FOR EACH stat.sfh020_fil USE-INDEX sfh02001 NO-LOCK:
+    
+        IF SUBSTRING(stat.sfh020_fil.cuser,1,8) = "INSPEC" THEN DO:
+    
+            IF INDEX(stat.sfh020_fil.cattr[3],nv_agent) <> 0 THEN DO:  /*ส่งการตลาด*/
+    
+                nv_bcc = SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)).
+            
+                CREATE "Notes.NotesSession"  chNotesSession.
+                        chNotesDatabase        = chNotesSession:CurrentDatabase.   
+                        chDocument             = chNotesDatabase:CreateDocument.
+                        chDocument:FORM        = ("Wmemo" ).        
+                        chDocument:Subject     = nv_subject.        
+                        chDocument:Sendto      = nv_bcc. 
+                        chDocument:CopyTo      = ("").
+                        chDocument:BlindCopyTo = ("").
+                        chDocument:body        = nv_body.
+                        chNotesView            = chDocument:SEND( TRUE ).
+                        chDocument:SAVE( TRUE, TRUE ).
+            END.
+            ELSE IF INDEX(stat.sfh020_fil.cattr[3],"CL") <> 0 THEN DO:  /*ส่ง mail หา Claim แยกส่งเป็นกรมธรรม์แต่ละสาขา*/
+
+                IF INDEX(stat.sfh020_fil.cattr[4], sicuw.uwm100.branch) <> 0 THEN DO:  /*ส่งตามชื่อที่มีการ Set สาขาไว้*/
+
+                    nv_bcc = SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)).
+            
+                    CREATE "Notes.NotesSession"  chNotesSession.
+                            chNotesDatabase        = chNotesSession:CurrentDatabase.   
+                            chDocument             = chNotesDatabase:CreateDocument.
+                            chDocument:FORM        = ("Wmemo" ).        
+                            chDocument:Subject     = nv_subject.        
+                            chDocument:Sendto      = nv_bcc. 
+                            chDocument:CopyTo      = ("").
+                            chDocument:BlindCopyTo = ("").
+                            chDocument:body        = nv_body.
+                            chNotesView            = chDocument:SEND( TRUE ).
+                            chDocument:SAVE( TRUE, TRUE ).
+                END.
+                ELSE IF stat.sfh020_fil.cattr[4] = "" THEN DO:   /*ส่งทุก Mail ที่มีการนำเข้ากล่อง inspection*/
+
+                    nv_bcc = SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)).
+            
+                    CREATE "Notes.NotesSession"  chNotesSession.
+                            chNotesDatabase        = chNotesSession:CurrentDatabase.   
+                            chDocument             = chNotesDatabase:CreateDocument.
+                            chDocument:FORM        = ("Wmemo" ).        
+                            chDocument:Subject     = nv_subject.        
+                            chDocument:Sendto      = nv_bcc. 
+                            chDocument:CopyTo      = ("").
+                            chDocument:BlindCopyTo = ("").
+                            chDocument:body        = nv_body.
+                            chNotesView            = chDocument:SEND( TRUE ).
+                            chDocument:SAVE( TRUE, TRUE ).
+                END.
+            END.
+
+        END.
+         
+    END. 
+    nv_k = 0.
+
+    /*--
+    RELEASE OBJECT chDocument.        
+    RELEASE OBJECT chNotesDataBase.
+    RELEASE OBJECT chNotesSession.
+    RELEASE OBJECT chNotesView.
+    --*/
+   --- End Comment A65-0141 ----*/
+    /*--- Transfer to Lotus Note ---*/
+END.
+/*--- A65-0141 --*/
+PROCEDURE pd_mail.
+   DEF VAR n_mailtmp AS CHAR INIT "".
+   
+   ASSIGN
+      n_mailtmp = SUBSTRING(stat.sfh020_fil.cuser,9,LENGTH(stat.sfh020_fil.cuser)) NO-ERROR.
+      nv_ufname = TRIM(SUBSTRING(n_mailtmp,1,INDEX(n_mailtmp," "))) NO-ERROR.
+      nv_ulname = TRIM(SUBSTRING(n_mailtmp,INDEX(n_mailtmp," "),LENGTH(n_mailtmp))) NO-ERROR.
+      nv_ulname = extractDigits(nv_ulname).
+      
+      IF nv_ufname <> "" AND nv_ulname <> "" THEN RUN wuw\wuwqmalws(INPUT nv_ufname,INPUT nv_ulname,OUTPUT n_email ,OUTPUT n_merr). //ws find email address 
+      IF n_email = "" THEN DO: 
+          RUN wuw\wuwqgmlws(INPUT n_mailtmp,OUTPUT n_email ,OUTPUT n_merr). //ws find group-email address 
+      END.
+      IF n_email = ""  THEN RUN pd_log("Not found e-mail send to. Please check user id or webservice").
+END PROCEDURE.
+
+
+PROCEDURE pd_log.
+    DEF INPUT PARAMETER n_char AS CHAR INIT "".
+    OUTPUT TO VALUE(nv_outp) APPEND.
+    PUT "------------Start----------------------"  SKIP
+        TODAY    FORMAT "99/99/9999"  " " STRING(TIME,"HH:MM:SS") "." SUBSTR(STRING(MTIME,">>>>99999999"),10,3) SKIP
+        "Input Key :" nv_NewInput           FORMAT "X(28)"   SKIP 
+        "Policy    :" sicuw.uwm100.policy   format "x(20)"   SKIP
+        "nv_usrid  :" nv_usernote           format "x(50)"   SKIP
+        "nv_error1 :" n_char                format "x(100)"  SKIP
+        "------------End------------------------" SKIP.      
+    OUTPUT CLOSE.
+END PROCEDURE.
+/*--- A65-0141 --*/
+
+
+FUNCTION extractDigits RETURNS CHARACTER ( INPUT pcString AS CHARACTER ):  
+
+    DEFINE VARIABLE iChar AS INTEGER NO-UNDO.
+    DEFINE VARIABLE iAsc AS INTEGER NO-UNDO.
+    
+    DEFINE VARIABLE cTemp AS CHARACTER NO-UNDO.
+    DEFINE VARIABLE cChar AS CHARACTER NO-UNDO.
+    IF INDEX(pcString,"@tokiomarinesafety") <> 0 THEN RETURN pcString.
+
+    DO iChar = 1 TO LENGTH(pcString):
+        ASSIGN 
+            cChar = SUBSTRING(pcString,iChar,1)
+            iAsc = ASC(cChar).
+    
+        IF (iAsc >= 65 AND iAsc <= 90) OR (iAsc >= 97 AND iAsc <= 122) THEN DO:
+            
+            cTemp = cTemp + cChar.
+        END.
+        ELSE LEAVE.
+    END.
+    
+    IF cTemp <> "" THEN RETURN cTemp.
+    ELSE RETURN "". /* If no integers in the string return the unknown value. */
+END FUNCTION.
+

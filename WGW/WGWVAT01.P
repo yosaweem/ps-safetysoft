@@ -1,0 +1,90 @@
+/*=================================================================*/
+/* Program Name : WGWVAT01.P   CHECK DATA VAT BEFORE TRANSFER      */
+/* Assign  No   : A57-0300                                         */
+/* CREATE  By   : PORNTIWA P.           (Date 16/09/2014)          */
+/*                CHECK DATA VAT BEFORE TRANSFER TO PREMIUM        */
+/* Modify By    : Chaiyong W. A59-0312 07/07/2016                  */
+/*                Add chk vat                                      */
+/* Modify By : Jiraphon P. A62-0286  Date : 17/06/2019 
+             : แก้ไขเพิ่ม Check vat102     */
+/*=================================================================*/
+
+DEF SHARED VAR n_User   AS CHAR.
+DEF INPUT PARAMETER nv_bchyr  AS INT.
+DEF INPUT PARAMETER nv_bchno  AS CHAR.
+DEF INPUT PARAMETER nv_bchcnt AS INT.
+DEF INPUT PARAMETER nv_policy AS CHAR.
+DEF INPUT PARAMETER nv_rencnt AS INT.
+DEF INPUT PARAMETER nv_endcnt AS INT.
+DEF OUTPUT PARAMETER nv_error AS LOGICAL INIT NO NO-UNDO.
+DEF OUTPUT PARAMETER putchr1  AS CHAR FORMAT "X(80)"  INIT "" NO-UNDO.
+
+DEFINE VAR nv_invtyp     AS CHAR.  
+DEFINE VAR nv_i          AS INT.
+
+nv_i = nv_i + 1.
+IF SUBSTR(nv_policy,1,1) <> "R" AND SUBSTR(nv_policy,1,1) <> "Q" THEN DO:
+    FIND sic_bran.uwm100 USE-INDEX uwm10001 WHERE 
+         sic_bran.uwm100.policy = nv_policy AND
+         sic_bran.uwm100.rencnt = nv_rencnt AND
+         sic_bran.uwm100.endcnt = nv_endcnt AND
+         sic_bran.uwm100.bchyr  = nv_bchyr  AND
+         sic_bran.uwm100.bchno  = nv_bchno  AND
+         sic_bran.uwm100.bchcnt = nv_bchcnt NO-ERROR.
+    IF AVAIL sic_bran.uwm100 THEN DO:
+
+        IF sic_bran.uwm100.trty13 <> "" AND sic_bran.uwm100.trty13 = "S" THEN DO:
+            nv_invtyp = TRIM(sic_bran.uwm100.trty13).
+        END.
+        ELSE nv_invtyp = "T".
+    
+        FIND FIRST stat.vat100 USE-INDEX vat10001 WHERE
+                   stat.vat100.invtyp  = nv_invtyp AND
+                   stat.vat100.invoice = sic_bran.uwm100.docno1 NO-LOCK NO-ERROR.
+        IF AVAIL stat.vat100 THEN DO:
+
+            /*---Begin by Chaiyong W. A59-0312 07/07/2016*/
+            IF stat.vat100.policy   = sic_bran.uwm100.policy  And
+               stat.vat100.rencnt   = sic_bran.uwm100.rencnt  And
+               stat.vat100.endcnt   = sic_bran.uwm100.endcnt  THEN DO:
+               /*stat.vat100.program  = "wgwgen01.p" THEN DO:  comment Jiraphon P. A62-0286*/ 
+
+            END.
+            ELSE DO:
+            /*End by Chaiyong W. A59-0312 07/07/2016-----*/
+
+
+                ASSIGN
+                    nv_error   = YES
+                    putchr1    = sic_bran.uwm100.policy + " Vat No. ซ้ำกับ Policy :" + stat.vat100.policy.
+            END. /*-------add end by Chaiyong W. A59-0312 07/07/2016*/
+        END.
+    END.
+    /* Add Jiraphon P. A62-0286*/
+    /*-- Check Vat102 --*/
+    FIND FIRST stat.vat102 USE-INDEX vat10211 WHERE
+               stat.vat102.trnty1 = sic_bran.uwm100.trty11 AND
+               stat.vat102.refno  = sic_bran.uwm100.docno1 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL stat.vat102 THEN DO:
+        IF stat.vat102.cancel = NO THEN DO:
+            ASSIGN
+                nv_error   = YES
+                putchr1    = sic_bran.uwm100.policy + " มีการพิมพ์ใบกำกับภาษีแล้ว (VAT102) " + 
+                             stat.vat102.invtyp + " " + stat.vat102.invoice.
+                
+        END.
+    END.
+    FIND LAST stat.vat102 USE-INDEX vat10211 WHERE
+              stat.vat102.trnty1 = sic_bran.uwm100.trty11 AND
+              stat.vat102.refno  = sic_bran.uwm100.docno1 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL stat.vat102 THEN DO:
+        IF stat.vat102.cancel = NO THEN DO:
+            ASSIGN
+                nv_error   = YES
+                putchr1    = sic_bran.uwm100.policy + " มีการพิมพ์ใบกำกับภาษีแล้ว (VAT102) " + 
+                             stat.vat102.invtyp + " " + stat.vat102.invoice.
+                
+        END.
+    END.
+    /*End Add Jiraphon P. A62-0286*/
+END.

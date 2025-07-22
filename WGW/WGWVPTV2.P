@@ -1,0 +1,1297 @@
+/***********************************************************
+Copyright  # Tokiomarin Insurance Public Company Limited 
+Dup Program : WUZVPTV2.P
+Create by  : Chaiying w. A65-0185 27/09/2022
+           : Tranfer งาน Non-Motor เข้า VAT เมื่อมีการออกใบกำกับภาษีแล้ว
+Modify by  : Chaiyong W. A66-0048 21/03/2023 add vat code thai
+Modify BY	: Chaiyong W.  ASSIGN A66-0116  DATE 08/09/2023 	 
+              Change stat.Vat100 to brstat.Vat100  
+              Transfer brstat.vat100 to stat.vat104                 
+/*Modify By : Chaiyong W. F67-0001 08/10/2024                           */
+/*            Correct Speed Program                                     */              
+/* Modify by:Chaiyong W. A68-0034 28/02/2025             */
+/*           Add check name & Address                    */   
+***********************************************************/
+
+DEF INPUT PARAMETER nv_recid AS RECID INIT ?.
+DEF OUTPUT PARAMETER nv_err AS CHAR INIT "".
+DEF  VAR n_user       AS CHAR FORMAT "X(6)" INIT "".
+DEF  VAR n_passwd     AS CHAR FORMAT "X(6)" INIT "".
+DEF  VAR nv_printer          AS CHAR  INIT "pdfcreator".
+DEF  VAR nv_chead            AS CHAR  INIT "".
+DEF   VAR n_policy    LIKE sicsyac.acm001.policy.
+DEF  VAR n_trnty1     LIKE sicsyac.acm001.trnty1.
+DEF  VAR n_trnty2     LIKE sicsyac.acm001.trnty2.
+DEF  VAR n_docno     AS   CHAR   FORMAT "x(15)".
+DEF  VAR n_trndat    AS   DATE   FORMAT "99/99/9999".
+DEF  VAR n_vatno     AS   CHAR   FORMAT "x(10)". 
+DEF  VAR n_bprm      LIKE sicsyac.acm001.prem.
+DEF  VAR n_disc      LIKE sicsyac.acm001.prem.
+DEF  VAR n_prem      LIKE sicsyac.acm001.prem.
+DEF  VAR n_vat       LIKE sicsyac.acm001.tax.
+DEF  VAR n_tot       LIKE sicsyac.acm001.prem.
+DEF  VAR n_grd       LIKE sicsyac.acm001.prem.
+DEF  VAR n_stamp     LIKE sicsyac.acm001.stamp.
+DEF  VAR n_poltyp    LIKE sic_bran.uwm100.poltyp.
+DEF  VAR nv_amt      LIKE sicsyac.acm001.prem.
+DEF  VAR n_taxmont   AS   INT    FORMAT "99".
+DEF  VAR n_taxyear   AS   INT    FORMAT "9999".
+DEF  VAR n_taxrepm   AS   LOGICAL.
+DEF  VAR nv_output   AS   CHAR.
+DEF  VAR nv_output2  AS   CHAR.
+DEF  VAR n_name      AS   CHAR   FORMAT "X(70)".
+DEF  VAR n_name1     AS   CHAR   FORMAT "X(100)".
+DEF  VAR n_name2     AS   CHAR   FORMAT "X(55)".
+DEF  VAR n_addr1     LIKE sic_bran.uwm100.addr1.
+DEF  VAR n_addr2     LIKE sic_bran.uwm100.addr2.
+DEF  VAR n_addr3     LIKE sic_bran.uwm100.addr3.
+DEF  VAR n_addr4     LIKE sic_bran.uwm100.addr4.
+DEF  VAR n_paddr     AS   CHAR   FORMAT "X(150)".
+DEF  VAR n_paddr1    AS   CHAR   FORMAT "X(50)".
+DEF  VAR n_paddr2    AS   CHAR   FORMAT "X(50)".
+DEF  VAR n_paddr3    AS   CHAR   FORMAT "X(70)".
+DEF  VAR np_addr1    AS   CHAR   FORMAT "X(70)". 
+DEF  VAR np_addr2    AS   CHAR   FORMAT "X(70)". 
+DEF  VAR n_rem1      AS   CHAR   FORMAT "X(50)".
+DEF  VAR n_rem2      AS   CHAR   FORMAT "X(50)".
+DEF  VAR np_policy   AS   CHAR   FORMAT "X(20)".
+DEF  VAR n_insref    LIKE sic_bran.uwm100.insref FORMAT "X(10)".
+DEF  VAR n_acno      LIKE sicsyac.acm001.acno   FORMAT "X(10)".
+deF  VAR n_agent     LIKE sicsyac.acm001.agent  FORMAT "X(10)".
+DEF  VAR n_acnam     LIKE sicsyac.xmm600.NAME. 
+DEF  VAR n_mark      AS   CHAR   FORMAT "X".
+DEF  VAR n_mark0     AS   CHAR   FORMAT "X".
+DEF  VAR n_mark7     AS   CHAR   FORMAT "X".
+DEF  VAR n_mark_tax  AS   CHAR   FORMAT "X(15)".
+DEF  VAR n_mark_0    AS   CHAR   FORMAT "X".
+DEF  VAR n_ratevat   AS   DECI   FORMAT ">9.99".
+DEF  VAR n_rencnt    LIKE sic_bran.uwm100.rencnt.
+DEF  VAR n_endcnt    LIKE sic_bran.uwm100.endcnt.
+DEF  VAR n_branch    LIKE sic_bran.uwm100.branch.
+DEF  VAR nv_amt_text AS   CHAR   FORMAT "x(70)".
+DEF  VAR n_ptrndat   AS   CHAR   FORMAT "x(15)".
+DEF  VAR n_write     AS   CHAR   FORMAT "X(8)".
+DEF  VAR n_write1    AS   CHAR   FORMAT "X(12)".
+DEF  VAR n_pvrvjv    AS   CHAR   FORMAT "X(16)".
+DEF  VAR n_chkpol    AS   LOGICAL.
+DEF  VAR n_prn       AS   CHAR   FORMAT "X" INIT "Y".
+DEF  VAR n_printbr   AS   CHAR   FORMAT "X(30)".
+DEF  VAR n_comdat    LIKE sic_bran.uwm100.comdat.
+DEF  VAR n_chassis   AS   CHARACTER FORMAT "X(30)".
+DEF  VAR n_chassis1  AS   CHARACTER FORMAT "X(30)". 
+DEF            VAR n_cend      AS   INT. 
+DEF            VAR n_datecover AS   CHAR   FORMAT "x(35)".
+DEF            VAR n_cpol      AS   CHAR.
+DEF            VAR n_cren      AS   INT.
+DEF            VAR n_criskgp   AS   INT.
+DEF            VAR n_criskno   AS   INT.
+DEF            VAR n_citemno   AS   INT.
+DEF  VAR   nv_fptr       AS   RECID.
+DEF  VAR   nv_sline53    AS   CHAR FORMAT "X(20)".
+DEF  VAR   nv_sline54    AS   CHAR FORMAT "X(35)".
+DEF  VAR   nv_sline50    AS   CHAR FORMAT "X(35)".
+DEF  VAR   nv_ltxt11     AS   INTE.
+DEF  VAR   nv_ltxt12     AS   INTE.
+DEF  VAR   nv_ltxt13     AS   INTE.
+DEF  VAR   nv_ltxt21     AS   INTE.
+DEF  VAR   nv_ltxt22     AS   CHAR.
+DEF  VAR   nv_mot        AS   LOGICAL INITIAL NO.
+DEF  VAR n_add1    AS CHAR INIT "X(70)".    
+DEF  VAR n_add2    AS CHAR INIT "X(70)".    
+DEF  VAR   nv_Bacm001    AS   LOGICAL   INITIAL NO.
+DEF  VAR   n_app2        AS   CHARACTER FORMAT "X(16)" INITIAL "". /*cr_2*/
+DEF  VAR   n_append      AS   CHARACTER FORMAT "X(16)" INITIAL "". /*cr_2*/
+DEF  VAR   nv_ll         AS   INT.
+DEF  VAR   nv_recno      AS   CHAR FORMAT "X(10)". 
+DEF  VAR nv_brnins  AS CHAR FORMAT "X(5)".  
+DEF  VAR nv_taxno   AS CHAR FORMAT "X(15)". 
+DEF  VAR nV_Dtaxno  AS CHAR FORMAT "x(30)". 
+DEF  VAR nV_Dbrnin  AS CHAR FORMAT "x(30)". 
+DEF  VAR nv_langug  AS CHAR FORMAT "x".    
+DEF  VAR n_bs_cd    LIKE sic_bran.uwm100.bs_cd  FORMAT "X(10)". 
+DEF  VAR n_bs_cd1   LIKE sic_bran.uwm100.bs_cd  FORMAT "X(10)".
+DEF  VAR sp_policy  LIKE sic_bran.uwm100.policy.
+DEF  BUFFER   buwm100    FOR sic_bran.uwm100.
+DEF  BUFFER   Bacm001    FOR sicsyac.acm001.
+DEF VAR n_userid   AS CHAR FORMAT "X(6)".  
+DEF VAR n_status   AS CHAR FORMAT "X".     
+DEF VAR n_text1    AS CHAR.                
+DEF VAR n_text2    AS CHAR.                
+DEF VAR n_chk      AS LOGICAL.             
+DEF VAR n_check     AS DECI . 
+DEF VAR n_chkl    AS CHAR INIT "".           
+DEF VAR nv_error   AS CHAR . 
+DEF VAR n_doctype  AS CHAR . 
+DEF VAR n_dir_ri  AS LOG .
+DEF VAR nv_DocType   AS  CHAR.    /* M = Receipt , S = Invoice , T = Sticker , C = Certificate ...*/
+DEF VAR nv_docrun1   AS  CHAR.    /* Receipt  */ 
+DEF VAR nv_docrun2   AS  CHAR.    /* Invoice  */
+DEF VAR nv_docrun3   AS  CHAR.    /* Sticker  */
+DEF VAR nv_out       AS  CHAR .
+DEF VAR nv_bc        AS  CHAR .
+DEF VAR nv_docdec    AS  DECI INIT 0.
+nv_out = "lgrun" + STRING(TODAY,"99999999") + ".txt".
+DEF VAR  nv_pauto  AS CHAR    INIT "".  
+DEF VAR  nv_branch AS CHAR    INIT "".  
+DEF VAR  nv_dir_ri AS LOGICAL INIT NO.  
+DEF VAR  nv_poltyp AS CHAR    INIT "".  
+DEF VAR  nv_trndat AS DATE    INIT ?.   
+DEFINE VAR nv_chkprn AS LOGICAL INITIAL YES NO-UNDO.   
+DEFINE VAR nv_from   AS CHAR FORMAT "X(10)" INIT ""  NO-UNDO.    
+DEF VAR nv_addv1    AS CHAR INIT "".
+DEF VAR nv_addv2    AS CHAR INIT "".
+DEF VAR nv_addv3    AS CHAR INIT "".
+DEF VAR nv_addv4    AS CHAR INIT "".
+DEF VAR nv_agdes AS CHAR INIT "".
+DEF VAR nv_dcode  AS CHAR INIT "".
+DEF VAR nv_dprint AS DATE INIT TODAY.
+DEF VAR nv_dday   AS INT  INIT 0.
+DEF VAR nv_time   AS CHAR INIT "".
+DEF VAR gv_id     AS CHAR INIT "".
+
+/*---A63-0377 ---*/
+DEF VAR n_title         AS CHAR INIT "".
+DEF VAR n_paddr4        AS CHAR INIT "".
+DEF VAR n_postcd        AS CHAR INIT "".
+/*---A63-0377 ---*/
+/*{uu\UUTHVAR.i} */
+/*---Begin by Chaiyong W. A65-0150 10/06/2022*/
+DEF VAR nv_xmm600 AS CHAR INIT "".
+/*End by Chaiyong W. A65-0150 10/06/2022-----*/
+DEF VAR nv_invbrn AS CHAR INIT "". /*--Add by Chaiyong W. A65-0185 21/07/2022*/ 
+/*--Begin by Chaiyong W. A68-0034 28/02/2025*/
+DEF VAR nv_putcode AS CHAR INIT "".
+def var nv_codeocc as char init "".
+def var nv_occup   as char init "".
+def var nv_ooth1   as char init "".
+def var nv_ooth2   as char init "".
+def var nv_ooth3   as char init "".
+def var nv_ooth4   as char init "".
+/*End by Chaiyong W. A68-0034 28/02/2025*/
+ASSIGN
+    n_write    = "PRINTER"
+    n_trndat   = TODAY
+    n_vat      = 0
+    n_bprm     = 0
+    n_disc     = 0
+    n_prem     = 0
+    n_vat      = 0
+    n_tot      = 0
+    n_grd      = 0
+    n_rencnt   = 0
+    n_endcnt   = 0
+    n_stamp    = 0
+    n_insref   = ""
+    n_name     = ""
+    n_name1    = ""
+    n_name2    = ""
+    n_acno     = ""
+    n_acnam    = ""
+    np_addr1   = "" 
+    np_addr2   = ""  
+    n_paddr1   = "" 
+    n_paddr2   = ""  
+    n_paddr3   = ""
+    nv_sline53 = ""
+    nv_sline54 = ""
+    nv_sline50 = ""
+    nv_mot     = NO
+    nv_recno   = ""
+    nv_brnins  = ""  
+    nv_taxno   = ""  
+    nV_Dtaxno  = ""
+    nV_Dbrnin  = ""
+    n_taxmont = MONTH(TODAY)
+    n_taxyear = YEAR(TODAY).
+
+FIND sic_bran.uwm100 WHERE RECID(sic_bran.uwm100) = nv_recid  NO-LOCK NO-ERROR.
+IF AVAIL sic_bran.uwm100 THEN DO:
+    ASSIGN
+        n_policy   = sic_bran.uwm100.policy
+        n_prem     = 0
+        n_comdat   = sic_bran.uwm100.comdat
+        n_trnty1   = sic_bran.uwm100.trty11
+        n_docno    = sic_bran.uwm100.docno1
+        n_tot      = sic_bran.uwm100.prem_t + sic_bran.uwm100.pstp   + sic_bran.uwm100.rstp_t
+        n_prem     = sic_bran.uwm100.prem_t .
+    IF n_vat = 0 THEN n_vat = sic_bran.uwm100.ptax   + sic_bran.uwm100.rtax_.
+    IF n_grd = 0 THEN n_grd = n_tot + n_vat.
+    ASSIGN
+        n_stamp  = sic_bran.uwm100.pstp   + sic_bran.uwm100.rstp_t
+        n_tot    = sic_bran.uwm100.prem_t + sic_bran.uwm100.pstp   + sic_bran.uwm100.rstp_t
+        n_prem   = sic_bran.uwm100.prem_t
+        n_vat    = sic_bran.uwm100.ptax   + sic_bran.uwm100.rtax_t
+        n_acno   = sic_bran.uwm100.acno1
+        n_grd    = n_tot + n_vat.
+
+     /*-- add chk inward A63-0035 Date: 29/06/2020 --*/
+    IF sic_bran.uwm100.dir_ri = YES THEN n_tot    = sic_bran.uwm100.prem_t + sic_bran.uwm100.pstp   + sic_bran.uwm100.rstp_t.
+    ELSE DO:
+        ASSIGN
+            n_tot    = sic_bran.uwm100.prem_t + sic_bran.uwm100.pstp   + sic_bran.uwm100.rstp_t +  sic_bran.uwm100.pfee   + sic_bran.uwm100.rfee_t 
+            n_disc   = sic_bran.uwm100.pfee   + sic_bran.uwm100.rfee_t . 
+        IF n_disc < 0 THEN  n_disc = n_disc * -1.
+    END.
+    /*-- End chk inward A63-0035 Date: 29/06/2020 --*/
+
+
+    IF n_acno = "B2L0118" THEN  n_acno = sic_bran.uwm100.agent. 
+    
+    ASSIGN
+        n_taxyear  = 0
+        n_taxmont  = 0.
+    nv_dcode  = trim(SUBSTR(uwm100.code1,11,10)) NO-ERROR.
+    IF nv_dcode = "" THEN nv_dcode  = string(sic_bran.uwm100.trndat,"99/99/9999") NO-ERROR.
+    n_trndat   = DATE(nv_dcode) NO-ERROR.
+    IF n_trndat = ? THEN n_trndat = TODAY.
+    ASSIGN
+        n_taxmont   = MONTH(n_trndat) 
+        n_taxyear   = YEAR(n_trndat) .
+    nv_time    = trim(SUBSTR(uwm100.code1,21,10)) no-error.
+    IF nv_time = "" THEN nv_time    = sic_bran.uwm100.enttim.  
+    /*gv_id      = trim(SUBSTR(sic_bran.uwm100.code1,31,10)).*/
+    IF nv_time = "" THEN nv_time = STRING(TIME,"HH:MM:SS").
+    IF gv_id   = "" THEN gv_id   = USERID(LDBNAME(1)).
+
+    //FIND FIRST sicsyac.sym100  Comment by Chaiyong W. F67-0001 08/10/2024
+    FIND  sicsyac.sym100  USE-INDEX sym10001  /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+        WHERE sicsyac.sym100.tabcod = "U083" AND 
+              sicsyac.sym100.itmcod = sic_bran.uwm100.acno1 NO-LOCK NO-ERROR.   
+    IF AVAIL sym100 THEN nv_invbrn = TRIM(sicsyac.sym100.itmdes). 
+    ELSE DO: 
+        //FIND FIRST sicsyac.sym100 Comment by Chaiyong W. F67-0001 08/10/2024
+        FIND  sicsyac.sym100  USE-INDEX sym10001  /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+            WHERE sicsyac.sym100.tabcod = "U083" AND 
+                  sicsyac.sym100.itmcod = "ALL"  NO-LOCK NO-ERROR.   
+        IF AVAIL sym100 THEN nv_invbrn = TRIM(sicsyac.sym100.itmdes). 
+        ELSE DO:
+            nv_invbrn = IF sic_bran.uwm100.branch <> "" THEN sic_bran.uwm100.branch ELSE "0". /* อิงตาม Policy Branch */
+        END.
+    END.
+    nv_invbrn = TRIM(nv_invbrn).
+
+
+
+    nv_dcode   = sic_bran.uwm100.prog.
+
+    //FIND FIRST sicsyac.xmm600 WHERE Comment by Chaiyong W. F67-0001 08/10/2024
+    FIND sicsyac.xmm600 USE-INDEX xmm60001 WHERE  /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+        sicsyac.xmm600.acno  = n_acno  NO-LOCK NO-ERROR.
+    IF AVAIL sicsyac.xmm600  THEN n_acnam  = sicsyac.xmm600.name.
+
+    IF sic_bran.uwm100.endcnt > 0 THEN nv_recno   = sic_bran.uwm100.endno. /*-- add by Songkran A63-0035 Date: 29/06/2020 --*/
+
+    ASSIGN
+        n_name     = ""
+        n_name1    = ""
+        n_name2    = ""
+        n_addr1    = ""
+        n_addr2    = ""
+        n_addr3    = ""
+        n_addr4    = ""
+        n_ratevat  = sic_bran.uwm100.gstrat
+        n_insref   = sic_bran.uwm100.insref
+        n_rencnt   = sic_bran.uwm100.rencnt
+        n_endcnt   = sic_bran.uwm100.endcnt
+        n_poltyp   = sic_bran.uwm100.poltyp            
+        n_branch   = sic_bran.uwm100.branch
+        n_agent    = sic_bran.uwm100.agent
+        nv_fptr    = sic_bran.uwm100.fptr01
+        nv_langug  = sic_bran.uwm100.langug
+        n_bs_cd    = sic_bran.uwm100.bs_cd
+        nv_branch  = sic_bran.uwm100.branch
+        nv_dir_ri  = sic_bran.uwm100.DIR_ri
+        nv_poltyp  = sic_bran.uwm100.poltyp 
+        nv_trndat  = TODAY 
+        /*--- Comment A63-0377 
+        n_name     = TRIM(TRIM(sic_bran.uwm100.ntitle) + " "
+                   +      TRIM(sic_bran.uwm100.name1))
+                   + TRIM(TRIM(sic_bran.uwm100.name2)  + " "
+                   +      TRIM(sic_bran.uwm100.name3))
+        -----*/
+        n_title    = TRIM(sic_bran.uwm100.ntitle)
+        n_name     = TRIM(sic_bran.uwm100.name1)
+        n_name2    = TRIM(TRIM(sic_bran.uwm100.name2) + " " + TRIM(sic_bran.uwm100.name3))
+        np_policy  = SUBSTRING(sic_bran.uwm100.policy,1,2) + "-" +
+                     SUBSTRING(sic_bran.uwm100.policy,3,2) + "-" +
+                     SUBSTRING(sic_bran.uwm100.policy,5,2) + "/" +
+                     SUBSTRING(sic_bran.uwm100.policy,7,6)
+        n_printbr = ""
+        n_printbr = TRIM(SUBSTR(n_user,6,2)).  
+
+    IF sic_bran.uwm100.dir_ri = NO THEN  n_insref  = sic_bran.uwm100.cedco.  /*-- add chk inward A63-0035 Date: 29/06/2020 --*/
+   
+    IF nv_invbrn <> "" THEN n_printbr = nv_invbrn. /*---add by Chaiyong W. A65-0185 22/07/2022*/
+    RUN wuw\wuwpbrns1 (INPUT  TODAY,  /*Branch User*/
+                       INPUT  n_printbr,
+                       INPUT  sic_bran.uwm100.langug,
+                       OUTPUT n_printbr ,
+                       OUTPUT nv_addv1  ,
+                       OUTPUT nv_addv2  ,
+                       OUTPUT nv_addv3  ,
+                       OUTPUT nv_addv4 ).
+    ASSIGN
+        n_add1    = nv_addv1  + " " + nv_addv2
+        n_add2    = nv_addv3  + " " + nv_addv4.
+
+    IF sic_bran.uwm100.instot = 1 THEN DO: /*--add by Chaiyong W. A65-0150 10/06/2022*/
+        /*--
+        IF SUBSTRING(sic_bran.uwm100.insref,1,4) <> "COMP"     AND
+                     sic_bran.uwm100.insref      <> "WMC0001"  THEN DO:
+            /* เช็คการออกชื่อและที่อยู่ Vat ในกรณีที่มี Vat Code*/
+            IF sic_bran.uwm100.bs_cd  <> "" THEN DO: /* เป็น Vat Code ที่ออกตามปกติ sic_bran.xmm600 */
+                // FIND FIRST sic_bran.xmm600 WHERE sic_bran.xmm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR NO-WAIT. Comment by Chaiyong W. F67-0001 08/10/2024
+                FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR NO-WAIT. /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+                IF AVAIL sic_bran.xmm600 THEN DO:
+
+
+                    IF sic_bran.xmm600.firstname <> ""  THEN DO:
+                        ASSIGN 
+                            n_title     =   TRIM(sic_bran.xmm600.ntitle)
+                            n_name      =   TRIM(sic_bran.xmm600.firstname)
+                            n_name2     =   TRIM(sic_bran.xmm600.lastname)    .
+                    END.
+                    ELSE DO:
+                        n_title     =   TRIM(sic_bran.xmm600.ntitle).
+                        n_name      =   TRIM(sic_bran.xmm600.name).
+                        n_name2     =   "".
+                    END.
+                    n_paddr1    =   TRIM(sic_bran.xmm600.addr1).
+                    n_paddr2    =   TRIM(sic_bran.xmm600.addr2).
+                    n_paddr3    =   TRIM(sic_bran.xmm600.addr3).
+                    n_paddr4    =   TRIM(sic_bran.xmm600.addr4).
+                    n_postcd    =   TRIM(sic_bran.xmm600.postcd).
+
+                    /*---Begin by Chaiyong W. A66-0048 21/03/2023*/
+                    IF sic_bran.uwm100.langug  = "T" THEN DO:
+                        //FIND  sic_bran.xtm600  WHERE xtm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR. Comment by Chaiyong W. F67-0001 08/10/2024
+                        FIND FIRST sic_bran.xtm600 USE-INDEX xtm60001  WHERE xtm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR.      /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+                        IF  AVAIL  xtm600  THEN DO:
+                            IF xtm600.firstname <> "" THEN DO:
+                                ASSIGN 
+                                n_title     =   TRIM(xtm600.ntitle)
+                                n_name      =   TRIM(xtm600.firstname)
+                                n_name2     =   TRIM(xtm600.lastname)    .
+                            END.
+                            ELSE DO:
+                                n_title     =   TRIM(xtm600.ntitle).
+                                n_name      =   TRIM(xtm600.name).
+                                n_name2     =   "".
+                            END.
+                            n_paddr1    =   TRIM(xtm600.addr1).
+                            n_paddr2    =   TRIM(xtm600.addr2).
+                            n_paddr3    =   TRIM(xtm600.addr3).
+                            n_paddr4    =   TRIM(xtm600.addr4).
+                            n_postcd    =   TRIM(xtm600.postcd).
+                            /*--- A63-0377 ---*/
+                        END.
+                    END.      /* langug = "T"  */  /*End by Chaiyong W. A66-0048 21/03/2023---*/
+                    ASSIGN
+                        nv_brnins = sic_bran.xmm600.anlyc5
+                        nv_taxno  = sic_bran.xmm600.icno.  
+                END.  /* AVAIL sic_bran.xmm600 */
+            END. /* สิ้นสุด Vat Code ที่ออกปกติ */
+            ELSE DO: 
+                //FIND FIRST sic_bran.xmm600 WHERE sic_bran.xmm600.acno  = n_insref  NO-LOCK NO-ERROR NO-WAIT. Comment by Chaiyong W. F67-0001 08/10/2024
+                FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno  = n_insref  NO-LOCK NO-ERROR NO-WAIT.  /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+                IF AVAILABLE sic_bran.xmm600 THEN DO:
+                    IF sic_bran.xmm600.naddr1 = ""  AND sic_bran.xmm600.naddr2 = "" AND  
+                       sic_bran.xmm600.naddr3 = ""  AND sic_bran.xmm600.naddr4 = "" THEN DO:
+                        IF sic_bran.uwm100.firstname <> ""  THEN DO:
+                            ASSIGN 
+                            n_title     =   TRIM(sic_bran.uwm100.ntitle)
+                            n_name      =   TRIM(sic_bran.uwm100.firstname)
+                            n_name2     =   TRIM(sic_bran.uwm100.lastname)    .
+                        END.
+                        ELSE DO:
+                            n_title     =   TRIM(sic_bran.uwm100.ntitle).
+                            n_name      =   TRIM(sic_bran.uwm100.name1).
+                            n_name2     =   "".
+                        END.
+
+                        n_paddr1    =   TRIM(uwm100.addr1).
+                        n_paddr2    =   TRIM(uwm100.addr2).
+                        n_paddr3    =   TRIM(uwm100.addr3).
+                        n_paddr4    =   TRIM(uwm100.addr4).
+                        n_postcd    =   TRIM(uwm100.postcd).
+                        ASSIGN
+                            nv_brnins = sic_bran.xmm600.anlyc5
+                            nv_taxno  = sic_bran.xmm600.icno. 
+                    END.  /* sic_bran.xmm600.naddr1 = "" And sic_bran.xmm600.naddr2 = "" And sic_bran.xmm600.naddr3 = "" And sic_bran.xmm600.naddr4 = ""  */
+                    ELSE DO:
+                        /*--------------------------------------
+                          พิมพ์ที่อยู่ ในการออก VAT จาก sic_bran.xmm600
+                           (ถ้ามีข้อมูลใน sic_bran.xmm600) แล้ว nphone <> ""
+                           ให้ n_name = sic_bran.xmm600.nphone
+                          --------------------------------------*/
+                        IF sic_bran.xmm600.nphone = "" THEN DO:
+                            IF sic_bran.uwm100.firstname <> ""  THEN DO:
+                                ASSIGN 
+                                    n_title     =   TRIM(sic_bran.uwm100.ntitle)
+                                    n_name      =   TRIM(sic_bran.uwm100.firstname)
+                                    n_name2     =   TRIM(sic_bran.uwm100.lastname)    .
+                            END.
+                            ELSE DO:
+                                n_title     =   TRIM(sic_bran.uwm100.ntitle).
+                                n_name      =   TRIM(sic_bran.uwm100.name1).
+                                n_name2     =   "".
+                            END.
+                        END.
+                        ELSE DO:    
+                            /*--- VAT ชมพู  A63-0377 ---*/
+                            IF sic_bran.xmm600.nfirstname <> ""  THEN  DO:
+                                ASSIGN
+                                    n_title     =   sic_bran.xmm600.nntitle
+                                    n_name      =   sic_bran.xmm600.nfirstname
+                                    n_name2     =   sic_bran.xmm600.nlastname .
+                            END.
+                            ELSE DO:
+                                n_title     =       "".
+                                n_name      =       SUBSTRING(sic_bran.xmm600.nphone,1,60).
+                                n_name2     =       SUBSTRING(sic_bran.xmm600.nphone,61,60).
+                            END.
+                        END.
+                        ASSIGN
+                            n_paddr1    =   TRIM(sic_bran.xmm600.naddr1)         /*-A63-0377-*/
+                            n_paddr2    =   TRIM(sic_bran.xmm600.naddr2)         /*-A63-0377-*/
+                            n_paddr3    =   TRIM(sic_bran.xmm600.naddr3)         /*-A63-0377-*/
+                            n_paddr4    =   TRIM(sic_bran.xmm600.naddr4)         /*-A63-0377-*/
+                            n_postcd    =   TRIM(sic_bran.xmm600.npostcd)        /*-A63-0377-*/
+                            nv_brnins = TRIM(SUBSTRING(sic_bran.xmm600.anlyc1,20,5))
+                            nv_taxno  = TRIM(SUBSTRING(sic_bran.xmm600.anlyc1,1,14)) . 
+                    END. /* (ELSE DO) */
+                END.   /* IF AVAILABLE sic_bran.xmm600 THEN DO: */
+            END.
+        END. /* POLTYP <> V72 */
+        ELSE DO:  /* IS COMPULSORY */
+            IF sic_bran.uwm100.insref = "COMP"    OR  
+               sic_bran.uwm100.insref = "WMC0001" THEN DO:
+                ASSIGN
+                    n_title    = TRIM(sic_bran.uwm100.ntitle)
+                    n_name     = TRIM(sic_bran.uwm100.name1)
+                    n_name2    = TRIM(TRIM(sic_bran.uwm100.name2) + " " + TRIM(sic_bran.uwm100.name3))
+                    n_paddr1   = TRIM(sic_bran.uwm100.addr1)
+                    n_paddr2   = TRIM(sic_bran.uwm100.addr2)
+                    n_paddr3   = TRIM(sic_bran.uwm100.addr3)
+                    n_paddr4   = TRIM(sic_bran.uwm100.addr4) 
+                    n_postcd   = TRIM(sic_bran.uwm100.postcd) .
+                
+            END. 
+            IF sic_bran.uwm100.bs_cd  <> "WMC0001" AND
+               sic_bran.uwm100.bs_cd  <> "COMP"    AND
+               sic_bran.uwm100.bs_cd  <> ""        THEN DO:
+                /* เป็น Vat Code ที่ออกตามปกติ sic_bran.xmm600 */
+                //FIND FIRST sic_bran.xmm600 WHERE sic_bran.xmm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR NO-WAIT. Comment by Chaiyong W. F67-0001 08/10/2024
+                FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno  = sic_bran.uwm100.bs_cd NO-LOCK NO-ERROR NO-WAIT.      /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+                IF AVAIL sic_bran.xmm600 THEN DO:
+                    IF sic_bran.xmm600.firstname <> ""  THEN DO:
+                        ASSIGN 
+                        n_title     =   TRIM(sic_bran.xmm600.ntitle)
+                        n_name      =   TRIM(sic_bran.xmm600.firstname)
+                        n_name2     =   TRIM(sic_bran.xmm600.lastname)    .
+                    END.
+                    ELSE DO:
+                        n_title     =   TRIM(sic_bran.xmm600.ntitle).
+                        n_name      =   TRIM(sic_bran.xmm600.name).
+                        n_name2     =   "".
+                    END.
+                    n_paddr1    =   TRIM(sic_bran.xmm600.addr1).
+                    n_paddr2    =   TRIM(sic_bran.xmm600.addr2).
+                    n_paddr3    =   TRIM(sic_bran.xmm600.addr3).
+                    n_paddr4    =   TRIM(sic_bran.xmm600.addr4).
+                    n_postcd    =   TRIM(sic_bran.xmm600.postcd).
+                    /*---Begin by Chaiyong W. A66-0048 21/03/2023*/
+                    IF sic_bran.uwm100.langug  = "T" THEN DO:
+                        //FIND  sic_bran.xtm600  WHERE xtm600.acno  = sic_bran.uwm100.bs_cd   NO-LOCK NO-ERROR. Comment by Chaiyong W. F67-0001 08/10/2024
+                        FIND FIRST sic_bran.xtm600 USE-INDEX xtm60001  WHERE xtm600.acno  = sic_bran.uwm100.bs_cd   NO-LOCK NO-ERROR.      /*--Add by Chaiyong W. F67-0001 08/10/2024*/
+                        IF AVAIL  xtm600  THEN DO:
+                            IF xtm600.firstname <> "" THEN DO:
+                                ASSIGN 
+                                n_title     =   TRIM(xtm600.ntitle)
+                                n_name      =   TRIM(xtm600.firstname)
+                                n_name2     =   TRIM(xtm600.lastname)    .
+                            END.
+                            ELSE DO:
+                                n_title     =   TRIM(xtm600.ntitle).
+                                n_name      =   TRIM(xtm600.name).
+                                n_name2     =   "".
+                            END.
+                            n_paddr1    =   TRIM(xtm600.addr1).
+                            n_paddr2    =   TRIM(xtm600.addr2).
+                            n_paddr3    =   TRIM(xtm600.addr3).
+                            n_paddr4    =   TRIM(xtm600.addr4).
+                            n_postcd    =   TRIM(xtm600.postcd).
+                            /*--- A63-0377 ---*/
+                        END.
+                    END.      /* langug = "T"  */ /*End by Chaiyong W. A66-0048 21/03/2023----*/
+                    ASSIGN
+                        nv_brnins = sic_bran.xmm600.anlyc5
+                        nv_taxno  = sic_bran.xmm600.icno. 
+                END.  /* AVAIL sic_bran.xmm600 */   /* สิ้นสุด Vat Code ที่ออกปกติ */
+            END. /* sic_bran.uwm100.bs_cd  <> "WMC0001" */
+        END.      /* IS COMPULSORY */ 
+        comment by Chaiyong W. A68-0034 28/02/2025*/
+        RUN pd_newaddr. /*--add by Chaiyong W. A68-0034 28/02/2025*/
+
+        
+    END. /*End instot = 1*/ /*---add by Chaiyong W. A65-0150 10/06/2022*/
+    
+    IF n_mark_tax = "" THEN DO:
+        IF n_vat = 0 THEN DO:
+            n_ratevat  = 0.
+        END.
+        ELSE DO:
+            IF n_vat > (n_tot * 9 / 100) THEN DO:
+                ASSIGN
+                    n_ratevat    = 10
+                    n_mark_tax   = "ร้อยละ 10".
+            END.
+            ELSE DO:
+                IF n_vat > (n_tot * 6 / 100) THEN DO:
+                    n_ratevat    = 7.
+                END.
+                ELSE DO:
+                    ASSIGN
+                        n_ratevat    = 3.3
+                        n_mark_tax   = "ร้อยละ 3.3".
+                END.
+            END.
+        END.
+    END.
+
+    
+    ASSIGN
+        n_name1   = ""
+        nV_Dtaxno = ""
+        nV_Dbrnin = ""
+        n_name1   = n_name.  /* Format เกิน 70 ตัว */
+    IF nv_langug = "T" THEN DO:
+        IF nv_taxno = "" THEN nV_Dtaxno =  "".
+        ELSE                  nV_Dtaxno =  "เลขผู้เสียภาษี" + " " + TRIM(nv_taxno).
+        IF       nv_brnins = ""      THEN nV_Dbrnin = "".
+        ELSE IF  nv_brnins = "00000" THEN nV_Dbrnin = "สำนักงานใหญ่".                   
+        ELSE                              nV_Dbrnin = "สาขาที่"      + " " + TRIM(nv_brnins). 
+    END.
+    ELSE DO: /*sic_bran.uwm100.langug <> "T"*/
+        IF nv_taxno = "" THEN nV_Dtaxno =  "".
+        ELSE                  nV_Dtaxno =  "Tax ID." + " " + TRIM(nv_taxno).
+        
+        IF       nv_brnins = ""      THEN nV_Dbrnin = "".
+        ELSE IF  nv_brnins = "00000" THEN nV_Dbrnin = "Head Office".                   
+        ELSE                              nV_Dbrnin = "Branch No."      + " " + TRIM(nv_brnins). 
+    END.
+    ASSIGN
+        n_ptrndat  = STRING(DAY(n_trndat),"99") + "/" +
+                         STRING(MONTH(n_trndat),"99") + "/" +
+                         STRING(YEAR(n_trndat), "9999")
+        nv_chkprn = YES
+        n_taxrepm = NO 
+        n_vatno   = sic_bran.uwm100.docno1.
+    /*--
+    {uu/uuthamt.i &amt       = "nv_amt"
+                    &amt_text  = "nv_amt_text" }*/
+                     
+    IF n_ratevat  = 10  THEN n_mark_tax = "ร้อยละ 10".
+    ELSE IF n_ratevat = 7 THEN DO:
+        ASSIGN
+            n_mark0   = ""
+            n_mark7   = "X".
+    END.
+    ELSE IF n_ratevat = 0 THEN DO:
+        ASSIGN
+            n_mark0   = "X"
+            n_mark7   = "".
+    END.
+    ELSE IF n_ratevat  = 3.3 then n_mark_tax = "ร้อยละ 3.3".
+
+    n_grd = n_tot + n_vat.
+    IF n_bs_cd  = "" THEN n_bs_cd1 = n_insref.
+    ELSE                  n_bs_cd1 = n_bs_cd.
+
+                         
+    n_chassis = "".
+    FIND FIRST sic_bran.uwm301 USE-INDEX uwm30101  //--add index by Chaiyong W. F67-0001 08/10/2024
+        WHERE  sic_bran.uwm301.policy = sic_bran.uwm100.policy  AND
+               sic_bran.uwm301.bchyr   =  sic_bran.uwm100.bchyr  AND 
+               sic_bran.uwm301.bchno   =  sic_Bran.uwm100.bchno  and
+               sic_bran.uwm301.bchcnt  =  sic_Bran.uwm100.bchcnt NO-LOCK NO-ERROR.
+    IF AVAIL sic_bran.uwm301 THEN DO:
+        ASSIGN
+            n_chassis = "Chassis: " + sic_bran.uwm301.cha_no
+            n_cpol    = sic_bran.uwm301.policy
+            n_cren    = sic_bran.uwm301.rencnt
+            n_criskgp = sic_bran.uwm301.riskgp
+            n_criskno = sic_bran.uwm301.riskno
+            n_citemno = sic_bran.uwm301.itemno.
+        FIND FIRST sic_bran.uwm301 USE-INDEX uwm30104
+           WHERE sic_bran.uwm301.policy = n_cpol
+           AND   sic_bran.uwm301.rencnt = n_cren
+           AND   sic_bran.uwm301.riskgp = n_criskgp
+           AND   sic_bran.uwm301.riskno = n_criskno
+           AND   sic_bran.uwm301.itemno = n_citemno AND
+               sic_bran.uwm301.bchyr   =  sic_bran.uwm100.bchyr  AND 
+               sic_bran.uwm301.bchno   =  sic_Bran.uwm100.bchno  and
+               sic_bran.uwm301.bchcnt  =  sic_Bran.uwm100.bchcnt NO-LOCK NO-ERROR.
+        IF AVAIL sic_bran.uwm301 THEN DO:
+            n_chassis = "".
+            n_chassis = "Chassis: " + sic_bran.uwm301.cha_no.
+        END.
+        ELSE DO:
+            FIND LAST  sic_bran.uwm301  USE-INDEX uwm30101  //--add index by Chaiyong W. F67-0001 08/10/2024
+             WHERE sic_bran.uwm301.policy = sic_bran.uwm100.policy   AND
+               sic_bran.uwm301.bchyr   =  sic_bran.uwm100.bchyr  AND 
+               sic_bran.uwm301.bchno   =  sic_Bran.uwm100.bchno  and
+               sic_bran.uwm301.bchcnt  =  sic_Bran.uwm100.bchcnt NO-LOCK NO-ERROR.
+            IF AVAIL sic_bran.uwm301 THEN DO:
+                n_chassis = "".
+                n_chassis = "Chassis: " + sic_bran.uwm301.cha_no.
+            END.
+        END.
+    END.
+    IF n_acno = "A0l0038"  OR n_acno = "a000795"  THEN n_acnam = "".
+    
+    IF n_ratevat  = 10  THEN n_mark_tax = "ร้อยละ 10".
+    ELSE IF n_ratevat = 7 THEN DO:
+            n_mark0   = "".
+            n_mark7   = "X".
+    END.
+    ELSE IF n_ratevat = 0 THEN DO:
+            n_mark0   = "X".
+            n_mark7   = "".
+    END.
+    ELSE IF n_ratevat  = 3.3 then n_mark_tax = "ร้อยละ 3.3".
+    
+
+
+    IF           sic_bran.uwm100.poltyp      = "M30" AND
+       SUBSTRING(sic_bran.uwm100.policy,2,1) = "W"   OR
+       SUBSTRING(sic_bran.uwm100.policy,2,1) = "L"   THEN DO:
+
+        ASSIGN
+            nv_sline53 = "" 
+            nv_sline54 = "" 
+            nv_sline50 = "" 
+            nv_mot     = NO .
+        IF sic_bran.uwm100.cedpol <> "" THEN DO:
+            IF SUBSTRING(sic_bran.uwm100.cedpol,1,4) <> "CASH" THEN nv_sline53 = sic_bran.uwm100.cedpol .
+        END.
+        nv_fptr    = 0.
+        nv_fptr    = sic_bran.uwm100.fptr01.
+        DO WHILE nv_fptr <> 0 AND sic_bran.uwm100.fptr01 <> ? :
+            FIND  sic_bran.uwd100 WHERE RECID(uwd100) = nv_fptr NO-LOCK NO-ERROR NO-WAIT.
+            IF AVAILABLE uwd100 THEN DO:
+                nv_fptr  =  uwd100.fptr.
+                IF INDEX(uwd100.ltext ,"เลขที่ตัวรถ") <> 0 THEN DO:
+                    nv_mot = YES .
+                    nv_fptr = 0.
+                    NEXT.
+                END.
+                IF nv_sline53 = ""  THEN DO:
+                    IF INDEX(uwd100.ltext ,"เลขที่สัญญา") <> 0 THEN DO:
+                        nv_ltxt11  = INDEX(uwd100.ltext , "เลขที่สัญญา") + 14.
+                        nv_ltxt12  = INDEX(uwd100.ltext , "เลขที่เอกสาร").
+                        IF   nv_ltxt12 > 0 THEN nv_ltxt13  = nv_ltxt12 - nv_ltxt11.
+                        ELSE nv_ltxt13  = 16.
+                        nv_sline53 = "" .
+                        nv_sline53 = TRIM(SUBSTRING(uwd100.ltext ,nv_ltxt11, nv_ltxt13)).
+                        nv_sline50 = TRIM(SUBSTRING(uwd100.ltext ,nv_ltxt11 - 14, nv_ltxt13)).
+                        IF SUBSTRING(nv_sline50,15,4) = "CASH" THEN nv_sline53 = " " .
+                        
+                    END.  /* END เลขที่สัญญา */
+                END.
+                IF  INDEX(uwd100.ltext ,"ตัวแทนจำหน่าย") <> 0 THEN DO:
+                    nv_ll = INDEX(uwd100.ltext ,"ตัวแทนจำหน่าย").
+                    IF INDEX(uwd100.ltext ,":") > nv_ll THEN nv_ll = INDEX(uwd100.ltext ,":").
+                    nv_ltxt21  = LENGTH(TRIM(uwd100.ltext)).
+                    nv_ltxt22  = TRIM(SUBSTRING(uwd100.ltext,nv_ll + 1, nv_ltxt21)).
+                    nv_sline54 = nv_ltxt22 .
+                END.  /* END ตัวแทนจำหน่าย */
+            END. /* end if avail uwd100 */
+            ELSE nv_fptr = 0.
+        END. /* end do while */
+    END.  /* end if = "M30" then */
+    
+
+    /* ----- Add inward A63-0035 Date: 29/06/2020 ----- */
+    IF sic_bran.uwm100.DIR_ri = YES THEN DO:
+        IF (n_poltyp  = "V70"   OR  n_poltyp  = "V72"  OR
+            n_poltyp  = "V73"   OR  n_poltyp  = "V74") THEN DO:
+            FOR  EACH  sic_bran.uwd132  USE-INDEX uwd13201  //--add index by Chaiyong W. F67-0001 08/10/2024
+                WHERE  uwd132.policy  = n_policy
+                AND  uwd132.rencnt   = n_rencnt
+                AND  uwd132.endcnt   = n_endcnt  AND
+               sic_bran.uwd132.bchyr   =  sic_bran.uwm100.bchyr  AND 
+               sic_bran.uwd132.bchno   =  sic_Bran.uwm100.bchno  and
+               sic_bran.uwd132.bchcnt  =  sic_Bran.uwm100.bchcnt NO-LOCK.
+                IF prem_c  <   0  THEN n_disc  = n_disc + prem_c.
+            END. /* end for each uwd132 */
+        END.  /*if n_poltyp */
+        ASSIGN
+            n_bprm   = n_tot  - n_disc
+            nv_amt   = n_grd.
+    END.
+    ELSE DO:
+        ASSIGN
+            n_bprm   = n_prem
+            nv_amt   = n_grd.
+    END.
+    /*---Begin by Chaiyong W. A65-0150 10/06/2022*/
+        
+      IF sic_bran.uwm100.instot = 1 THEN DO:
+          ASSIGN
+              n_ratevat  = sic_bran.uwm100.gstrat.
+          RUN pd_vat100.
+
+      END.
+      ELSE DO:
+          FOR EACH sic_bran.uwm101  USE-INDEX uwm10101  //--add index by Chaiyong W. F67-0001 08/10/2024
+             WHERE sic_bran.uwm101.policy   = sic_bran.uwm100.policy and
+                   sic_bran.uwm101.rencnt   = sic_bran.uwm100.rencnt and
+                   sic_bran.uwm101.endcnt   = sic_bran.uwm100.endcnt AND 
+                   
+               sic_bran.uwm101.bchyr   =  sic_bran.uwm100.bchyr  AND 
+               sic_bran.uwm101.bchno   =  sic_Bran.uwm100.bchno  and
+               sic_bran.uwm101.bchcnt  =  sic_Bran.uwm100.bchcnt  AND
+              /*--     
+              sic_bran.uwm101.flgprn   <> "" 
+              comment by Chaiyong W. A68-0034 15/05/2025*/
+              /*---Begin by Chaiyong W. A68-0034 15/05/2025*/
+              ((sic_bran.uwm101.flgprn   <> ""  AND sic_bran.uwm100.ltstatus <> "Y" ) OR
+               (sic_bran.uwm101.flgprn  = "Y"  AND sic_bran.uwm100.ltstatus = "Y" ))
+              /*End by Chaiyong W. A68-0034 15/05/2025-----*/
+              
+              
+              
+              NO-LOCK  BY sic_bran.uwm101.instno:
+
+
+              /*--
+              nv_xmm600 = "".
+              IF sic_bran.uwm101.desc_i <> "" THEN nv_xmm600 = TRIM(SUBSTRING(sic_bran.uwm101.desc_i, 1, INDEX(sic_bran.uwm101.desc_i, " ") - 1)) NO-ERROR .
+              ELSE IF sic_bran.uwm100.bs_cd <> "" THEN nv_xmm600  = sic_bran.uwm100.bs_cd.
+              ELSE IF sic_bran.uwm100.dir_ri = NO THEN nv_xmm600  = sic_bran.uwm100.cedco.  
+              ELSE nv_xmm600 = sic_bran.uwm100.insref.
+              ASSIGN
+                  n_title   = ""
+                  n_name    = ""
+                  n_name2   = ""
+                  n_paddr1  = ""
+                  n_paddr2  = ""
+                  n_paddr3  = ""
+                  n_paddr4  = ""
+                  n_postcd  = ""
+                  nv_brnins = ""
+                  nv_taxno  = "".
+
+              IF SUBSTRING(sic_bran.uwm100.insref,1,4) <> "COMP"    AND
+                           sic_bran.uwm100.insref      <> "WMC0001" THEN DO:
+                  RUN pd_xmminst.
+              END.
+              ELSE DO:
+                  IF sic_bran.uwm100.insref = "COMP"    OR
+                     sic_bran.uwm100.insref = "WMC0001" THEN DO:
+                      
+                      ASSIGN
+                          n_title  = TRIM(sic_bran.uwm100.ntitle)
+                          n_name   = TRIM(sic_bran.uwm100.name1) 
+                          n_name2  = TRIM(sic_bran.uwm100.name2) + " " + TRIM(sic_bran.uwm100.name3)
+                          n_paddr1 = TRIM(sic_bran.uwm100.addr1)
+                          n_paddr2 = TRIM(sic_bran.uwm100.addr2)
+                          n_paddr3 = TRIM(sic_bran.uwm100.addr3)
+                          n_paddr4 = TRIM(sic_bran.uwm100.addr4)
+                          n_postcd = TRIM(sic_bran.uwm100.postcd).
+                  END.
+                  IF sic_bran.uwm100.bs_cd <> "WMC0001" AND
+                     sic_bran.uwm100.bs_cd <> "COMP"    AND
+                     sic_bran.uwm100.bs_cd <> ""        THEN DO: 
+                       RUN pd_xmminst.
+                  END.                                   
+              END. 
+              comment by Chaiyong W. A68-0034 28/02/2025*/
+              RUN pd_newaddr. /*--add by Chaiyong W. A68-0034 28/02/2025*/
+
+              ASSIGN
+                  n_docno    = sic_bran.uwm101.docnoi
+                  n_prem     = sic_bran.uwm101.prem_i 
+                  n_vat      = sic_bran.uwm101.ptax_i   + sic_bran.uwm101.rtax_i 
+                  n_tot      = sic_bran.uwm101.prem_i + sic_bran.uwm101.pstp_i   + sic_bran.uwm101.rstp_i 
+                  n_grd      = n_tot + n_vat
+                  n_stamp    = sic_bran.uwm101.pstp_i   + sic_bran.uwm101.rstp_i 
+                  nv_amt     = n_grd.
+              
+
+              n_disc = 0.
+              IF sic_bran.uwm100.dir_ri = NO THEN DO:
+                              ASSIGN
+                      n_tot    = sic_bran.uwm101.prem_i + sic_bran.uwm101.pstp_i   + sic_bran.uwm101.rstp_i  +  sic_bran.uwm101.pfee_i   + sic_bran.uwm101.rfee_i
+                      n_disc   = sic_bran.uwm101.pfee_i   + sic_bran.uwm101.rfee_i. 
+                  IF n_disc < 0 THEN  n_disc = n_disc * -1.
+                  n_bprm   = n_prem.
+              END.
+              ELSE DO:
+                  IF (n_poltyp  = "V70"   OR  n_poltyp  = "V72"  OR
+                      n_poltyp  = "V73"   OR  n_poltyp  = "V74") THEN DO:
+                      FOR  EACH  sic_bran.uwd132  USE-INDEX uwd13201  //--add index by Chaiyong W. F67-0001 08/10/2024
+                          WHERE  uwd132.policy  = n_policy
+                          AND  uwd132.rencnt   = n_rencnt
+                          AND  uwd132.endcnt   = n_endcnt AND 
+                       uwd132.bchyr   =  sic_bran.uwm100.bchyr  AND 
+                       uwd132.bchno   =  sic_Bran.uwm100.bchno  and
+                       uwd132.bchcnt  =  sic_Bran.uwm100.bchcnt  NO-LOCK.
+                          IF prem_c  <   0  THEN n_disc  = n_disc + prem_c.
+                      END. /* end for each uwd132 */
+                  END.  /*if n_poltyp */
+                  n_bprm     = (sic_bran.uwm101.prem_i + sic_bran.uwm101.pstp_i   + sic_bran.uwm101.rstp_i )  - n_disc.
+              END.
+              
+              n_ratevat  = sic_bran.uwm100.gstrat.
+              IF n_vat = 0 THEN n_ratevat  = 0.
+              ELSE DO:
+                  IF n_vat > (n_tot * 9 / 100) THEN  n_ratevat    = 10.
+                  ELSE DO:
+                      IF n_vat > (n_tot * 6 / 100) THEN DO:
+                          n_ratevat    = 7.
+                      END.
+                      ELSE n_ratevat    = 3.3.
+                  END.
+              END.
+              RUN pd_vat100.
+          END. 
+      
+      END.
+     /*End by Chaiyong W. A65-0150 10/06/2022-----*/
+
+    /*--
+    ASSIGN
+        np_addr1 =   n_paddr1 + n_paddr2
+        np_addr2 =   n_paddr3. 
+    FIND FIRST vat100 WHERE 
+        vat100.policy   = n_policy and
+        vat100.rencnt   = n_rencnt and
+        vat100.endcnt   = n_endcnt and
+        vat100.refno    = n_docno  NO-ERROR NO-WAIT.
+    IF NOT AVAIL vat100 THEN DO:
+        CREATE VAT100.
+        ASSIGN
+          vat100.invtyp   = "S" /** ประเภทภาษีขาย  **/
+          vat100.invoice  = n_vatno 
+          vat100.invdat   = n_trndat
+          vat100.poltyp   = sic_bran.uwm100.poltyp   /*n_poltyp*/
+          vat100.policy   = sic_bran.uwm100.policy   /*n_policy*/
+          vat100.rencnt   = sic_bran.uwm100.rencnt   /*n_rencnt*/
+          vat100.endcnt   = sic_bran.uwm100.endcnt   /*n_endcnt*/
+          vat100.branch   = sic_bran.uwm100.branch   /*n_branch*/                /* รหัสสาขาเจ้าของรายการ */
+          vat100.invbrn   = SUBSTRING(gv_id,6,2)  /* รหัสสาขาที่ทำรายการ */
+          vat100.acno     = sic_bran.uwm100.acno1    /*n_acno*/
+          vat100.agent    = sic_bran.uwm100.agent    /*n_agent*/
+          vat100.trnty1   = sic_bran.uwm100.trty11   /*n_trnty1*/
+          vat100.refno    = sic_bran.uwm100.docno1   /*n_docno*/
+          vat100.ratevat  = sic_bran.uwm100.gstrat   /*n_ratevat*/
+          vat100.amount   = n_bprm
+          vat100.discamt  = n_disc
+          vat100.totamt   = n_tot
+          vat100.vatamt   = n_vat
+          vat100.grandamt = n_grd
+          vat100.pvrvjv   = n_pvrvjv
+          vat100.insref   = n_insref
+          vat100.name     = TRIM(TRIM(n_title) + " " + TRIM(n_name) + " " + TRIM(n_name2))
+          vat100.add1     = n_paddr1
+          vat100.add2     = n_paddr2
+          vat100.desci    = "ค่าเบี้ยประกันตามกรมธรรม์เลขที่ " + n_policy /*A42-0110*/
+          vat100.descdis  = "หักส่วนลด"
+          vat100.entdat   = TODAY
+          vat100.enttime  = STRING(TIME,"HH:MM:SS")
+          vat100.usrid    = gv_id
+          vat100.remark1  = n_rem1
+          vat100.remark2  = n_rem2
+          vat100.print    = YES
+          vat100.program  = nv_dcode
+          vat100.taxmont  = n_taxmont
+          vat100.taxyear  = n_taxyear
+          vat100.taxrepm  = n_taxrepm
+          vat100.taxno    = TRIM(nv_taxno) + FILL(" ",19 - LENGTH(nv_taxno)) + TRIM(nv_brnins).  
+          ASSIGN    /*--  A63-0377 --*/
+          vat100.endno       =  sic_bran.uwm100.endno       
+          vat100.comdat      =  sic_bran.uwm100.comdat 
+          vat100.addr3       =  TRIM(n_paddr3)
+          vat100.addr4       =  TRIM(TRIM(n_paddr4)  + " " + n_app2)    /*-A63-0377-*/
+          vat100.postcode    =  TRIM(n_postcd)
+          vat100.expdat      =  sic_bran.uwm100.expdat
+          vat100.accdat      =  sic_bran.uwm100.accdat
+          /*-vat100.occupn      =  n_occupn       -*/
+          vat100.brnins      =  nv_brnins      
+          /*-vat100.ag_name     =  n_agname       -*/
+          vat100.ac_name     =  n_acnam        
+          /*-vat100.Siprem      =  n_uom6_v       -*/
+          vat100.vdeci1      =  n_Prem         
+          vat100.vdeci2      =  n_stamp        
+          vat100.brncod      =  n_printbr      
+          vat100.brnadd1     =  n_add1         
+          vat100.brnadd2     =  n_add2         
+          vat100.prndat      =  TODAY 
+          vat100.ntitle      =  TRIM(n_title)
+          vat100.firstname   =  TRIM(n_name)       /*- A63-0377 -*/
+          vat100.lastname    =  TRIM(n_name2) .    /*- A63-0377 -*/ 
+          /* ========================= */  
+    END.
+    RELEASE vat100 NO-ERROR. 
+    comment BY Chaiyong W. A65-0150 10/06/2022*/
+END.
+/*--
+PROCEDURE pd_vat100:
+    ASSIGN
+        np_addr1 =   n_paddr1 + n_paddr2
+        np_addr2 =   n_paddr3. 
+    FIND FIRST stat.vat100 WHERE 
+        vat100.policy   = n_policy and
+        vat100.rencnt   = n_rencnt and
+        vat100.endcnt   = n_endcnt and
+        vat100.refno    = n_docno  NO-ERROR NO-WAIT.
+    IF NOT AVAIL stat.vat100 THEN DO:
+        CREATE stat.VAT100.
+        ASSIGN
+          vat100.invtyp   = "S" /** ประเภทภาษีขาย  **/
+          vat100.invoice  = n_docno 
+          vat100.invdat   = n_trndat
+          vat100.poltyp   = sic_bran.uwm100.poltyp   /*n_poltyp*/
+          vat100.policy   = sic_bran.uwm100.policy   /*n_policy*/
+          vat100.rencnt   = sic_bran.uwm100.rencnt   /*n_rencnt*/
+          vat100.endcnt   = sic_bran.uwm100.endcnt   /*n_endcnt*/
+          vat100.branch   = sic_bran.uwm100.branch   /*n_branch*/                /* รหัสสาขาเจ้าของรายการ */
+          /*--
+          vat100.invbrn   = SUBSTRING(gv_id,6,2)  /* รหัสสาขาที่ทำรายการ */
+          comment by Chaiyong W. A65-0185 21/07/2022*/
+          vat100.invbrn   = IF nv_invbrn <> "" THEN nv_invbrn ELSE trim(SUBSTRING(gv_id,6,2)) /*---add by Chaiyong W. A65-0185 21/07/2022*/
+          vat100.acno     = sic_bran.uwm100.acno1    /*n_acno*/
+          vat100.agent    = sic_bran.uwm100.agent    /*n_agent*/
+          vat100.trnty1   = n_trnty1        /*n_trnty1*/
+          vat100.refno    = n_docno         /*n_docno*/
+          vat100.ratevat  = n_ratevat  /*n_ratevat*/
+          vat100.amount   = n_bprm
+          vat100.discamt  = n_disc
+          vat100.totamt   = n_tot
+          vat100.vatamt   = n_vat
+          vat100.grandamt = n_grd
+          vat100.pvrvjv   = n_pvrvjv
+          vat100.insref   = n_insref
+          /*--Comment A63-0377
+          vat100.name     = n_name
+          vat100.add1     = np_addr1
+          vat100.add2     =  (TRIM(np_addr2) + " " + n_app2)  /*เก็บเบอร์อ้างอิงที่เกี่ยวข้อง*/
+          ----*/
+          vat100.name     = TRIM(TRIM(n_title) + " " + TRIM(n_name) + " " + TRIM(n_name2))
+          vat100.add1     = n_paddr1
+          vat100.add2     = n_paddr2
+          vat100.desci    = "ค่าเบี้ยประกันตามกรมธรรม์เลขที่ " + n_policy /*A42-0110*/
+          vat100.descdis  = "หักส่วนลด"
+          vat100.entdat   = TODAY
+          vat100.enttime  = STRING(TIME,"HH:MM:SS")
+          vat100.usrid    = gv_id
+          vat100.remark1  = n_rem1
+          vat100.remark2  = n_rem2
+          vat100.print    = YES
+          vat100.program  = nv_dcode
+          vat100.taxmont  = n_taxmont
+          vat100.taxyear  = n_taxyear
+          vat100.taxrepm  = n_taxrepm
+          vat100.taxno    = TRIM(nv_taxno) + FILL(" ",19 - LENGTH(nv_taxno)) + TRIM(nv_brnins).  
+          ASSIGN    /*--  A63-0377 --*/
+          vat100.endno       =  sic_bran.uwm100.endno       
+          vat100.comdat      =  sic_bran.uwm100.comdat 
+          vat100.addr3       =  TRIM(n_paddr3)
+          vat100.addr4       =  TRIM(TRIM(n_paddr4)  + " " + n_app2)    /*-A63-0377-*/
+          vat100.postcode    =  TRIM(n_postcd)
+          vat100.expdat      =  sic_bran.uwm100.expdat
+          vat100.accdat      =  sic_bran.uwm100.accdat
+          /*-vat100.occupn      =  n_occupn       -*/
+          vat100.brnins      =  nv_brnins      
+          /*-vat100.ag_name     =  n_agname       -*/
+          vat100.ac_name     =  n_acnam        
+          /*-vat100.Siprem      =  n_uom6_v       -*/
+          vat100.vdeci1      =  n_Prem         
+          vat100.vdeci2      =  n_stamp        
+          vat100.brncod      =  n_printbr      
+          vat100.brnadd1     =  n_add1         
+          vat100.brnadd2     =  n_add2         
+          vat100.prndat      =  TODAY 
+          vat100.ntitle      =  TRIM(n_title)
+          vat100.firstname   =  TRIM(n_name)       /*- A63-0377 -*/
+          vat100.lastname    =  TRIM(n_name2) .    /*- A63-0377 -*/ 
+          /* ========================= */  
+    END.
+    RELEASE vat100 NO-ERROR. 
+END PROCEDURE.
+comment by Chaiyong W. A66-0116 08/09/2023*/
+/*---Begin by Chaiyong W. A66-0116 08/09/2023*/
+PROCEDURE pd_vat100:
+
+    ASSIGN
+        np_addr1 =   n_paddr1 + n_paddr2
+        np_addr2 =   n_paddr3. 
+
+    /*--
+    FIND FIRST brstat.vat100 WHERE 
+        brstat.vat100.policy   = n_policy and
+        brstat.vat100.rencnt   = n_rencnt and
+        brstat.vat100.endcnt   = n_endcnt and
+        brstat.vat100.refno    = n_docno  NO-ERROR NO-WAIT.
+    comment by Chaiyong W. F67-0001 08/10/2024*/
+    /*---Begin by Chaiyong W. F67-0001 08/10/2024*/
+    FIND brstat.vat100 USE-INDEX vat10001  
+       WHERE brstat.vat100.invtyp  = "S" 
+         AND brstat.vat100.invoice = n_docno NO-LOCK NO-ERROR.
+    /*End by Chaiyong W. F67-0001 08/10/2024--*/
+
+
+    IF NOT AVAIL brstat.vat100 THEN DO:
+        CREATE brstat.vat100.
+        ASSIGN
+          brstat.vat100.invtyp   = "S" /** ประเภทภาษีขาย  **/
+          brstat.vat100.invoice  = n_docno 
+          brstat.vat100.invdat   = n_trndat
+          brstat.vat100.poltyp   = sic_bran.uwm100.poltyp   /*n_poltyp*/
+          brstat.vat100.policy   = sic_bran.uwm100.policy   /*n_policy*/
+          brstat.vat100.rencnt   = sic_bran.uwm100.rencnt   /*n_rencnt*/
+          brstat.vat100.endcnt   = sic_bran.uwm100.endcnt   /*n_endcnt*/
+          brstat.vat100.branch   = sic_bran.uwm100.branch   /*n_branch*/                /* รหัสสาขาเจ้าของรายการ */
+          brstat.vat100.invbrn   = IF nv_invbrn <> "" THEN nv_invbrn ELSE trim(SUBSTRING(gv_id,6,2)) /*---add by Chaiyong W. A65-0185 21/07/2022*/
+          brstat.vat100.acno     = sic_bran.uwm100.acno1    /*n_acno*/
+          brstat.vat100.agent    = sic_bran.uwm100.agent    /*n_agent*/
+          brstat.vat100.trnty1   = n_trnty1        /*n_trnty1*/
+          brstat.vat100.refno    = n_docno         /*n_docno*/
+          brstat.vat100.ratevat  = n_ratevat  /*n_ratevat*/
+          brstat.vat100.amount   = n_bprm
+          brstat.vat100.discamt  = n_disc
+          brstat.vat100.totamt   = n_tot
+          brstat.vat100.vatamt   = n_vat
+          brstat.vat100.grandamt = n_grd
+          brstat.vat100.pvrvjv   = n_pvrvjv
+          brstat.vat100.insref   = n_insref
+          brstat.vat100.name     = TRIM(TRIM(n_title) + " " + TRIM(n_name) + " " + TRIM(n_name2))
+          brstat.vat100.add1     = n_paddr1
+          brstat.vat100.add2     = n_paddr2
+          brstat.vat100.desci    = "ค่าเบี้ยประกันตามกรมธรรม์เลขที่ " + n_policy /*A42-0110*/
+          brstat.vat100.descdis  = "หักส่วนลด"
+          brstat.vat100.entdat   = TODAY
+          brstat.vat100.enttime  = STRING(TIME,"HH:MM:SS")
+          brstat.vat100.usrid    = gv_id
+          brstat.vat100.remark1  = n_rem1
+          brstat.vat100.remark2  = n_rem2
+          brstat.vat100.print    = YES
+          brstat.vat100.program  = nv_dcode
+          brstat.vat100.taxmont  = n_taxmont
+          brstat.vat100.taxyear  = n_taxyear
+          brstat.vat100.taxrepm  = n_taxrepm
+          brstat.vat100.taxno    = TRIM(nv_taxno) + FILL(" ",19 - LENGTH(nv_taxno)) + TRIM(nv_brnins).  
+          ASSIGN    /*--  A63-0377 --*/
+          brstat.vat100.endno       =  sic_bran.uwm100.endno       
+          brstat.vat100.comdat      =  sic_bran.uwm100.comdat 
+          brstat.vat100.addr3       =  TRIM(n_paddr3)
+          brstat.vat100.addr4       =  TRIM(TRIM(n_paddr4)  + " " + n_app2)    /*-A63-0377-*/
+          brstat.vat100.postcode    =  TRIM(n_postcd)
+          brstat.vat100.expdat      =  sic_bran.uwm100.expdat
+          brstat.vat100.accdat      =  sic_bran.uwm100.accdat
+          brstat.vat100.brnins      =  nv_brnins      
+          brstat.vat100.ac_name     =  n_acnam        
+          brstat.vat100.vdeci1      =  n_Prem         
+          brstat.vat100.vdeci2      =  n_stamp        
+          brstat.vat100.brncod      =  n_printbr      
+          brstat.vat100.brnadd1     =  n_add1         
+          brstat.vat100.brnadd2     =  n_add2         
+          brstat.vat100.prndat      =  TODAY 
+          brstat.vat100.ntitle      =  TRIM(n_title)
+          brstat.vat100.firstname   =  TRIM(n_name)       /*- A63-0377 -*/
+          brstat.vat100.lastname    =  TRIM(n_name2) .    /*- A63-0377 -*/ 
+          /* ========================= */  
+          {wgw\wgwvptv1.i}.
+    END.
+    RELEASE brstat.vat100 NO-ERROR.
+    RELEASE stat.vat104 NO-ERROR.
+END PROCEDURE.
+/*End by Chaiyong W. A66-0116 08/09/2023-----*/ 
+PROCEDURE pd_xmminst:
+    FIND FIRST sic_bran.xmm600 USE-INDEX xmm60001 WHERE sic_bran.xmm600.acno  = nv_xmm600 NO-LOCK NO-ERROR NO-WAIT.
+    IF AVAIL sic_bran.xmm600 THEN DO:
+        IF (sic_bran.xmm600.naddr1 = "" AND sic_bran.xmm600.naddr2 = "" AND
+            sic_bran.xmm600.naddr3 = "" AND sic_bran.xmm600.naddr4 = "") THEN DO :
+            
+            IF sic_bran.uwm100.insref <> nv_xmm600 THEN DO:
+                IF sic_bran.xmm600.firstname <> "" OR sic_bran.xmm600.lastname <> ""  THEN DO:
+                    ASSIGN 
+                    n_title     =   TRIM(sic_bran.xmm600.ntitle)
+                    n_name      =   TRIM(sic_bran.xmm600.firstname)
+                    n_name2     =   TRIM(sic_bran.xmm600.lastname)    .
+                END.
+                ELSE DO:
+                    n_title     =   TRIM(sic_bran.xmm600.ntitle).
+                    n_name      =   TRIM(sic_bran.xmm600.name).
+                    n_name2     =   "".
+                END. 
+                n_paddr1    =   TRIM(sic_bran.xmm600.addr1).
+                n_paddr2    =   TRIM(sic_bran.xmm600.addr2).
+                n_paddr3    =   TRIM(sic_bran.xmm600.addr3).
+                n_paddr4    =   TRIM(sic_bran.xmm600.addr4).
+                n_postcd    =   TRIM(sic_bran.xmm600.postcd).
+                /*---Begin by Chaiyong W. A66-0048 21/03/2023*/
+                IF uwm100.langug  = "T" AND nv_xmm600 = sic_bran.uwm100.bs_cd THEN DO:
+                    //FIND  sic_bran.xtm600 USE-INDEX xtm60001 WHERE xtm600.acno  = nv_xmm600 NO-LOCK NO-ERROR. comment by Chaiyong W. F67-0001 08/10/2024
+                    FIND FIRST sic_bran.xtm600 USE-INDEX xtm60001 WHERE xtm600.acno  = nv_xmm600 NO-LOCK NO-ERROR.  /*---add by Chaiyong W. F67-0001 08/10/2024*/
+                    IF AVAIL   xtm600  THEN DO:
+                       
+                        IF xtm600.firstname <> "" OR xmm600.lastname <> "" THEN DO:
+                            ASSIGN 
+                            n_title     =   TRIM(xtm600.ntitle)
+                            n_name      =   TRIM(xtm600.firstname)
+                            n_name2     =   TRIM(xtm600.lastname)    .
+                        END.
+                        ELSE DO:
+                            n_title     =   TRIM(xtm600.ntitle).
+                            n_name      =   TRIM(xtm600.name).
+                            n_name2     =   "".
+                        END.
+                        n_paddr1    =   TRIM(xtm600.addr1).
+                        n_paddr2    =   TRIM(xtm600.addr2).
+                        n_paddr3    =   TRIM(xtm600.addr3).
+                        n_paddr4    =   TRIM(xtm600.addr4).
+                        n_postcd    =   TRIM(xtm600.postcd).
+                        
+                    END.
+                END.      
+                /*End by Chaiyong W. A66-0048 21/03/2023----*/
+            END.
+            ELSE DO:
+                IF sic_bran.uwm100.firstname <> ""  THEN DO:
+                    ASSIGN 
+                        n_title     =   TRIM(sic_bran.uwm100.ntitle)
+                        n_name      =   TRIM(sic_bran.uwm100.firstname)
+                        n_name2     =   TRIM(sic_bran.uwm100.lastname)    .
+                END.
+                ELSE DO:
+                    n_title     =   TRIM(sic_bran.uwm100.ntitle).
+                    n_name      =   TRIM(sic_bran.uwm100.name1).
+                    n_name2     =   "".
+                END.
+    
+                n_paddr1    =   TRIM(uwm100.addr1).
+                n_paddr2    =   TRIM(uwm100.addr2).
+                n_paddr3    =   TRIM(uwm100.addr3).
+                n_paddr4    =   TRIM(uwm100.addr4).
+                n_postcd    =   TRIM(uwm100.postcd).
+            END.
+            nv_brnins = sic_bran.xmm600.anlyc5 .
+            nv_taxno  = sic_bran.xmm600.icno. 
+        END.
+        ELSE DO:
+            IF sic_bran.xmm600.nphone = "" THEN DO:
+               IF sic_bran.uwm100.insref <> nv_xmm600 THEN DO:
+                    IF sic_bran.xmm600.firstname <> "" OR sic_bran.xmm600.lastname <> ""  THEN DO:
+                         ASSIGN 
+                         n_title     =   TRIM(sic_bran.xmm600.ntitle)
+                         n_name      =   TRIM(sic_bran.xmm600.firstname)
+                         n_name2     =   TRIM(sic_bran.xmm600.lastname)    .
+                     END.
+                     ELSE DO:
+                         n_title     =   TRIM(sic_bran.xmm600.ntitle).
+                         n_name      =   TRIM(sic_bran.xmm600.name).
+                         n_name2     =   "".
+                     END.
+                END.
+                ELSE DO:
+                    IF sic_bran.uwm100.firstname <> ""  THEN DO:
+                        ASSIGN 
+                            n_title     =   TRIM(sic_bran.uwm100.ntitle)
+                            n_name      =   TRIM(sic_bran.uwm100.firstname)
+                            n_name2     =   TRIM(sic_bran.uwm100.lastname)    .
+                    END.
+                    ELSE DO:
+                        n_title     =   TRIM(sic_bran.uwm100.ntitle).
+                        n_name      =   TRIM(sic_bran.uwm100.name1).
+                        n_name2     =   "".
+                    END.
+                END.
+
+                /*---Begin by Chaiyong W. A66-0048 21/03/2023*/
+                IF uwm100.langug  = "T" AND nv_xmm600 = sic_bran.uwm100.bs_cd THEN DO:
+                    //FIND  sic_bran.xtm600 USE-INDEX xtm60001 WHERE xtm600.acno  = nv_xmm600 NO-LOCK NO-ERROR. comment by Chaiyong W. F67-0001 08/10/2024
+                    FIND FIRST sic_bran.xtm600 USE-INDEX xtm60001 WHERE xtm600.acno  = nv_xmm600 NO-LOCK NO-ERROR.  /*---add by Chaiyong W. F67-0001 08/10/2024*/
+                    IF AVAIL   xtm600  THEN DO:
+                       
+                        IF xtm600.firstname <> "" OR xmm600.lastname <> "" THEN DO:
+                            ASSIGN 
+                            n_title     =   TRIM(xtm600.ntitle)
+                            n_name      =   TRIM(xtm600.firstname)
+                            n_name2     =   TRIM(xtm600.lastname)    .
+                        END.
+                        ELSE DO:
+                            n_title     =   TRIM(xtm600.ntitle).
+                            n_name      =   TRIM(xtm600.name).
+                            n_name2     =   "".
+                        END.
+                        n_paddr1    =   TRIM(xtm600.addr1).
+                        n_paddr2    =   TRIM(xtm600.addr2).
+                        n_paddr3    =   TRIM(xtm600.addr3).
+                        n_paddr4    =   TRIM(xtm600.addr4).
+                        n_postcd    =   TRIM(xtm600.postcd).
+                        
+                    END.
+                END.    
+                /*End by Chaiyong W. A66-0048 21/03/2023---*/
+            END.
+            ELSE DO:    /*n_name = sic_bran.xmm600.nphone.  Comment  A63-0377 */
+                        /*--- VAT ชมพู  A63-0377 ---*/
+                        IF sic_bran.xmm600.nfirstname <> ""  THEN  DO:
+                            ASSIGN
+                                n_title     =   sic_bran.xmm600.nntitle
+                                n_name      =   sic_bran.xmm600.nfirstname
+                                n_name2     =   sic_bran.xmm600.nlastname .
+                        END.
+                        ELSE DO:
+                            n_title     =       "".
+                            n_name      =       SUBSTRING(sic_bran.xmm600.nphone,1,60).
+                            n_name2     =       SUBSTRING(sic_bran.xmm600.nphone,61,60).
+                        END.
+                        /*--- A63-0377 ---*/
+            END.
+
+            ASSIGN
+                n_paddr1    =   TRIM(sic_bran.xmm600.naddr1)
+                n_paddr2    =   TRIM(sic_bran.xmm600.naddr2)
+                n_paddr3    =   TRIM(sic_bran.xmm600.naddr3)
+                n_paddr4    =   TRIM(sic_bran.xmm600.naddr4)
+                n_postcd    =   TRIM(sic_bran.xmm600.npostcd)
+                nv_brnins = TRIM(SUBSTRING(sic_bran.xmm600.anlyc1,20,5))
+                nv_taxno  = TRIM(SUBSTRING(sic_bran.xmm600.anlyc1,1,14)) NO-ERROR . 
+        END.
+    END.
+END PROCEDURE.
+/*---Begin by Chaiyong W. A68-0034 18/02/2025*/
+PROCEDURE pd_newaddr:
+    DEF VAR nv_rec101 AS RECID INIT ?.
+    IF AVAIL sic_bran.uwm101 THEN nv_rec101 = RECID(sic_bran.uwm101).
+
+    RUN wgw\wgwpvtcm1(input  "trn_vat"    ,
+                      input  "vat_s"      ,
+                      input  "wgwvptv2"   ,
+                      input  nv_recid     ,
+                      input  nv_rec101    ,
+                      output nv_putcode   ,
+                      OUTPUT n_title      ,
+                      output n_name       ,
+                      output n_name2      ,
+                      output n_paddr1     ,
+                      output n_paddr2     ,
+                      output n_paddr3     ,
+                      output n_paddr4     ,
+                      OUTPUT n_postcd     ,
+                      output nv_taxno     ,
+                      output nv_brnins    ,
+                      output nv_codeocc   ,
+                      output nv_occup     ,
+                      output nv_ooth1     ,
+                      output nv_ooth2     ,
+                      output nv_ooth3     ,
+                      output nv_ooth4     ).
+
+END PROCEDURE.
+/*End by Chaiyong W. A68-0034 18/02/2025-----*/
+

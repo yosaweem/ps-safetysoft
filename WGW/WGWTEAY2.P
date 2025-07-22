@@ -1,0 +1,317 @@
+/* WGWTEAY1.P  -- Load Text file aycl to gw                                */
+/* Copyright   # Safety Insurance Public Company Limited                   */
+/*               บริษัท ประกันคุ้มภัย จำกัด (มหาชน)                        */
+/* Create By   : Porntiwa P.  A58-0384  27/10/2015                         
+               : ปรับการดึงค่า Expiry                                      */
+/* Connect DB  : GW_SAFE -LD SIC_BRAN ; EXPIRY -LD SIC_EXP                 */               
+/* ------------------------------------------------------------------------*/
+DEFINE INPUT-OUTPUT PARAMETER nr_prepol    AS CHAR FORMAT "X(12)".
+DEFINE INPUT-OUTPUT PARAMETER nr_policy    AS CHAR FORMAT "X(16)".
+DEFINE INPUT-OUTPUT PARAMETER nr_rencnt    AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_endcnt    AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchyr     AS INTE.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchno     AS CHAR.
+DEFINE INPUT-OUTPUT PARAMETER nr_bchcnt    AS INTE.
+
+DEFINE VAR nv_fptr AS RECID.
+DEFINE VAR nv_bptr AS RECID.
+
+DEFINE BUFFER wf_uwd120 FOR sic_bran.uwd120.
+DEFINE BUFFER wf_uwd121 FOR sic_bran.uwd121.
+DEFINE BUFFER wf_uwd123 FOR sic_bran.uwd123.
+DEFINE BUFFER wf_uwd124 FOR sic_bran.uwd124.
+DEFINE BUFFER wf_uwd125 FOR sic_bran.uwd125.
+DEFINE BUFFER wf_uwd126 FOR sic_bran.uwd126.
+DEFINE BUFFER wf_uwd132 FOR sic_bran.uwd132.
+
+DEFINE VAR nv_comp AS INTE.
+
+/*-- Create UWM120 --*/
+FIND LAST sic_exp.uwm120 USE-INDEX uwm12001 WHERE
+          sic_exp.uwm120.policy = nr_prepol NO-LOCK NO-ERROR.
+IF AVAIL sic_exp.uwm120 THEN DO:
+
+    FIND LAST sic_exp.uwm130 USE-INDEX uwm13001 WHERE
+              sic_exp.uwm130.policy = sic_exp.uwm120.policy AND
+              sic_exp.uwm130.rencnt = sic_exp.uwm120.rencnt AND
+              sic_exp.uwm130.endcnt = sic_exp.uwm120.endcnt AND
+              sic_exp.uwm130.riskgp = sic_exp.uwm120.riskgp AND
+              sic_exp.uwm130.riskno = sic_exp.uwm120.riskno NO-LOCK NO-ERROR.
+    IF AVAIL sic_exp.uwm130 THEN DO:
+        nv_fptr = sic_exp.uwm130.fptr03.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm130.fptr03 <> ? :
+            FIND sic_exp.uwd132 WHERE RECID(sic_exp.uwd132) = nv_fptr NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd132 THEN DO:
+                nv_fptr = sic_exp.uwd132.fptr.
+
+                IF sic_exp.uwd132.bencod = "COMP" THEN DO:
+                    nv_comp = uwd132.gap_c.
+                END.
+            END.
+        END.
+    END.
+
+    FIND sic_bran.uwm120 USE-INDEX uwm12001 WHERE
+         sic_bran.uwm120.policy = nr_policy AND
+         sic_bran.uwm120.rencnt = nr_rencnt AND
+         sic_bran.uwm120.endcnt = nr_endcnt AND 
+         sic_bran.uwm120.bchyr  = nr_bchyr  AND
+         sic_bran.uwm120.bchno  = nr_bchno  AND
+         sic_bran.uwm120.bchcnt = nr_bchcnt NO-ERROR.
+    IF NOT AVAIL sic_bran.uwm120 THEN DO:
+        CREATE sic_bran.uwm120.
+        ASSIGN
+            sic_bran.uwm120.policy      = nr_policy
+            sic_bran.uwm120.rencnt      = nr_rencnt
+            sic_bran.uwm120.endcnt      = nr_endcnt
+            sic_bran.uwm120.bchyr       = nr_bchyr
+            sic_bran.uwm120.bchno       = nr_bchno
+            sic_bran.uwm120.bchcnt      = nr_bchcnt
+            sic_bran.uwm120.bptr01      = 0
+            sic_bran.uwm120.bptr02      = 0
+            sic_bran.uwm120.bptr03      = 0
+            sic_bran.uwm120.bptr04      = 0
+            sic_bran.uwm120.bptr08      = 0
+            sic_bran.uwm120.bptr09      = 0
+            sic_bran.uwm120.class       = sic_exp.uwm120.class
+            sic_bran.uwm120.com1ae      = YES
+            sic_bran.uwm120.com1p       = sic_exp.uwm120.com1p
+            sic_bran.uwm120.com1_r      = sic_exp.uwm120.com1_r
+            sic_bran.uwm120.com2ae      = YES
+            sic_bran.uwm120.com2p       = sic_exp.uwm120.com2p
+            sic_bran.uwm120.com2_r      = sic_exp.uwm120.com2_r
+            sic_bran.uwm120.com3ae      = YES
+            sic_bran.uwm120.com3p       = sic_exp.uwm120.com3p
+            sic_bran.uwm120.com3_r      = sic_exp.uwm120.com3_r
+            sic_bran.uwm120.com4ae      = YES
+            sic_bran.uwm120.com4p       = sic_exp.uwm120.com4p
+            sic_bran.uwm120.com4_r      = sic_exp.uwm120.com4_r
+            sic_bran.uwm120.comco       = sic_exp.uwm120.comco
+            sic_bran.uwm120.comfac      = sic_exp.uwm120.comfac
+            sic_bran.uwm120.comqs       = sic_exp.uwm120.comqs
+            sic_bran.uwm120.comst       = sic_exp.uwm120.comst
+            sic_bran.uwm120.comtty      = sic_exp.uwm120.comtty
+            sic_bran.uwm120.dl1_r       = sic_exp.uwm120.dl1_r
+            sic_bran.uwm120.dl2_r       = sic_exp.uwm120.dl2_r
+            sic_bran.uwm120.dl3_r       = sic_exp.uwm120.dl3_r
+            sic_bran.uwm120.feeae       = YES
+            sic_bran.uwm120.fptr01      = 0
+            sic_bran.uwm120.fptr02      = 0
+            sic_bran.uwm120.fptr03      = 0
+            sic_bran.uwm120.fptr04      = 0
+            sic_bran.uwm120.fptr08      = 0
+            sic_bran.uwm120.fptr09      = 0
+            sic_bran.uwm120.gap_r       = (sic_exp.uwm120.gap_r - nv_comp)
+            sic_bran.uwm120.pdco        = sic_exp.uwm120.pdco
+            sic_bran.uwm120.pdfac       = sic_exp.uwm120.pdfac
+            sic_bran.uwm120.pdqs        = sic_exp.uwm120.pdqs
+            sic_bran.uwm120.pdst        = sic_exp.uwm120.pdst
+            sic_bran.uwm120.pdtty       = sic_exp.uwm120.pdtty
+            sic_bran.uwm120.prem_r      = (sic_exp.uwm120.prem_r - nv_comp)
+            sic_bran.uwm120.rfee_r      = sic_exp.uwm120.rfee_r
+            sic_bran.uwm120.rilate      = sic_exp.uwm120.rilate
+            sic_bran.uwm120.riskgp      = sic_exp.uwm120.riskgp
+            sic_bran.uwm120.riskno      = sic_exp.uwm120.riskno
+            sic_bran.uwm120.rskdel      = sic_exp.uwm120.rskdel
+            /*sic_bran.uwm120.rstp_r      = sic_exp.uwm120.rstp_r
+            sic_bran.uwm120.rtax_r      = sic_exp.uwm120.rtax_r*/
+            sic_bran.uwm120.r_text      = sic_exp.uwm120.r_text
+            sic_bran.uwm120.sico        = sic_exp.uwm120.sico
+            sic_bran.uwm120.sicurr      = sic_exp.uwm120.sicurr
+            sic_bran.uwm120.siexch      = sic_exp.uwm120.siexch
+            sic_bran.uwm120.sifac       = sic_exp.uwm120.sifac
+            sic_bran.uwm120.sigr        = sic_exp.uwm120.sigr
+            sic_bran.uwm120.siqs        = sic_exp.uwm120.siqs
+            sic_bran.uwm120.sist        = sic_exp.uwm120.sist
+            sic_bran.uwm120.sitty       = sic_exp.uwm120.sitty
+            sic_bran.uwm120.stmpae      = YES
+            sic_bran.uwm120.styp20      = sic_exp.uwm120.styp20
+            sic_bran.uwm120.sval20      = sic_exp.uwm120.sval20
+            sic_bran.uwm120.taxae       = YES.
+
+        /* Risk Level Upper Text  uwd120*/
+        nv_fptr = sic_exp.uwm120.fptr01.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr01 <> ? :
+            FIND sic_exp.uwd120 WHERE RECID(sic_exp.uwm120) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd120 THEN DO:
+                nv_fptr = sic_exp.uwd120.fptr.
+                CREATE sic_bran.uwd120.
+                ASSIGN
+                    sic_bran.uwd120.bptr          = nv_bptr
+                    sic_bran.uwd120.endcnt        = nr_endcnt
+                    sic_bran.uwd120.fptr          = 0
+                    sic_bran.uwd120.ltext         = sic_exp.uwd120.ltext
+                    sic_bran.uwd120.policy        = nr_policy
+                    sic_bran.uwd120.rencnt        = nr_rencnt
+                    sic_bran.uwd120.riskgp        = sic_exp.uwd120.riskgp
+                    sic_bran.uwd120.riskno        = sic_exp.uwd120.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd120 WHERE RECID(wf_uwd120) = nv_bptr.
+                    wf_uwd120.fptr = RECID(sic_bran.uwd120).
+                END.
+
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr01 = RECID(sic_bran.uwd120).
+                nv_bptr = RECID(sic_bran.uwd120).
+
+            END.
+        END. /* DO */
+        sic_bran.uwm120.bptr01 = nv_bptr.
+
+        /* Risk Level Lower Text */
+        nv_fptr = sic_exp.uwm120.fptr02.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr02 <> ? :
+            FIND sic_exp.uwd121 WHERE RECID(sic_exp.uwd121) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd121 THEN DO:
+                nv_fptr = sic_exp.uwd121.fptr.
+                CREATE sic_bran.uwd121.
+                ASSIGN
+                    sic_bran.uwd121.bptr    = nv_bptr
+                    sic_bran.uwd121.endcnt  = nr_endcnt
+                    sic_bran.uwd121.fptr    = 0
+                    sic_bran.uwd121.ltext   = sic_exp.uwd121.ltext
+                    sic_bran.uwd121.policy  = nr_policy
+                    sic_bran.uwd121.rencnt  = nr_rencnt
+                    sic_bran.uwd121.riskgp  = sic_exp.uwd121.riskgp
+                    sic_bran.uwd121.riskno  = sic_exp.uwd121.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                  FIND wf_uwd121 WHERE RECID(wf_uwd121) = nv_bptr.
+                  wf_uwd121.fptr = RECID(sicuw.uwd121).
+                END.
+
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr02 = RECID(sic_bran.uwd121).
+                nv_bptr = RECID(sic_bran.uwd121).
+
+            END.
+        END. /*DO*/
+        sic_bran.uwm120.bptr02 = nv_bptr.
+
+        /* Risk Level Bordereau Text */
+        nv_fptr = sic_exp.uwm120.fptr03.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr03 <> ? :
+            FIND sic_exp.uwd123 WHERE RECID(sic_exp.uwd123) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd123 THEN DO:
+                nv_fptr = sic_exp.uwd123.fptr.
+                CREATE sic_bran.uwd123.
+                ASSIGN
+                    sic_bran.uwd123.bptr          = nv_bptr
+                    sic_bran.uwd123.endcnt        = nr_endcnt
+                    sic_bran.uwd123.fptr          = 0
+                    sic_bran.uwd123.ltext         = sic_exp.uwd123.ltext
+                    sic_bran.uwd123.policy        = nr_policy
+                    sic_bran.uwd123.rencnt        = nr_rencnt
+                    sic_bran.uwd123.riskgp        = sic_exp.uwd123.riskgp
+                    sic_bran.uwd123.riskno        = sic_exp.uwd123.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                  FIND wf_uwd123 WHERE RECID(wf_uwd123) = nv_bptr.
+                  wf_uwd123.fptr = RECID(sic_bran.uwd123).
+                END.
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr03 = RECID(sic_bran.uwd123).
+                nv_bptr = RECID(sic_bran.uwd123).
+            END.
+        END.  /*DO*/
+        sic_bran.uwm120.bptr03 = nv_bptr.
+
+        /* Risk Level Clauses */
+        nv_fptr = sic_exp.uwm120.fptr04.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr04 <> ? :
+            FIND sic_exp.uwd125 WHERE RECID(sic_exp.uwd125) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAIL sic_exp.uwd125 THEN DO:
+                nv_fptr = sic_exp.uwd125.fptr.
+                CREATE sic_bran.uwd125.
+                ASSIGN
+                    sic_bran.uwd125.bptr          = nv_bptr
+                    sic_bran.uwd125.clause        = sic_exp.uwd125.clause
+                    sic_bran.uwd125.endcnt        = nr_endcnt
+                    sic_bran.uwd125.fptr          = 0
+                    sic_bran.uwd125.policy        = nr_policy
+                    sic_bran.uwd125.rencnt        = nr_rencnt
+                    sic_bran.uwd125.riskgp        = sic_exp.uwd125.riskgp
+                    sic_bran.uwd125.riskno        = sic_exp.uwd125.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                  FIND wf_uwd125 WHERE RECID(wf_uwd125) = nv_bptr.
+                  wf_uwd125.fptr = RECID(sic_bran.uwd125).
+                END.
+
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr04 = RECID(sic_bran.uwd125).
+                nv_bptr = RECID(sic_bran.uwd125).
+            END.
+        END.
+        sic_bran.uwm120.bptr04 = nv_bptr.
+
+        /* Risk Level Endorsement Text */
+        nv_fptr = sic_exp.uwm120.fptr08.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr08 <> ? :
+            FIND sic_exp.uwd124 WHERE RECID(sic_exp.uwd124) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAILABLE sic_exp.uwd124 THEN DO:
+                nv_fptr = sic_exp.uwd124.fptr.
+                CREATE sic_bran.uwd124.
+                ASSIGN
+                    sic_bran.uwd124.bptr          = nv_bptr
+                    sic_bran.uwd124.endcnt        = nr_endcnt
+                    sic_bran.uwd124.fptr          = 0
+                    sic_bran.uwd124.ltext         = sic_exp.uwd124.ltext
+                    sic_bran.uwd124.policy        = nr_policy
+                    sic_bran.uwd124.rencnt        = nr_rencnt
+                    sic_bran.uwd124.riskgp        = sic_exp.uwd124.riskgp
+                    sic_bran.uwd124.riskno        = sic_exp.uwd124.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                  FIND wf_uwd124 WHERE RECID(wf_uwd124) = nv_bptr.
+                  wf_uwd124.fptr = RECID(sic_bran.uwd124).
+                END.
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr08 = RECID(sic_bran.uwd124).
+                nv_bptr = RECID(sic_bran.uwd124).
+            END.
+        END. /*DO*/
+        sic_bran.uwm120.bptr08 = nv_bptr.
+
+        /* Risk level Endorsement Clauses */
+        nv_fptr = sic_exp.uwm120.fptr09.
+        nv_bptr = 0.
+        DO WHILE nv_fptr <> 0 AND sic_exp.uwm120.fptr09 <> ? :
+            FIND sic_exp.uwd126 WHERE RECID(sic_exp.uwd126) = nv_fptr
+            NO-LOCK NO-ERROR.
+            IF AVAILABLE sic_exp.uwd126 THEN DO:
+                nv_fptr = sic_exp.uwd126.fptr.
+                CREATE sic_bran.uwd126.
+
+                ASSIGN
+                    sic_bran.uwd126.bptr     = nv_bptr
+                    sic_bran.uwd126.endcls   = sic_exp.uwd126.endcls
+                    sic_bran.uwd126.endcnt   = nr_endcnt
+                    sic_bran.uwd126.fptr     = 0
+                    sic_bran.uwd126.policy   = nr_policy
+                    sic_bran.uwd126.rencnt   = nr_rencnt
+                    sic_bran.uwd126.riskgp   = sic_exp.uwd126.riskgp
+                    sic_bran.uwd126.riskno   = sic_exp.uwd126.riskno.
+
+                IF nv_bptr <> 0 THEN DO:
+                    FIND wf_uwd126 WHERE RECID(wf_uwd126) = nv_bptr.
+                    wf_uwd126.fptr = RECID(sic_bran.uwd126).
+                END.
+                IF nv_bptr = 0 THEN  sic_bran.uwm120.fptr09 = RECID(sic_bran.uwd126).
+                nv_bptr = RECID(sic_bran.uwd126).
+            END.
+        END.
+        sic_bran.uwm120.bptr09 = nv_bptr.
+
+    END.
+    ELSE DO:
+        MESSAGE "NOT AVAIL UWM120" VIEW-AS ALERT-BOX.
+    END.
+END.
