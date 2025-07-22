@@ -1,0 +1,3 @@
+RUN wac\wacconfn .
+RUN wac\wacr0010 .
+RUN wac\wacdisfn .
