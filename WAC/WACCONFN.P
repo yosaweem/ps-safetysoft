@@ -1,0 +1,22 @@
+/* Modify By Wantanee.S A49-0139  Date 11/08/2006 Lock Database Sicfn 
+   - Lock ไม่ให้ User Blank เข้าใช้ database */
+/* Modify By : Porntiwa T.  A62-0105  Date: 19/07/2019
+             : Change Host Alpha4 => TMSth (SICUW,SICFN)*/   
+  
+/*--- Begin Wantanee A49-0139 11/8/2006 ---*/
+DEF     SHARED  VAR n_User     AS   CHAR.
+DEF     SHARED  VAR n_Passwd   AS   CHAR.
+/*---- End Wantanee A49-0139 11/8/2006 ----*/
+
+    /* connect sicfn  alpha4 */
+    IF Not CONNECTED ("sicfn") THEN 
+        CONNECT -db sicfn -H TMSth -S sicfn -N TCP -U value(n_User) -P value(n_Passwd)  
+                     -cpinternal 620-2533 -cpstream 620-2533 NO-ERROR.
+        /*CONNECT -db sicfn -H alpha4 -S sicfn -N TCP -U value(n_User) -P value(n_Passwd)  
+                     -cpinternal 620-2533 -cpstream 620-2533 NO-ERROR.*//*Comment A62-0105*/
+
+
+     IF NOT CONNECTED ("sicfn") THEN DO:
+             MESSAGE "sicfn  not connect " VIEW-AS ALERT-BOX ERROR BUTTONS OK 
+            TITLE "Invalid LOGON".
+     END.

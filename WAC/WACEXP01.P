@@ -1,0 +1,140 @@
+/*------------------------------------------------------------------
+ Modify By : TANTAWAN C.   09/01/2008   [A500178]
+             ปรับ FORMAT branch เพื่อรองรับการขยายสาขา
+--------------------------------------------------------------------*/
+
+/*
+DEF VAR n_frdat AS DATE INIT "01/01/2003".
+DEF VAR n_todat AS DATE INIT "12/31/2003".
+DEF VAR n_output AS CHAR FORMAT "X(8)" INIT "TRAN5678".
+*/
+
+DEF INPUT PARAMETER n_frdat AS DATE.
+DEF INPUT PARAMETER n_todat AS DATE.
+DEF INPUT PARAMETER n_output AS CHAR.
+
+
+/*----- var for put text in ns1 -----*/
+DEF VAR n_policy LIKE uwm100.policy.
+DEF VAR n_comdat LIKE uwm100.comdat.
+DEF VAR n_expdat LIKE uwm100.expdat.
+DEF VAR n_ntitle LIKE uwm100.ntitle.
+DEF VAR n_name1  LIKE uwm100.name1.
+DEF VAR n_name2  LIKE uwm100.name2.
+DEF VAR n_sigr_p LIKE uwm100.sigr_p.
+DEF VAR n_prem_t LIKE uwm100.prem_t.
+DEF VAR n_pstp   LIKE uwm100.pstp.
+DEF VAR n_rstp_t LIKE uwm100.rstp_t.
+DEF VAR n_rtax_t LIKE uwm100.rtax_t.
+DEF VAR n_com1_t LIKE uwm100.com1_t.
+DEF VAR n_com2_t LIKE uwm100.com2_t.
+DEF VAR n_acno1  LIKE uwm100.acno1 FORMAT "X(10)".  /*--- A500178 --- เพิ่ม FORMAT "X(10)" ---*/
+
+/*----- ว/ด/ป รับเบี้ยประกันภัย -----*/
+DEF VAR n_prem_d LIKE  acd001.cjodat.
+
+DEF VAR dispname AS CHAR.
+
+DEF STREAM ns1.
+
+    /*----- create file -----*/
+    OUTPUT STREAM ns1 TO VALUE(n_output) .
+                
+    /*----- put header in file -----*/
+    PUT STREAM ns1
+        "สมุดทะเบียนการต่ออายุกรมธรรม์ประกันภัย;" SKIP(2)
+        "เลขที่หนังสือรับรองการต่ออายุกรมธรรม์ประกันภัย;"
+        "วันเริ่มต้น;"
+        "วันสิ้นสุด;"
+        "เลขที่กรมธรรม์ประกันภัย;"
+        "ชื่อผู้เอาประกันภัย;"
+        "ราคาแห่งมูลประกันภัย;"
+        "จำนวนเงินเอาประกันภัย;"
+        "อัตราเบี้ยประกันภัย;"
+        "เบี้ยประกันภัย;"
+        "ภาษีอากร;"
+        "วัน เดือน ปี รับเบี้ยประกันภัย;"
+        "ค่าบำเหน็จ;"
+        "ชื่อผู้หาประกันภัยหรือรหัส;"
+        "หมายเหตุ;"
+        SKIP.
+
+    FOR EACH uwm100 USE-INDEX uwm10008 WHERE
+             uwm100.trndat >= n_frdat AND
+             uwm100.trndat <= n_todat AND
+             uwm100.renpol <> "" AND
+             uwm100.endcnt = 0 AND
+             uwm100.releas = yes
+             NO-LOCK BREAK BY uwm100.policy.
+              
+        /*----- หา ว/ด/ป รับเบี้ยประกันภัย -----*/
+      
+        find last acm001 use-index acm00101 where 
+               acm001.trnty1   = uwm100.trty11 and   
+               acm001.docno = uwm100.docno1 no-lock no-error.
+        if avail acm001 then do:         
+             if  acm001.bal <= 0  then do:
+                find first acd001 use-index acd00191 where
+                           acd001.trnty1 = acm001.trnty1    and
+                           acd001.docno  = acm001.docno no-lock no-error.
+                if avail acd001 then n_prem_d = acd001.cjodat.                
+             end.
+        end.       
+        /*----- STOP: หา ว/ด/ป รับเบี้ยประกันภัย -----*/
+                                                  
+        n_policy = uwm100.policy.
+        n_comdat = uwm100.comdat.
+        n_expdat = uwm100.expdat.
+        n_ntitle = uwm100.ntitle.
+        n_name1 = uwm100.name1.
+        n_name2 = uwm100.name2.
+     
+        dispname = TRIM(n_ntitle) + TRIM(n_name1) + TRIM(n_name2) + ";".
+     
+        n_sigr_p = uwm100.sigr_p.
+        n_prem_t = uwm100.prem_t.
+        n_pstp = uwm100.pstp.
+        n_rstp_t = uwm100.rstp_t.
+        n_rtax_t = uwm100.rtax_t.
+        n_com1_t = uwm100.com1_t.
+        n_com2_t = uwm100.com2_t.
+        n_acno1= uwm100.acno1.
+   
+        /*----- put data in file -----*/
+        IF n_policy = "" THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 n_policy FORMAT "X(16)" + ";".
+
+        IF n_comdat = ? THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 STRING(n_comdat,"99/99/9999") FORMAT "x(10)" + ";".
+
+        IF n_expdat = ? THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 STRING(n_expdat,"99/99/9999" ) FORMAT "x(10)" + ";".
+
+        IF n_policy = "" THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 n_policy FORMAT "X(16)" + ";".
+
+        IF dispname = "" THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 dispname FORMAT "X(200)" + ";".
+
+        PUT STREAM ns1
+        n_sigr_p FORMAT "->,>>>,>>>,>>>,>>9.99" + ";"
+        "-;"
+        n_prem_t FORMAT "->>,>>>,>>>,>>9.99" + ";"
+        n_pstp + n_rstp_t + n_rtax_t FORMAT "->,>>>,>>9.99" + ";".
+
+        /* acd002.cjodat */
+        IF n_prem_d = ? THEN PUT STREAM ns1 ";".
+                        ELSE PUT STREAM ns1 STRING(n_prem_d,"99/99/9999" ) FORMAT "x(10)" + ";".
+
+        PUT STREAM ns1
+        n_com1_t + n_com2_t FORMAT "->>,>>>,>>>,>>9.99" + ";"
+        n_acno1 FORMAT "X(7)" + ";"
+        SKIP.
+                    
+    END.
+
+    /*----- close file -----*/
+     HIDE MESSAGE NO-PAUSE.
+     BELL.
+     MESSAGE "Printing Ok.".
+     OUTPUT STREAM ns1 CLOSE.

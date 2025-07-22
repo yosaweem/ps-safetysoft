@@ -1,0 +1,217 @@
+/***************************************
+wac01104.p  -  DR & CR Matching  ใช้ใน wace1002.w - Debit Note & Credit Note Matching Entry
+MODI BY :  Kanchana C.        A46-0478
+    - process matching  เบี้ย + , - 
+
+FROM
+/**  ACO01104.P - UPDATE MATCHED MASTER RECORDS FILE PROGRAM  **/
+/**  Programmer : SM  **/
+/* # 0694  2/8/95 oa        */
+
+/* MODI BY : Kanchana C.    19/10/2004 */
+- แก้ให้ใช้ user id  ที่ส่งมา  n_User   แทน USERID(LDBNAME(1))  
+เนื่อง่จาก LDBNAME(1) ถ้า เป้น sicfn จะมีค่าเป็น  ? 
+
+***************************************/
+/* 19/10/2004 */
+DEF     SHARED VAR n_User           AS CHAR.
+DEF     SHARED VAR n_Passwd         AS CHAR. 
+
+/*{s0/s0sgbvar.i}*/
+DEFINE     SHARED VAR s_prog      LIKE acm001.prog NO-UNDO.
+DEFINE     SHARED VAR s_recid2    AS RECID INITIAL[0] NO-UNDO. /* RecId-acm001*/
+DEFINE     SHARED VAR s_trnty1    LIKE acm002.trnty1 NO-UNDO.
+DEFINE     SHARED VAR s_docno     LIKE acm002.docno NO-UNDO.
+DEFINE     SHARED VAR s_trndat    LIKE acm001.trndat NO-UNDO.
+DEFINE     SHARED VAR s_fptr02    AS RECID NO-UNDO. /* fptr for acm002 */
+DEFINE     SHARED VAR s_bptr02    AS RECID NO-UNDO. /* bptr for acm002 */
+DEFINE     SHARED VAR s_mchtot    LIKE acm001.netamt INITIAL[0] NO-UNDO.
+                                  /* total amt matched */
+DEFINE     SHARED VAR s_mchdat    AS DATE FORMAT "99/99/9999" NO-UNDO.
+DEFINE     SHARED VAR s_module    AS CHAR FORMAT "x" NO-UNDO.
+DEFINE     SHARED VAR s_netamt    LIKE acm001.netamt NO-UNDO.
+DEFINE     SHARED VAR s_netloc    LIKE acm001.netloc NO-UNDO.
+
+DEFINE            VAR n_recid2   AS RECID. /* Next Rec Id for acd002 */
+DEFINE            VAR n_fptr01   AS RECID. /* Forward pointer - acd001 */
+DEFINE            VAR n_bptr01   AS RECID. /* Backward pointer - acd001 */
+DEFINE            VAR n_precid   AS RECID. /* Rec Id for last old acd001 */
+DEFINE            VAR n_nrecid   AS RECID. /* Rec Id for new acd001 */
+DEFINE            VAR n_lastno   LIKE xmm056.lastno.
+DEFINE            VAR n_ctype    LIKE acd001.ctype.
+DEFINE     SHARED VAR s_prgind   AS CHAR FORMAT "xx" NO-UNDO.
+
+DEFINE     SHARED WORKFILE w_acd002
+  FIELD w_trnty1  LIKE acd002.trnty1
+  FIELD w_docno   LIKE acd002.docno
+  FIELD w_ctrty1  LIKE acd002.ctrty1
+  FIELD w_cdocno  LIKE acd002.cdocno
+  FIELD w_cjono   LIKE acd002.cjono
+  FIELD w_cjodat  LIKE acd002.cjodat
+  FIELD w_netamt  LIKE acd002.netamt.
+
+STATUS INPUT OFF.
+VIEW FRAME nf1.
+
+n_recid2 = s_fptr02.
+n_fptr01 = 0.             n_bptr01 = 0.
+
+IF n_recid2 <> 0 THEN DO:
+    
+   /* oa
+   /* Modified by Hery  29/04/92 */
+   FIND xmm056 WHERE xmm056.seqtyp = "01" AND xmm056.branch = ""
+   NO-WAIT NO-ERROR.
+       End of Modification */
+
+   repeat:
+     FIND xmm056 WHERE xmm056.seqtyp = "01" AND xmm056.branch = ""
+     EXCLUSIVE-LOCK NO-WAIT  NO-ERROR.
+     if  locked xmm056 then do:
+         hide message no-pause.
+         MESSAGE "** WAIT! **".
+         next.
+     end.
+     else do:
+         leave.
+     end.
+   end.
+   /*
+   IF NOT AVAILABLE xmm056 THEN DO:
+      CREATE xmm056.
+      xmm056.seqtyp = "01".
+      xmm056.des    = "Contra Journal Seq. No.".
+      xmm056.lastno = 1.
+   END.
+    */
+   n_lastno = xmm056.lastno.
+
+   FIND FIRST acd001 USE-INDEX acd00101 WHERE
+   acd001.cjono = STRING(n_lastno,"9999999") NO-LOCK NO-ERROR.
+   IF AVAILABLE acd001 THEN DO :
+      MESSAGE "Next Journal No." acd001.cjono  "already present in A/C file"
+      "- press space bar to terminate ".
+      PAUSE.
+      s_prgind = "03".
+      RETURN.
+   END.
+
+   xmm056.lastno = xmm056.lastno + 1.
+   RELEASE xmm056.
+
+   FIND acm001 USE-INDEX acm00101 WHERE acm001.trnty1 = s_trnty1 AND
+     acm001.docno = s_docno NO-WAIT NO-ERROR.
+   IF acm001.latdat = ? OR acm001.latdat <= s_mchdat THEN DO:
+      acm001.latdat = s_mchdat.
+      IF s_module = "Y" THEN acm001.lattyp = "R".
+      IF s_module = "Z" THEN acm001.lattyp = "P".
+      IF s_module = "D" THEN acm001.lattyp = "D".
+      IF s_module = "C" THEN acm001.lattyp = "C".
+   END.
+   n_fptr01 = acm001.fptr01.
+   n_bptr01 = acm001.bptr01.
+
+/*   gv_time = STRING(time,"HH:MM:SS").*/
+
+   CREATE acd001.
+   n_nrecid = RECID(acd001).
+
+   IF s_module = "Y" THEN n_ctype   = "R".
+   IF s_module = "Z" THEN n_ctype   = "P".
+   IF s_module = "D" THEN n_ctype   = "D".
+   IF s_module = "C" THEN n_ctype   = "C".
+   ASSIGN
+   acd001.trnty1  = CAPS(acm001.trnty1)
+   acd001.docno   = acm001.docno
+   acd001.ctype   = n_ctype
+   acd001.ctrty1  = CAPS(s_trnty1)
+   acd001.cdocno  = s_docno
+   acd001.cjono   = STRING(n_lastno, "9999999").
+
+   /* Modified by Hery */
+   acd001.cjodat  = s_mchdat.
+   /* End of modfification */
+
+   ASSIGN
+   acd001.netamt  = s_mchtot
+   acd001.netloc  = (s_netloc / s_netamt) * s_mchtot
+   acd001.usrid   = n_user          /* 19/10/2004 USERID(LDBNAME(1)) */          /* acd001.usrid   = SUBSTR(gv_id,3,6)  */
+   acd001.entdat  = TODAY
+   acd001.enttim  = STRING(time,"HH:MM:SS")      /*gv_time*/
+   acd001.prog    = s_prog.
+
+   IF n_bptr01 = 0 THEN DO:
+      acd001.bptr = 0.
+      acd001.fptr = 0.
+      n_fptr01    = RECID(acd001).
+   END.
+   ELSE DO:
+      FIND acd001 WHERE RECID(acd001) = n_bptr01 NO-WAIT NO-ERROR.
+      acd001.fptr = n_nrecid.
+      n_precid    = RECID(acd001).
+      FIND acd001 WHERE RECID(acd001) = n_nrecid NO-WAIT NO-ERROR.
+      acd001.bptr = n_precid.
+      acd001.fptr = 0.
+   END.
+
+   n_bptr01 = RECID(acd001).
+   acm001.fptr01 = n_fptr01.
+   acm001.bptr01 = n_bptr01.
+   RELEASE acd001.
+   RELEASE acm001.
+END.
+
+n_fptr01 = 0.             n_bptr01 = 0.
+
+FOR EACH w_acd002:
+   FIND acm001 USE-INDEX acm00101 WHERE acm001.trnty1 = w_acd002.w_trnty1 AND
+     acm001.docno = w_acd002.w_docno NO-WAIT NO-ERROR.
+   IF acm001.latdat = ? OR acm001.latdat <= w_acd002.w_cjodat THEN DO:
+      acm001.latdat = w_acd002.w_cjodat.
+      acm001.lattyp = n_ctype.
+   END.
+   n_fptr01 = acm001.fptr01.   n_bptr01 = acm001.bptr01.
+
+/*   gv_time = STRING(time,"HH:MM:SS").*/
+
+/*    message "รอบที่1"  view-as alert-box. . */
+
+   CREATE acd001.
+   n_nrecid = RECID(acd001).
+
+   ASSIGN
+   acd001.trnty1  = w_acd002.w_trnty1
+   acd001.docno   = w_acd002.w_docno
+   acd001.ctype   = n_ctype
+   acd001.ctrty1  = w_acd002.w_ctrty1
+   acd001.cdocno  = w_acd002.w_cdocno
+   acd001.cjono   = STRING(n_lastno, "9999999")
+   acd001.cjodat  = w_acd002.w_cjodat
+   acd001.netamt  = - w_acd002.w_netamt
+   acd001.netloc  = - (s_netloc / s_netamt) * w_acd002.w_netamt
+   acd001.usrid   = n_user          /* 19/10/2004  USERID(LDBNAME(1)) */       /*acd001.usrid   = SUBSTR(gv_id,3,6) */
+   acd001.entdat  = TODAY
+   acd001.enttim  = STRING(time,"HH:MM:SS")      /*gv_time*/
+   acd001.prog    = s_prog
+   acd001.matchp  = no.
+
+   IF n_bptr01 = 0 THEN DO:
+      acd001.bptr = 0.
+      acd001.fptr = 0.
+      n_fptr01 = RECID(acd001).
+   END.
+   ELSE DO:
+      FIND acd001 WHERE RECID(acd001) = n_bptr01 NO-WAIT NO-ERROR.
+      acd001.fptr = n_nrecid.
+      n_precid    = RECID(acd001).
+      FIND acd001 WHERE RECID(acd001) = n_nrecid NO-WAIT NO-ERROR.
+      acd001.bptr = n_precid.
+      acd001.fptr = 0.
+   END.
+
+   n_bptr01 = RECID(acd001).
+   acm001.fptr01 = n_fptr01.
+   acm001.bptr01 = n_bptr01.
+   RELEASE acd001.
+   RELEASE acm001.
+END.

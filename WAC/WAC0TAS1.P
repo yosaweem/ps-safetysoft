@@ -1,0 +1,6 @@
+/* run program in use  -db sicfn */
+
+RUN wac\wacconfn.
+RUN wac\wactas1.
+RUN wac\wacdisfn.
+
